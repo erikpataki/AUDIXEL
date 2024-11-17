@@ -350,32 +350,85 @@ const Home = () => {
     const workerUrl = URL.createObjectURL(workerBlob);
     const workerCount = navigator.hardwareConcurrency || 4;
     const workers = [];
-    const chunkSize = Math.ceil(canvas.height / workerCount);
 
-    for (let i = 0; i < workerCount; i++) {
-      const worker = new Worker(workerUrl);
-      const start = i * chunkSize;
-      const end = Math.min(start + chunkSize, canvas.height);
+    if (sortDirection === 'horizontal') {
+      const chunkHeight = Math.ceil(canvas.height / workerCount);
       
-      const chunk = data.slice(start * canvas.width * 4, end * canvas.width * 4);
-      
-      workers.push(new Promise(resolve => {
-        worker.onmessage = (e) => {
-          data.set(e.data, start * canvas.width * 4);
-          worker.terminate();
-          resolve();
-        };
+      for (let i = 0; i < workerCount; i++) {
+        const worker = new Worker(workerUrl);
+        const startY = i * chunkHeight;
+        const endY = Math.min(startY + chunkHeight, canvas.height);
         
-        worker.postMessage({
-          data: chunk,
-          width: canvas.width,
-          height: end - start,
-          sortDirection,
-          minThreshold,
-          maxThreshold,
-          sortMode
-        });
-      }));
+        const chunk = data.slice(startY * canvas.width * 4, endY * canvas.width * 4);
+        
+        workers.push(new Promise(resolve => {
+          worker.onmessage = (e) => {
+            data.set(e.data, startY * canvas.width * 4);
+            worker.terminate();
+            resolve();
+          };
+          
+          worker.postMessage({
+            data: chunk,
+            width: canvas.width,
+            height: endY - startY,
+            sortDirection,
+            minThreshold,
+            maxThreshold,
+            sortMode
+          });
+        }));
+      }
+    } else { // vertical sorting
+      const chunkWidth = Math.ceil(canvas.width / workerCount);
+      
+      for (let i = 0; i < workerCount; i++) {
+        const worker = new Worker(workerUrl);
+        const startX = i * chunkWidth;
+        const endX = Math.min(startX + chunkWidth, canvas.width);
+        const chunk = new Uint8ClampedArray(canvas.height * (endX - startX) * 4);
+        
+        // Extract vertical strip of pixels
+        for (let y = 0; y < canvas.height; y++) {
+          for (let x = startX; x < endX; x++) {
+            const sourceIndex = (y * canvas.width + x) * 4;
+            const targetIndex = (y * (endX - startX) + (x - startX)) * 4;
+            chunk[targetIndex] = data[sourceIndex];
+            chunk[targetIndex + 1] = data[sourceIndex + 1];
+            chunk[targetIndex + 2] = data[sourceIndex + 2];
+            chunk[targetIndex + 3] = data[sourceIndex + 3];
+          }
+        }
+        
+        workers.push(new Promise(resolve => {
+          worker.onmessage = (e) => {
+            // Copy processed data back to main array
+            const processedChunk = e.data;
+            for (let y = 0; y < canvas.height; y++) {
+              for (let x = startX; x < endX; x++) {
+                const sourceIndex = (y * (endX - startX) + (x - startX)) * 4;
+                const targetIndex = (y * canvas.width + x) * 4;
+                data[targetIndex] = processedChunk[sourceIndex];
+                data[targetIndex + 1] = processedChunk[sourceIndex + 1];
+                data[targetIndex + 2] = processedChunk[sourceIndex + 2];
+                data[targetIndex + 3] = processedChunk[sourceIndex + 3];
+              }
+            }
+            worker.terminate();
+            resolve();
+          };
+          
+          worker.postMessage({
+            data: chunk,
+            width: endX - startX,
+            height: canvas.height,
+            sortDirection,
+            minThreshold,
+            maxThreshold,
+            sortMode
+          });
+        }));
+      }
     }
 
     await Promise.all(workers);
