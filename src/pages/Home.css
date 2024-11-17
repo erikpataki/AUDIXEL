@@ -11,7 +11,7 @@
     display: grid;
     justify-content: center;
     align-items: center;
-    grid-template-columns: 10vw 60vw 30vw;
+    grid-template-columns: 15vw 60vw 25vw;
     grid-gap: 10px;
     max-height: 90vh;
 }
