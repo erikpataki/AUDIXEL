@@ -6,8 +6,8 @@ const Home = () => {
   const canvasRef = useRef(null);
   const [processedImage, setProcessedImage] = useState(null);
   const [uploadedSound, setUploadedSound] = useState(false);
-  const [minThreshold, setMinThreshold] = useState(0);
-  const [maxThreshold, setMaxThreshold] = useState(128);
+  const [minThreshold, setMinThreshold] = useState(40);
+  const [maxThreshold, setMaxThreshold] = useState(170);
   const [sortMode, setSortMode] = useState(0); // 0 = white, 1 = black, 2 = bright, 3 = dark
   const [sortDirection, setSortDirection] = useState('horizontal'); // 'horizontal' or 'vertical'
   const [audioFileUrl, setAudioFileUrl] = useState(null); // Store audio file URL
@@ -399,8 +399,8 @@ const Home = () => {
   const presetSelector = (preset) => {
     switch (preset) {
       case 'default':
-        setMinThreshold(87);
-        setMaxThreshold(94);
+        setMinThreshold(27);
+        setMaxThreshold(173);
         setSortMode(0);
         setSortDirection('horizontal');
         break;
