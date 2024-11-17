@@ -9,9 +9,6 @@ const Home = () => {
   const [minThreshold, setMinThreshold] = useState(0);
   const [maxThreshold, setMaxThreshold] = useState(128);
   const [sortMode, setSortMode] = useState(0); // 0 = white, 1 = black, 2 = bright, 3 = dark
-  const [invertSelection, setInvertSelection] = useState(false);
-  const [zoom, setZoom] = useState(1);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
   const [sortDirection, setSortDirection] = useState('horizontal'); // 'horizontal' or 'vertical'
   const [audioFileUrl, setAudioFileUrl] = useState(null); // Store audio file URL
   const [showProcessed, setShowProcessed] = useState(true);
@@ -23,11 +20,9 @@ const Home = () => {
     highFreq: 0
   });
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const audioRef = useRef(null);
-  const [audioContext, setAudioContext] = useState(null);
-  const [audioSource, setAudioSource] = useState(null);
-  const [analyser, setAnalyser] = useState(null);
   const [progress, setProgress] = useState(0);
+  const [audioContext, setAudioContext] = useState(null);
+  const audioRef = useRef(null);
 
   // Update conversion function
   const byteToDB = (byteValue) => {
@@ -45,10 +40,10 @@ const Home = () => {
       const img = new Image();
       img.src = selectedImage;
       img.onload = () => {
-        processImage(img, minThreshold, maxThreshold, sortMode, invertSelection, sortDirection);
+        processImage(img, minThreshold, maxThreshold, sortMode, sortDirection);
       };
     }
-  }, [minThreshold, maxThreshold, selectedImage, sortMode, invertSelection, sortDirection]);
+  }, [minThreshold, maxThreshold, selectedImage, sortMode, sortDirection]);
 
   const handleImageChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -61,7 +56,7 @@ const Home = () => {
 
         img.onload = () => {
           setSelectedImage(event.target.result);
-          processImage(img, minThreshold, maxThreshold, sortMode, invertSelection, sortDirection);
+          processImage(img, minThreshold, maxThreshold, sortMode, sortDirection);
         };
       };
 
@@ -95,6 +90,7 @@ const Home = () => {
       
       console.log('Creating audio context...');
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      setAudioContext(audioContext);
       
       console.log('Decoding audio data...');
       const audioBuffer = await audioContext.decodeAudioData(arrayBuffer).catch(error => {
@@ -231,17 +227,9 @@ const Home = () => {
         audioContext.close();
       }
     };
-  }, []);
+  }, [audioContext]);
 
-  const meetsThreshold = (r, g, b, mode) => {
-    const brightness = 0.3 * r + 0.59 * g + 0.11 * b;
-    const value = mode <= 1 ? (r + g + b) / 3 : brightness;
-    
-    // Pixels between thresholds are borders - don't sort them
-    return value >= minThreshold && value <= maxThreshold;
-  };
-
-  const processImage = async (image, minThreshold, maxThreshold, sortMode, invertSelection, sortDirection) => {
+  const processImage = async (image, minThreshold, maxThreshold, sortMode, sortDirection) => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     canvas.width = image.width;
@@ -253,14 +241,18 @@ const Home = () => {
 
     const workerBlob = new Blob([`
       self.onmessage = function(e) {
-        const { data, width, height, sortDirection, minThreshold, maxThreshold, sortMode, invertSelection } = e.data;
+        const { data, width, height, sortDirection, minThreshold, maxThreshold, sortMode } = e.data;
         
         const processChunk = (data, width, height) => {
           const pixels = new Uint8ClampedArray(data);
           
           const meetsThreshold = (i) => {
-            const brightness = (pixels[i] + pixels[i + 1] + pixels[i + 2]) / 3;
-            return brightness >= minThreshold && brightness <= maxThreshold;
+            const r = pixels[i];
+            const g = pixels[i + 1];
+            const b = pixels[i + 2];
+            const brightness = 0.3 * r + 0.59 * g + 0.11 * b;
+            const value = sortMode <= 1 ? (r + g + b) / 3 : brightness;
+            return value >= minThreshold && value <= maxThreshold;
           };
 
           if (sortDirection === 'horizontal') {
@@ -271,16 +263,16 @@ const Home = () => {
 
               for (let x = 0; x < width; x++) {
                 const i = (y * width + x) * 4;
-                const isBorder = meetsThreshold(i);
+                const shouldSort = meetsThreshold(i);
 
-                // Start collecting pixels when we exit border
-                if (!isBorder && !isInSortRange) {
+                // Start collecting pixels when we enter sort range
+                if (shouldSort && !isInSortRange) {
                   startX = x;
                   isInSortRange = true;
                   pixelsToSort = [];
                 }
 
-                // Collect pixels while outside border
+                // Collect pixels while in sort range
                 if (isInSortRange) {
                   pixelsToSort.push({
                     r: pixels[i],
@@ -291,13 +283,52 @@ const Home = () => {
                   });
                 }
 
-                // Sort when we hit border again
-                if ((isBorder || x === width - 1) && isInSortRange) {
+                // Sort when we leave sort range or reach the end
+                if ((!shouldSort || x === width - 1) && isInSortRange) {
                   pixelsToSort.sort((a, b) => a.brightness - b.brightness);
-                  if (invertSelection) pixelsToSort.reverse();
 
                   for (let j = 0; j < pixelsToSort.length; j++) {
                     const targetI = (y * width + (startX + j)) * 4;
+                    pixels[targetI] = pixelsToSort[j].r;
+                    pixels[targetI + 1] = pixelsToSort[j].g;
+                    pixels[targetI + 2] = pixelsToSort[j].b;
+                    pixels[targetI + 3] = pixelsToSort[j].a;
+                  }
+                  isInSortRange = false;
+                }
+              }
+            }
+          } else if (sortDirection === 'vertical') {
+            for (let x = 0; x < width; x++) {
+              let startY = 0;
+              let isInSortRange = false;
+              let pixelsToSort = [];
+
+              for (let y = 0; y < height; y++) {
+                const i = (y * width + x) * 4;
+                const shouldSort = meetsThreshold(i);
+
+                if (shouldSort && !isInSortRange) {
+                  startY = y;
+                  isInSortRange = true;
+                  pixelsToSort = [];
+                }
+
+                if (isInSortRange) {
+                  pixelsToSort.push({
+                    r: pixels[i],
+                    g: pixels[i + 1],
+                    b: pixels[i + 2],
+                    a: pixels[i + 3],
+                    brightness: (pixels[i] + pixels[i + 1] + pixels[i + 2]) / 3
+                  });
+                }
+
+                if ((!shouldSort || y === height - 1) && isInSortRange) {
+                  pixelsToSort.sort((a, b) => a.brightness - b.brightness);
+
+                  for (let j = 0; j < pixelsToSort.length; j++) {
+                    const targetI = ((startY + j) * width + x) * 4;
                     pixels[targetI] = pixelsToSort[j].r;
                     pixels[targetI + 1] = pixelsToSort[j].g;
                     pixels[targetI + 2] = pixelsToSort[j].b;
@@ -342,8 +373,7 @@ const Home = () => {
           sortDirection,
           minThreshold,
           maxThreshold,
-          sortMode,
-          invertSelection
+          sortMode
         });
       }));
     }
@@ -354,26 +384,6 @@ const Home = () => {
     imageData.data.set(data);
     ctx.putImageData(imageData, 0, 0);
     setProcessedImage(canvas.toDataURL());
-  };
-
-  const sortAndApplyRow = (data, y, start, end, row) => {
-    row.sort((a, b) => (a.r + a.g + a.b) - (b.r + b.g + b.b));
-    for (let i = 0; i < row.length; i++) {
-      const index = (y * canvasRef.current.width + start + i) * 4;
-      data[index] = row[i].r;
-      data[index + 1] = row[i].g;
-      data[index + 2] = row[i].b;
-    }
-  };
-
-  const sortAndApplyColumn = (data, x, start, end, column) => {
-    column.sort((a, b) => (a.r + a.g + a.b) - (b.r + b.g + b.b));
-    for (let i = 0; i < column.length; i++) {
-      const index = ((start + i) * canvasRef.current.width + x) * 4;
-      data[index] = column[i].r;
-      data[index + 1] = column[i].g;
-      data[index + 2] = column[i].b;
-    }
   };
 
   const downloadImage = () => {
