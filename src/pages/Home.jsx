@@ -8,7 +8,7 @@ const Home = () => {
   const [uploadedSound, setUploadedSound] = useState(false);
   const [minThreshold, setMinThreshold] = useState(40);
   const [maxThreshold, setMaxThreshold] = useState(170);
-  const [sortMode, setSortMode] = useState(0); // 0 = white, 1 = black, 2 = bright, 3 = dark
+  const [sortMode, setSortMode] = useState(0); // 0 = white, 1 = black (ascending/descending)
   const [sortDirection, setSortDirection] = useState('horizontal'); // 'horizontal' or 'vertical'
   const [audioFileUrl, setAudioFileUrl] = useState(null); // Store audio file URL
   const [showProcessed, setShowProcessed] = useState(true);
@@ -250,9 +250,15 @@ const Home = () => {
             const r = pixels[i];
             const g = pixels[i + 1];
             const b = pixels[i + 2];
-            const brightness = 0.3 * r + 0.59 * g + 0.11 * b;
-            const value = sortMode <= 1 ? (r + g + b) / 3 : brightness;
+            const value = (r + g + b) / 3; // Simplified since we only need this for thresholding
             return value >= minThreshold && value <= maxThreshold;
+          };
+
+          const getSortValue = (i) => {
+            const r = pixels[i];
+            const g = pixels[i + 1];
+            const b = pixels[i + 2];
+            return sortMode === 0 ? (r + g + b) : -(r + g + b);
           };
 
           if (sortDirection === 'horizontal') {
@@ -265,27 +271,24 @@ const Home = () => {
                 const i = (y * width + x) * 4;
                 const shouldSort = meetsThreshold(i);
 
-                // Start collecting pixels when we enter sort range
                 if (shouldSort && !isInSortRange) {
                   startX = x;
                   isInSortRange = true;
                   pixelsToSort = [];
                 }
 
-                // Collect pixels while in sort range
                 if (isInSortRange) {
                   pixelsToSort.push({
                     r: pixels[i],
                     g: pixels[i + 1],
                     b: pixels[i + 2],
                     a: pixels[i + 3],
-                    brightness: (pixels[i] + pixels[i + 1] + pixels[i + 2]) / 3
+                    sortValue: getSortValue(i)
                   });
                 }
 
-                // Sort when we leave sort range or reach the end
                 if ((!shouldSort || x === width - 1) && isInSortRange) {
-                  pixelsToSort.sort((a, b) => a.brightness - b.brightness);
+                  pixelsToSort.sort((a, b) => a.sortValue - b.sortValue);
 
                   for (let j = 0; j < pixelsToSort.length; j++) {
                     const targetI = (y * width + (startX + j)) * 4;
@@ -320,12 +323,12 @@ const Home = () => {
                     g: pixels[i + 1],
                     b: pixels[i + 2],
                     a: pixels[i + 3],
-                    brightness: (pixels[i] + pixels[i + 1] + pixels[i + 2]) / 3
+                    sortValue: getSortValue(i)
                   });
                 }
 
                 if ((!shouldSort || y === height - 1) && isInSortRange) {
-                  pixelsToSort.sort((a, b) => a.brightness - b.brightness);
+                  pixelsToSort.sort((a, b) => a.sortValue - b.sortValue);
 
                   for (let j = 0; j < pixelsToSort.length; j++) {
                     const targetI = ((startY + j) * width + x) * 4;
@@ -472,7 +475,7 @@ const Home = () => {
       case 'footwork':
         setMinThreshold(0);
         setMaxThreshold(170);
-        setSortMode(3);
+        setSortMode(0); // Changed from 3 to 0 since dark mode was removed
         setSortDirection('vertical');
         break;
       default:
@@ -589,8 +592,6 @@ const Home = () => {
               >
                 <option value="0">White</option>
                 <option value="1">Black</option>
-                <option value="2">Bright</option>
-                <option value="3">Dark</option>
               </select>
             </div>
 
