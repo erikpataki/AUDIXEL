@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import "./Home.css";
+import FFT from 'fft.js'; // Import the FFT library
 
 const Home = () => {
   const [selectedImage, setSelectedImage] = useState(null);
@@ -24,15 +25,22 @@ const Home = () => {
   const [audioContext, setAudioContext] = useState(null);
   const audioRef = useRef(null);
 
-  // Update conversion function
-  const byteToDB = (byteValue) => {
-    // Convert byte (0-255) to amplitude (0-1)
-    const amplitude = byteValue / 255;
+  // Update conversion function to handle zero or very low magnitudes
+  const magnitudeToDB = (magnitude, reference) => {
+    // Ensure reference is not zero to avoid division by zero
+    if (reference === 0) reference = 1e-10;
     
-    // Convert amplitude to dB
-    if (amplitude === 0) return -Infinity;
-    const db = 20 * Math.log10(amplitude);
-    return db.toFixed(2);
+    // Calculate the magnitude ratio
+    const ratio = magnitude / reference;
+    
+    // Set a minimum ratio to prevent Math.log10 from receiving zero or negative values
+    const minRatio = 1e-10;
+    const safeRatio = Math.max(ratio, minRatio);
+    
+    // Convert magnitude to dB
+    const db = 20 * Math.log10(safeRatio);
+    
+    return db;
   };
 
   useEffect(() => {
@@ -94,19 +102,17 @@ const Home = () => {
       setAudioContext(audioContext);
       
       console.log('Decoding audio data...');
-      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer).catch(error => {
-        console.error('Failed to decode audio:', error);
-        throw error;
-      });
+      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
       
       console.log('Audio decoded, getting channel data...');
       const channelData = audioBuffer.getChannelData(0);
       const sampleRate = audioBuffer.sampleRate;
-      const bufferLength = 2048;
-      const totalChunks = Math.ceil(channelData.length / bufferLength);
+      const fftSize = 2048; // Adjust FFT size as needed
+      const totalChunks = Math.ceil(channelData.length / fftSize);
       
-      console.log(`Processing ${totalChunks} chunks at ${sampleRate}Hz...`);
+      console.log(`Performing FFT analysis on ${totalChunks} chunks...`);
       
+      const fft = new FFT(fftSize);
       const allValues = {
         averages: [],
         peaks: [],
@@ -115,84 +121,131 @@ const Home = () => {
         highFreq: []
       };
   
-      // Helper to convert Hz to FFT bin index
-      const freqToBin = (freq) => Math.floor(freq / (sampleRate / 2) * (bufferLength / 2));
+      // Helper to convert bin index to frequency
+      const getFrequency = (index) => index * sampleRate / fftSize;
   
-      // Calculate bin ranges
-      const binRanges = {
-        low: {
-          start: freqToBin(FREQUENCY_RANGES.LOW.MIN),
-          end: freqToBin(FREQUENCY_RANGES.LOW.MAX)
-        },
-        mid: {
-          start: freqToBin(FREQUENCY_RANGES.MID.MIN),
-          end: freqToBin(FREQUENCY_RANGES.MID.MAX)
-        },
-        high: {
-          start: freqToBin(FREQUENCY_RANGES.HIGH.MIN),
-          end: freqToBin(FREQUENCY_RANGES.HIGH.MAX)
-        }
-      };
-  
-      // Process chunks with error handling
+      // Calculate frequency resolution
+      const deltaF = sampleRate / fftSize;
+
+      // Variables to keep track of maximum magnitude for normalization
+      let globalMaxMagnitude = 0;
+
       for (let i = 0; i < totalChunks; i++) {
-        try {
-          const chunk = channelData.slice(i * bufferLength, (i + 1) * bufferLength);
-          const offlineCtx = new OfflineAudioContext(1, bufferLength, sampleRate);
-          const source = offlineCtx.createBufferSource();
-          const analyzer = offlineCtx.createAnalyser();
-          
-          analyzer.fftSize = 2048;
-          
-          const tempBuffer = offlineCtx.createBuffer(1, chunk.length, sampleRate);
-          tempBuffer.copyToChannel(chunk, 0);
-          
-          source.buffer = tempBuffer;
-          source.connect(analyzer);
-          analyzer.connect(offlineCtx.destination);
-          
-          const dataArray = new Uint8Array(analyzer.frequencyBinCount);
-          
-          source.start();
-          await offlineCtx.startRendering().catch(error => {
-            console.error(`Failed to render chunk ${i}:`, error);
-            throw error;
-          });
-          
-          analyzer.getByteFrequencyData(dataArray);
-          
-          // Process frequency data...
-          const average = dataArray.reduce((a, b) => a + b) / analyzer.frequencyBinCount;
-          const peak = Math.max(...dataArray);
-          
-          // Calculate frequency band averages
-          const lowFreq = dataArray.slice(binRanges.low.start, binRanges.low.end)
-            .reduce((a, b) => a + b) / (binRanges.low.end - binRanges.low.start);
-          const midFreq = dataArray.slice(binRanges.mid.start, binRanges.mid.end)
-            .reduce((a, b) => a + b) / (binRanges.mid.end - binRanges.mid.start);
-          const highFreq = dataArray.slice(binRanges.high.start, binRanges.high.end)
-            .reduce((a, b) => a + b) / (binRanges.high.end - binRanges.high.start);
-          
-          allValues.averages.push(average);
-          allValues.peaks.push(peak);
-          allValues.lowFreq.push(lowFreq);
-          allValues.midFreq.push(midFreq);
-          allValues.highFreq.push(highFreq);
-          
-          setProgress(Math.round((i / totalChunks) * 100));
-          
-        } catch (chunkError) {
-          console.error(`Error processing chunk ${i}:`, chunkError);
-          continue; // Skip failed chunk
+        let chunk = channelData.slice(i * fftSize, (i + 1) * fftSize);
+  
+        // Pad the last chunk if necessary
+        if (chunk.length < fftSize) {
+          const paddedChunk = new Float32Array(fftSize);
+          paddedChunk.set(chunk);
+          chunk = paddedChunk;
         }
+  
+        // Perform FFT
+        const out = fft.createComplexArray();
+        fft.realTransform(out, chunk);
+        fft.completeSpectrum(out);
+  
+        // Calculate magnitudes manually
+        const magnitudes = new Float32Array(fftSize / 2);
+        for (let j = 0; j < fftSize / 2; j++) {
+          const real = out[j * 2];
+          const imag = out[j * 2 + 1];
+          magnitudes[j] = Math.hypot(real, imag);
+        }
+  
+        // Check for NaN values
+        if (magnitudes.some(isNaN)) {
+          console.error(`NaN detected in magnitudes at chunk ${i}`);
+          continue;
+        }
+  
+        // Calculate average and peak
+        const average = magnitudes.reduce((a, b) => a + b, 0) / magnitudes.length;
+        const peak = Math.max(...magnitudes);
+  
+        // Helper function to get bin index for a frequency
+        const freqToIndex = (freq) => Math.round(freq / deltaF);
+
+        // Calculate start and end indices for each frequency band
+        const lowStart = freqToIndex(FREQUENCY_RANGES.LOW.MIN);
+        const lowEnd = freqToIndex(FREQUENCY_RANGES.LOW.MAX);
+        const midStart = freqToIndex(FREQUENCY_RANGES.MID.MIN);
+        const midEnd = freqToIndex(FREQUENCY_RANGES.MID.MAX);
+        const highStart = freqToIndex(FREQUENCY_RANGES.HIGH.MIN);
+        const highEnd = Math.min(freqToIndex(FREQUENCY_RANGES.HIGH.MAX), magnitudes.length - 1);
+
+        // Sum magnitudes within each band
+        const sumMagnitudes = (start, end) => {
+          let sum = 0;
+          let count = 0;
+          for (let k = start; k <= end && k < magnitudes.length; k++) {
+            sum += magnitudes[k];
+            count++;
+          }
+          return sum / (count || 1);
+        };
+
+        const lowFreq = sumMagnitudes(lowStart, lowEnd);
+        const midFreq = sumMagnitudes(midStart, midEnd);
+        const highFreq = sumMagnitudes(highStart, highEnd);
+  
+        allValues.averages.push(average);
+        allValues.peaks.push(peak);
+        allValues.lowFreq.push(lowFreq);
+        allValues.midFreq.push(midFreq);
+        allValues.highFreq.push(highFreq);
+  
+        // Update global maximum magnitude
+        const chunkMaxMagnitude = Math.max(...magnitudes);
+        if (chunkMaxMagnitude > globalMaxMagnitude) {
+          globalMaxMagnitude = chunkMaxMagnitude;
+        }
+  
+        // Debugging output
+        console.log(`Chunk ${i + 1}/${totalChunks}: average=${average}, peak=${peak}`);
+        console.log(`LowFreq=${lowFreq}, MidFreq=${midFreq}, HighFreq=${highFreq}`);
+  
+        setProgress(Math.round(((i + 1) / totalChunks) * 100));
       }
   
+      // Ensure there are valid values before calculating overall averages
+      if (allValues.averages.length === 0) {
+        console.error('No valid data collected during analysis.');
+        return {
+          average: 0,
+          peak: 0,
+          lowFreq: 0,
+          midFreq: 0,
+          highFreq: 0
+        };
+      }
+  
+      // After processing all chunks, normalize magnitudes and convert to dB
+      const normalizeAndConvert = (values) => {
+        return values.map((mag) => magnitudeToDB(mag, globalMaxMagnitude));
+      };
+
+      // Normalize and convert the averaged magnitudes
+      const average = magnitudeToDB(
+        allValues.averages.reduce((a, b) => a + b, 0) / allValues.averages.length,
+        globalMaxMagnitude
+      );
+
+      const peak = magnitudeToDB(
+        allValues.peaks.reduce((a, b) => a + b, 0) / allValues.peaks.length,
+        globalMaxMagnitude
+      );
+
+      const lowFreq = normalizeAndConvert(allValues.lowFreq).reduce((a, b) => a + b, 0) / allValues.lowFreq.length;
+      const midFreq = normalizeAndConvert(allValues.midFreq).reduce((a, b) => a + b, 0) / allValues.midFreq.length;
+      const highFreq = normalizeAndConvert(allValues.highFreq).reduce((a, b) => a + b, 0) / allValues.highFreq.length;
+
       return {
-        average: Math.floor(allValues.averages.reduce((a, b) => a + b) / allValues.averages.length),
-        peak: Math.floor(allValues.peaks.reduce((a, b) => a + b) / allValues.peaks.length),
-        lowFreq: Math.floor(allValues.lowFreq.reduce((a, b) => a + b) / allValues.lowFreq.length),
-        midFreq: Math.floor(allValues.midFreq.reduce((a, b) => a + b) / allValues.midFreq.length),
-        highFreq: Math.floor(allValues.highFreq.reduce((a, b) => a + b) / allValues.highFreq.length)
+        average,
+        peak,
+        lowFreq,
+        midFreq,
+        highFreq
       };
   
     } catch (error) {
@@ -484,19 +537,19 @@ const Home = () => {
   }
 
   useEffect(() => {
-    if (byteToDB(audioFeatures.lowFreq) > byteToDB(audioFeatures.midFreq) && byteToDB(audioFeatures.lowFreq) > byteToDB(audioFeatures.highFreq)) {
+    if (audioFeatures.lowFreq > audioFeatures.midFreq && audioFeatures.lowFreq > audioFeatures.highFreq) {
       setSortDirection('vertical');
       setMinThreshold(30);
       setMaxThreshold(170);
       setSortMode(1);
     }
-    else if (byteToDB(audioFeatures.midFreq) > byteToDB(audioFeatures.lowFreq) && byteToDB(audioFeatures.midFreq) > byteToDB(audioFeatures.highFreq)) {
+    else if (audioFeatures.midFreq > audioFeatures.lowFreq && audioFeatures.midFreq > audioFeatures.highFreq) {
       setSortDirection('horizontal');
       setMinThreshold(50);
       setMaxThreshold(150);
       setSortMode(0);
     }
-    else if (byteToDB(audioFeatures.highFreq) > byteToDB(audioFeatures.lowFreq) && byteToDB(audioFeatures.highFreq) > byteToDB(audioFeatures.midFreq)) {
+    else if (audioFeatures.highFreq > audioFeatures.lowFreq && audioFeatures.highFreq > audioFeatures.midFreq) {
       setSortDirection('vertical');
       setMinThreshold(20);
       setMaxThreshold(120);
@@ -649,11 +702,11 @@ const Home = () => {
                     ) : (
                       // Update display section
                       <div className="analysis-results">
-                        <p>Average: {byteToDB(audioFeatures.average)} dB</p>
-                        <p>Peak: {byteToDB(audioFeatures.peak)} dB</p>
-                        <p>Low Freq ({FREQUENCY_RANGES.LOW.MIN}Hz-{FREQUENCY_RANGES.LOW.MAX}Hz): {byteToDB(audioFeatures.lowFreq)} dB</p>
-                        <p>Mid Freq ({FREQUENCY_RANGES.MID.MIN}Hz-{FREQUENCY_RANGES.MID.MAX}Hz): {byteToDB(audioFeatures.midFreq)} dB</p>
-                        <p>High Freq ({FREQUENCY_RANGES.HIGH.MIN}Hz-{FREQUENCY_RANGES.HIGH.MAX}Hz): {byteToDB(audioFeatures.highFreq)} dB</p>
+                        <p>Average: {audioFeatures.average.toFixed(2)} dB</p>
+                        <p>Peak: {audioFeatures.peak.toFixed(2)} dB</p>
+                        <p>Low Freq ({FREQUENCY_RANGES.LOW.MIN}Hz-{FREQUENCY_RANGES.LOW.MAX}Hz): {audioFeatures.lowFreq.toFixed(2)} dB</p>
+                        <p>Mid Freq ({FREQUENCY_RANGES.MID.MIN}Hz-{FREQUENCY_RANGES.MID.MAX}Hz): {audioFeatures.midFreq.toFixed(2)} dB</p>
+                        <p>High Freq ({FREQUENCY_RANGES.HIGH.MIN}Hz-{FREQUENCY_RANGES.HIGH.MAX}Hz): {audioFeatures.highFreq.toFixed(2)} dB</p>
                       </div>
                     )}
                   </div>
