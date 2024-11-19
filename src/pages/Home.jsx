@@ -26,9 +26,13 @@ const Home = () => {
 
   // Update conversion function
   const byteToDB = (byteValue) => {
-    if (audioFeatures.minDB === undefined || audioFeatures.maxDB === undefined) return 0;
-    const db = (byteValue / 255) * (audioFeatures.maxDB - audioFeatures.minDB) + audioFeatures.minDB;
-    return parseFloat(db.toFixed(1));
+    // Convert byte (0-255) to amplitude (0-1)
+    const amplitude = byteValue / 255;
+    
+    // Convert amplitude to dB
+    if (amplitude === 0) return -Infinity;
+    const db = 20 * Math.log10(amplitude);
+    return db.toFixed(2);
   };
 
   useEffect(() => {
@@ -72,134 +76,131 @@ const Home = () => {
       MAX: 4000
     },
     HIGH: {
-      MIN: 4000,  // Presence to brilliance (4kHz - 20kHz)
+      MIN: 4000,  // Presence to brilliance (4000Hz - 20000Hz)
       MAX: 20000
     }
   };
 
   const analyzeFullAudio = async (file) => {
+    console.log('Starting offline audio analysis...');
     setIsAnalyzing(true);
-    
+  
     try {
+      console.log('Reading array buffer...');
       const arrayBuffer = await file.arrayBuffer();
+      
+      console.log('Creating audio context...');
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+      setAudioContext(audioContext);
       
-      const offlineCtx = new OfflineAudioContext(1, audioBuffer.length, audioBuffer.sampleRate);
-      const source = offlineCtx.createBufferSource();
-      const analyzer = offlineCtx.createAnalyser();
+      console.log('Decoding audio data...');
+      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer).catch(error => {
+        console.error('Failed to decode audio:', error);
+        throw error;
+      });
       
-      analyzer.fftSize = 32768;
-      analyzer.smoothingTimeConstant = 0.8;
+      console.log('Audio decoded, getting channel data...');
+      const channelData = audioBuffer.getChannelData(0);
+      const sampleRate = audioBuffer.sampleRate;
+      const bufferLength = 2048;
+      const totalChunks = Math.ceil(channelData.length / bufferLength);
       
-      source.buffer = audioBuffer;
-      source.connect(analyzer);
-      analyzer.connect(offlineCtx.destination);
+      console.log(`Processing ${totalChunks} chunks at ${sampleRate}Hz...`);
       
-      const frequencyData = new Float32Array(analyzer.frequencyBinCount);
-      const binSize = audioContext.sampleRate / analyzer.fftSize;
-      
-      source.start(0);
-      await offlineCtx.startRendering();
-      
-      analyzer.getFloatFrequencyData(frequencyData);
-
-      // Handle -Infinity values
-      for (let i = 0; i < frequencyData.length; i++) {
-        if (frequencyData[i] === -Infinity) {
-          frequencyData[i] = analyzer.minDecibels;
+      const allValues = {
+        averages: [],
+        peaks: [],
+        lowFreq: [],
+        midFreq: [],
+        highFreq: []
+      };
+  
+      // Helper to convert Hz to FFT bin index
+      const freqToBin = (freq) => Math.floor(freq / (sampleRate / 2) * (bufferLength / 2));
+  
+      // Calculate bin ranges
+      const binRanges = {
+        low: {
+          start: freqToBin(FREQUENCY_RANGES.LOW.MIN),
+          end: freqToBin(FREQUENCY_RANGES.LOW.MAX)
+        },
+        mid: {
+          start: freqToBin(FREQUENCY_RANGES.MID.MIN),
+          end: freqToBin(FREQUENCY_RANGES.MID.MAX)
+        },
+        high: {
+          start: freqToBin(FREQUENCY_RANGES.HIGH.MIN),
+          end: freqToBin(FREQUENCY_RANGES.HIGH.MAX)
+        }
+      };
+  
+      // Process chunks with error handling
+      for (let i = 0; i < totalChunks; i++) {
+        try {
+          const chunk = channelData.slice(i * bufferLength, (i + 1) * bufferLength);
+          const offlineCtx = new OfflineAudioContext(1, bufferLength, sampleRate);
+          const source = offlineCtx.createBufferSource();
+          const analyzer = offlineCtx.createAnalyser();
+          
+          analyzer.fftSize = 2048;
+          
+          const tempBuffer = offlineCtx.createBuffer(1, chunk.length, sampleRate);
+          tempBuffer.copyToChannel(chunk, 0);
+          
+          source.buffer = tempBuffer;
+          source.connect(analyzer);
+          analyzer.connect(offlineCtx.destination);
+          
+          const dataArray = new Uint8Array(analyzer.frequencyBinCount);
+          
+          source.start();
+          await offlineCtx.startRendering().catch(error => {
+            console.error(`Failed to render chunk ${i}:`, error);
+            throw error;
+          });
+          
+          analyzer.getByteFrequencyData(dataArray);
+          
+          // Process frequency data...
+          const average = dataArray.reduce((a, b) => a + b) / analyzer.frequencyBinCount;
+          const peak = Math.max(...dataArray);
+          
+          // Calculate frequency band averages
+          const lowFreq = dataArray.slice(binRanges.low.start, binRanges.low.end)
+            .reduce((a, b) => a + b) / (binRanges.low.end - binRanges.low.start);
+          const midFreq = dataArray.slice(binRanges.mid.start, binRanges.mid.end)
+            .reduce((a, b) => a + b) / (binRanges.mid.end - binRanges.mid.start);
+          const highFreq = dataArray.slice(binRanges.high.start, binRanges.high.end)
+            .reduce((a, b) => a + b) / (binRanges.high.end - binRanges.high.start);
+          
+          allValues.averages.push(average);
+          allValues.peaks.push(peak);
+          allValues.lowFreq.push(lowFreq);
+          allValues.midFreq.push(midFreq);
+          allValues.highFreq.push(highFreq);
+          
+          setProgress(Math.round((i / totalChunks) * 100));
+          
+        } catch (chunkError) {
+          console.error(`Error processing chunk ${i}:`, chunkError);
+          continue; // Skip failed chunk
         }
       }
-
-      // Use FREQUENCY_RANGES constant
-      const frequencyBands = {
-        low: { min: FREQUENCY_RANGES.LOW.MIN, max: FREQUENCY_RANGES.LOW.MAX, values: [] },
-        mid: { min: FREQUENCY_RANGES.MID.MIN, max: FREQUENCY_RANGES.MID.MAX, values: [] },
-        high: { min: FREQUENCY_RANGES.HIGH.MIN, max: FREQUENCY_RANGES.HIGH.MAX, values: [] }
+  
+      return {
+        average: Math.floor(allValues.averages.reduce((a, b) => a + b) / allValues.averages.length),
+        peak: Math.floor(allValues.peaks.reduce((a, b) => a + b) / allValues.peaks.length),
+        lowFreq: Math.floor(allValues.lowFreq.reduce((a, b) => a + b) / allValues.lowFreq.length),
+        midFreq: Math.floor(allValues.midFreq.reduce((a, b) => a + b) / allValues.midFreq.length),
+        highFreq: Math.floor(allValues.highFreq.reduce((a, b) => a + b) / allValues.highFreq.length)
       };
-
-      // Process frequency data using FREQUENCY_RANGES
-      for (let i = 0; i < frequencyData.length; i++) {
-        const frequency = i * binSize;
-        const dB = frequencyData[i];
-        const power = Math.pow(10, dB / 10); // Corrected power conversion
-        
-        if (frequency >= FREQUENCY_RANGES.LOW.MIN && frequency <= FREQUENCY_RANGES.HIGH.MAX) {
-          if (frequency <= FREQUENCY_RANGES.LOW.MAX) {
-            frequencyBands.low.values.push(power);
-          } else if (frequency <= FREQUENCY_RANGES.MID.MAX) {
-            frequencyBands.mid.values.push(power);
-          } else if (frequency <= FREQUENCY_RANGES.HIGH.MAX) {
-            frequencyBands.high.values.push(power);
-          }
-        }
-      }
-
-      const minDecibels = analyzer.minDecibels;
-
-      // Calculate results and pass minDecibels
-      const results = {
-        lowFreq: calculateAverageDB(frequencyBands.low.values, minDecibels),
-        midFreq: calculateAverageDB(frequencyBands.mid.values, minDecibels),
-        highFreq: calculateAverageDB(frequencyBands.high.values, minDecibels),
-        average: calculateAverageDB(
-          [
-            ...frequencyBands.low.values,
-            ...frequencyBands.mid.values,
-            ...frequencyBands.high.values,
-          ],
-          minDecibels
-        ),
-        peak: Math.max(...frequencyData),
-      };
-
-      return results;
-
+  
     } catch (error) {
-      console.error('Audio analysis failed:', error);
+      console.error('Offline analysis failed:', error);
       throw error;
     } finally {
       setIsAnalyzing(false);
     }
-  };
-  
-  // Modify calculateAverageDB to accept minDecibels
-  const calculateAverageDB = (powers, minDecibels) => {
-    if (powers.length === 0) return minDecibels;
-    const totalPower = powers.reduce((a, b) => a + b, 0);
-    const avgPower = totalPower / powers.length;
-    return 10 * Math.log10(avgPower);
-  };
-  
-  const normalizeResults = (results) => {
-    const dBValues = [results.lowFreq, results.midFreq, results.highFreq];
-    const maxDB = Math.max(...dBValues);
-    const minDB = Math.min(...dBValues);
-  
-    return {
-      lowFreq: ((results.lowFreq - minDB) / (maxDB - minDB)) * 255,
-      midFreq: ((results.midFreq - minDB) / (maxDB - minDB)) * 255,
-      highFreq: ((results.highFreq - minDB) / (maxDB - minDB)) * 255,
-      average: results.average,
-      peak: results.peak,
-      minDB,
-      maxDB,
-    };
-  };
-
-  // Helper function to calculate A-weighting for frequencies
-  const calculateAWeighting = (f) => {
-    const f2 = f * f;
-    const f4 = f2 * f2;
-    const ra = (12200 * 12200 * f4) / ((f2 + 20.6 * 20.6) * Math.sqrt((f2 + 107.7 * 107.7) * (f2 + 737.9 * 737.9)) * (f2 + 12200 * 12200));
-    return ra;
-  };
-
-  // Helper function to get median value (more robust than mean)
-  const getMedian = (values) => {
-    const sorted = [...values].sort((a, b) => a - b);
-    const mid = Math.floor(sorted.length / 2);
-    return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
   };
 
   const handleAudioChange = async (e) => {
@@ -207,9 +208,8 @@ const Home = () => {
     if (!file) return;
   
     try {
-      const rawResults = await analyzeFullAudio(file);
-      const normalizedResults = normalizeResults(rawResults);
-      setAudioFeatures(normalizedResults);
+      const averages = await analyzeFullAudio(file);
+      setAudioFeatures(averages);
       
       // Create URL for playback after analysis
       const url = URL.createObjectURL(file);
