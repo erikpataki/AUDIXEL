@@ -130,6 +130,8 @@ const Home = () => {
       // Variables to keep track of maximum magnitude for normalization
       let globalMaxMagnitude = 0;
 
+      const sumSquaredMagnitudes = new Float64Array(fftSize / 2);
+
       for (let i = 0; i < totalChunks; i++) {
         let chunk = channelData.slice(i * fftSize, (i + 1) * fftSize);
   
@@ -143,14 +145,24 @@ const Home = () => {
         // Perform FFT
         const out = fft.createComplexArray();
         fft.realTransform(out, chunk);
-        fft.completeSpectrum(out);
-  
-        // Calculate magnitudes manually
+
+        // Calculate magnitudes
         const magnitudes = new Float32Array(fftSize / 2);
         for (let j = 0; j < fftSize / 2; j++) {
           const real = out[j * 2];
           const imag = out[j * 2 + 1];
-          magnitudes[j] = Math.hypot(real, imag);
+          magnitudes[j] = Math.sqrt(real * real + imag * imag);
+        }
+
+        // Accumulate squared magnitudes
+        for (let j = 0; j < fftSize / 2; j++) {
+          sumSquaredMagnitudes[j] += magnitudes[j] * magnitudes[j];
+        }
+
+        // Map FFT bins to frequencies
+        const frequencies = new Float32Array(fftSize / 2);
+        for (let j = 0; j < fftSize / 2; j++) {
+          frequencies[j] = (j * sampleRate) / fftSize;
         }
   
         // Check for NaN values
@@ -166,13 +178,13 @@ const Home = () => {
         // Helper function to get bin index for a frequency
         const freqToIndex = (freq) => Math.round(freq / deltaF);
 
-        // Calculate start and end indices for each frequency band
-        const lowStart = freqToIndex(FREQUENCY_RANGES.LOW.MIN);
-        const lowEnd = freqToIndex(FREQUENCY_RANGES.LOW.MAX);
-        const midStart = freqToIndex(FREQUENCY_RANGES.MID.MIN);
-        const midEnd = freqToIndex(FREQUENCY_RANGES.MID.MAX);
-        const highStart = freqToIndex(FREQUENCY_RANGES.HIGH.MIN);
-        const highEnd = Math.min(freqToIndex(FREQUENCY_RANGES.HIGH.MAX), magnitudes.length - 1);
+        // Calculate frequency range indices
+        const lowStart = Math.floor(FREQUENCY_RANGES.LOW.MIN / deltaF);
+        const lowEnd = Math.ceil(FREQUENCY_RANGES.LOW.MAX / deltaF);
+        const midStart = Math.floor(FREQUENCY_RANGES.MID.MIN / deltaF);
+        const midEnd = Math.ceil(FREQUENCY_RANGES.MID.MAX / deltaF);
+        const highStart = Math.floor(FREQUENCY_RANGES.HIGH.MIN / deltaF);
+        const highEnd = Math.min(Math.ceil(FREQUENCY_RANGES.HIGH.MAX / deltaF), magnitudes.length - 1);
 
         // Sum magnitudes within each band
         const sumMagnitudes = (start, end) => {
@@ -207,45 +219,60 @@ const Home = () => {
   
         setProgress(Math.round(((i + 1) / totalChunks) * 100));
       }
-  
-      // Ensure there are valid values before calculating overall averages
-      if (allValues.averages.length === 0) {
-        console.error('No valid data collected during analysis.');
-        return {
-          average: 0,
-          peak: 0,
-          lowFreq: 0,
-          midFreq: 0,
-          highFreq: 0
-        };
+
+      // Calculate RMS magnitudes
+      const rmsMagnitudes = new Float32Array(fftSize / 2);
+      for (let j = 0; j < fftSize / 2; j++) {
+        rmsMagnitudes[j] = Math.sqrt(sumSquaredMagnitudes[j] / totalChunks);
       }
-  
-      // After processing all chunks, normalize magnitudes and convert to dB
-      const normalizeAndConvert = (values) => {
-        return values.map((mag) => magnitudeToDB(mag, globalMaxMagnitude));
+
+      // Frequency resolution
+      // const deltaF = sampleRate / fftSize;
+
+      // Calculate frequency range indices
+      const lowStart = Math.floor(FREQUENCY_RANGES.LOW.MIN / deltaF);
+      const lowEnd = Math.ceil(FREQUENCY_RANGES.LOW.MAX / deltaF);
+      const midStart = Math.floor(FREQUENCY_RANGES.MID.MIN / deltaF);
+      const midEnd = Math.ceil(FREQUENCY_RANGES.MID.MAX / deltaF);
+      const highStart = Math.floor(FREQUENCY_RANGES.HIGH.MIN / deltaF);
+      const highEnd = Math.min(Math.ceil(FREQUENCY_RANGES.HIGH.MAX / deltaF), rmsMagnitudes.length - 1);
+
+      // Sum RMS magnitudes within each band
+      const sumBandMagnitudes = (start, end) => {
+        let sum = 0;
+        for (let k = start; k <= end; k++) {
+          sum += rmsMagnitudes[k];
+        }
+        return sum / (end - start + 1);
       };
 
-      // Normalize and convert the averaged magnitudes
+      const lowFreq = sumBandMagnitudes(lowStart, lowEnd);
+      const midFreq = sumBandMagnitudes(midStart, midEnd);
+      const highFreq = sumBandMagnitudes(highStart, highEnd);
+
+      // Convert magnitudes to dB using a standard reference (e.g., 1.0)
+      const reference = 1.0;
+
+      const magnitudeToDB = (magnitude, reference) => {
+        const ratio = magnitude / reference || 1e-10;
+        return 20 * Math.log10(Math.max(ratio, 1e-10));
+      };
+
       const average = magnitudeToDB(
-        allValues.averages.reduce((a, b) => a + b, 0) / allValues.averages.length,
-        globalMaxMagnitude
+        rmsMagnitudes.reduce((a, b) => a + b, 0) / rmsMagnitudes.length,
+        reference
       );
-
-      const peak = magnitudeToDB(
-        allValues.peaks.reduce((a, b) => a + b, 0) / allValues.peaks.length,
-        globalMaxMagnitude
-      );
-
-      const lowFreq = normalizeAndConvert(allValues.lowFreq).reduce((a, b) => a + b, 0) / allValues.lowFreq.length;
-      const midFreq = normalizeAndConvert(allValues.midFreq).reduce((a, b) => a + b, 0) / allValues.midFreq.length;
-      const highFreq = normalizeAndConvert(allValues.highFreq).reduce((a, b) => a + b, 0) / allValues.highFreq.length;
+      const peak = magnitudeToDB(Math.max(...rmsMagnitudes), reference);
+      const lowFreqDB = magnitudeToDB(lowFreq, reference);
+      const midFreqDB = magnitudeToDB(midFreq, reference);
+      const highFreqDB = magnitudeToDB(highFreq, reference);
 
       return {
         average,
         peak,
-        lowFreq,
-        midFreq,
-        highFreq
+        lowFreq: lowFreqDB,
+        midFreq: midFreqDB,
+        highFreq: highFreqDB,
       };
   
     } catch (error) {
