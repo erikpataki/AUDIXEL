@@ -9,7 +9,7 @@ const Home = () => {
   const [uploadedSound, setUploadedSound] = useState(false);
   const [minThreshold, setMinThreshold] = useState(40);
   const [maxThreshold, setMaxThreshold] = useState(170);
-  const [sortMode, setSortMode] = useState(0); // 0 = white, 1 = black (ascending/descending)
+  const [sortMode, setSortMode] = useState(0); // 0 = brightness, 1 = darkness
   const [sortDirection, setSortDirection] = useState('horizontal'); // 'horizontal' or 'vertical'
   const [audioFileUrl, setAudioFileUrl] = useState(null); // Store audio file URL
   const [showProcessed, setShowProcessed] = useState(true);
@@ -24,6 +24,7 @@ const Home = () => {
   const [progress, setProgress] = useState(0);
   const [audioContext, setAudioContext] = useState(null);
   const audioRef = useRef(null);
+  const visualizerRef = useRef(null); // Add reference for the visualizer canvas
 
   // Update conversion function to handle zero or very low magnitudes
   const magnitudeToDB = (magnitude, reference) => {
@@ -168,6 +169,8 @@ const Home = () => {
           
           analyzer.fftSize = 2048;
           
+          const dataArray = new Float32Array(analyzer.frequencyBinCount);
+          
           const tempBuffer = offlineCtx.createBuffer(1, chunk.length, sampleRate);
           tempBuffer.copyToChannel(chunk, 0);
           
@@ -175,27 +178,32 @@ const Home = () => {
           source.connect(analyzer);
           analyzer.connect(offlineCtx.destination);
           
-          const dataArray = new Uint8Array(analyzer.frequencyBinCount);
-          
           source.start();
           await offlineCtx.startRendering().catch(error => {
             console.error(`Failed to render chunk ${i}:`, error);
             throw error;
           });
           
-          analyzer.getByteFrequencyData(dataArray);
+          analyzer.getFloatFrequencyData(dataArray);
           
-          // Process frequency data...
-          const average = dataArray.reduce((a, b) => a + b) / analyzer.frequencyBinCount;
-          const peak = Math.max(...dataArray);
+          // Replace map with a loop to convert dB to linear amplitudes
+          const linearDataArray = new Float32Array(dataArray.length);
+          for (let j = 0; j < dataArray.length; j++) {
+            linearDataArray[j] = Math.pow(10, dataArray[j] / 20);
+          }
           
+          // Process frequency data in linear scale
+          const average = linearDataArray.reduce((a, b) => a + b, 0) / linearDataArray.length;
+          const peak = Math.max(...linearDataArray);
+  
           // Calculate frequency band averages
-          const lowFreq = dataArray.slice(binRanges.low.start, binRanges.low.end)
-            .reduce((a, b) => a + b, 0) / (binRanges.low.end - binRanges.low.start);
-          const midFreq = dataArray.slice(binRanges.mid.start, binRanges.mid.end)
-            .reduce((a, b) => a + b, 0) / (binRanges.mid.end - binRanges.mid.start);
-          const highFreq = dataArray.slice(binRanges.high.start, binRanges.high.end)
-            .reduce((a, b) => a + b, 0) / (binRanges.high.end - binRanges.high.start);
+          const lowFreqValues = linearDataArray.slice(binRanges.low.start, binRanges.low.end);
+          const midFreqValues = linearDataArray.slice(binRanges.mid.start, binRanges.mid.end);
+          const highFreqValues = linearDataArray.slice(binRanges.high.start, binRanges.high.end);
+  
+          const lowFreq = lowFreqValues.reduce((a, b) => a + b, 0) / lowFreqValues.length;
+          const midFreq = midFreqValues.reduce((a, b) => a + b, 0) / midFreqValues.length;
+          const highFreq = highFreqValues.reduce((a, b) => a + b, 0) / highFreqValues.length;
           
           allValues.averages.push(average);
           allValues.peaks.push(peak);
@@ -227,6 +235,68 @@ const Home = () => {
     }
   };
 
+  const setupVisualizer = (audioUrl) => {
+    const audio = new Audio(audioUrl);
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const src = ctx.createMediaElementSource(audio);
+    const analyser = ctx.createAnalyser();
+  
+    analyser.fftSize = 4096; // Increased FFT size for better frequency resolution
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    const canvas = visualizerRef.current;
+    const canvasCtx = canvas.getContext('2d');
+  
+    const WIDTH = canvas.width;
+    const HEIGHT = canvas.height;
+  
+    const minFrequency = 20;
+    const maxFrequency = 20000;
+    const sampleRate = ctx.sampleRate;
+    const freqPerBin = sampleRate / analyser.fftSize;
+    const startBin = Math.floor(minFrequency / freqPerBin);
+    const endBin = Math.min(Math.floor(maxFrequency / freqPerBin), bufferLength);
+  
+    // New: Define number of logarithmic bars
+    const numberOfBars = 60;
+    const logMin = Math.log10(minFrequency);
+    const logMax = Math.log10(maxFrequency);
+    const logStep = (logMax - logMin) / numberOfBars;
+    const frequencies = Array.from({ length: numberOfBars }, (_, i) => Math.pow(10, logMin + i * logStep));
+  
+    // New: Map each frequency to its corresponding FFT bin
+    const binIndices = frequencies.map(freq => Math.floor(freq / freqPerBin));
+  
+    const draw = () => {
+      requestAnimationFrame(draw);
+  
+      analyser.getByteFrequencyData(dataArray);
+  
+      canvasCtx.fillStyle = '#000';
+      canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
+  
+      // New: Calculate bar width based on logarithmic bars
+      const barWidth = WIDTH / numberOfBars;
+  
+      frequencies.forEach((freq, i) => {
+        const bin = binIndices[i];
+        const barHeight = dataArray[bin];
+  
+        // Adjust bar height if bin index is out of range
+        const safeBarHeight = bin < bufferLength ? barHeight : 0;
+  
+        canvasCtx.fillStyle = `rgb(${safeBarHeight + 100}, 50, 50)`;
+        canvasCtx.fillRect(i * barWidth, HEIGHT - safeBarHeight / 2, barWidth - 2, safeBarHeight / 2);
+      });
+    };
+  
+    src.connect(analyser);
+    analyser.connect(ctx.destination);
+  
+    draw();
+    audio.play();
+  };
+
   const handleAudioChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -239,6 +309,9 @@ const Home = () => {
       const url = URL.createObjectURL(file);
       setAudioFileUrl(url);
       setUploadedSound(true);
+
+      // Set up audio visualization
+      setupVisualizer(url);
     } catch (error) {
       console.error('Audio processing failed:', error);
     }
@@ -634,8 +707,8 @@ const Home = () => {
                 value={sortMode}
                 onChange={(e) => setSortMode(Number(e.target.value))}
               >
-                <option value="0">White</option>
-                <option value="1">Black</option>
+                <option value="0">Brightness</option>
+                <option value="1">Darkness</option>
               </select>
             </div>
 
@@ -691,6 +764,7 @@ const Home = () => {
                     <p>Analyzing: {progress}%</p>
                   </div>
                 )}
+                <canvas ref={visualizerRef} width="300" height="100"></canvas> {/* Add visualizer canvas */}
               </div>
             </div>
 
