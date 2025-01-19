@@ -176,8 +176,12 @@ input:checked + .slider:before {
     transition: width 0.2s;
 }
 
+.sound-upload {
+    width: 100%;
+}
+
 .sound-upload canvas {
-    width: 1000px; /* Increased width for better frequency representation */
+    width: 100%;
     height: 100px;
     background-color: #000;
     border-radius: 10px;

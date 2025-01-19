@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import "./Home.css";
 import FFT from 'fft.js'; // Import the FFT library
+import Dropdowns from '../components/Dropdowns/Dropdowns';
 
 const Home = () => {
   const [selectedImage, setSelectedImage] = useState(null);
@@ -211,6 +212,8 @@ const Home = () => {
           allValues.midFreq.push(midFreq);
           allValues.highFreq.push(highFreq);
           
+          console.log("allValues", allValues)
+
           setProgress(Math.round((i / totalChunks) * 100));
           
         } catch (chunkError) {
@@ -220,11 +223,11 @@ const Home = () => {
       }
   
       return {
-        average: Math.floor(allValues.averages.reduce((a, b) => a + b) / allValues.averages.length),
-        peak: Math.floor(allValues.peaks.reduce((a, b) => a + b) / allValues.peaks.length),
-        lowFreq: Math.floor(allValues.lowFreq.reduce((a, b) => a + b) / allValues.lowFreq.length),
-        midFreq: Math.floor(allValues.midFreq.reduce((a, b) => a + b) / allValues.midFreq.length),
-        highFreq: Math.floor(allValues.highFreq.reduce((a, b) => a + b) / allValues.highFreq.length)
+        average: (allValues.averages.reduce((a, b) => a + b, 0) / allValues.averages.length),
+        peak: (allValues.peaks.reduce((a, b) => a + b, 0) / allValues.peaks.length),
+        lowFreq: (allValues.lowFreq.reduce((a, b) => a + b, 0) / allValues.lowFreq.length),
+        midFreq: (allValues.midFreq.reduce((a, b) => a + b, 0) / allValues.midFreq.length),
+        highFreq: (allValues.highFreq.reduce((a, b) => a + b, 0) / allValues.highFreq.length)
       };
   
     } catch (error) {
@@ -304,6 +307,8 @@ const Home = () => {
     try {
       const averages = await analyzeFullAudio(file);
       setAudioFeatures(averages);
+
+      console.log("averages", averages)
       
       // Create URL for playback after analysis
       const url = URL.createObjectURL(file);
@@ -580,6 +585,8 @@ const Home = () => {
     }
   }
 
+  console.log("audioFeatures", audioFeatures)
+
   useEffect(() => {
     if (audioFeatures.lowFreq > audioFeatures.midFreq && audioFeatures.lowFreq > audioFeatures.highFreq) {
       setSortDirection('vertical');
@@ -606,11 +613,23 @@ const Home = () => {
       <div className='upload-parent'>
         {selectedImage && (
           <div className='presets-container'>
-            <h3>Presets:</h3>
-            <h4 onClick={() => presetSelector('default')}>Default (art)</h4>
-            <h4 onClick={() => presetSelector('techno')}>Techno (flower)</h4>
-            <h4 onClick={() => presetSelector('dnb')}>DnB (badminton)</h4>
-            <h4 onClick={() => presetSelector('footwork')}>Footwork</h4>
+            <div className='presets-window'>
+              <h3>Presets:</h3>
+              <h4 onClick={() => presetSelector('default')}>Default (art)</h4>
+              <h4 onClick={() => presetSelector('techno')}>Techno (flower)</h4>
+              <h4 onClick={() => presetSelector('dnb')}>DnB (badminton)</h4>
+              <h4 onClick={() => presetSelector('footwork')}>Footwork</h4>
+            </div>
+            <div>
+              <h3>Current Preset:</h3>
+              <p>Min Threshold: {minThreshold}</p>
+              <p>Max Threshold: {maxThreshold}</p>
+              <p>Sort Mode: {sortMode === 0 ? 'Brightness' : 'Darkness'}</p>
+              <p>Sort Direction: {sortDirection}</p>
+            </div>
+            <div>
+              <h4></h4>
+            </div>
           </div>
         )}
         <div className="image-upload">
@@ -724,6 +743,8 @@ const Home = () => {
               </select>
             </div>
 
+            <Dropdowns hasDropdown={true} title="Threshold" setMaxThreshold={setMaxThreshold} maxThreshold={maxThreshold} type={"slider"} />
+
             <div className='sound-upload'>
               <input id="sound-file" accept="audio/*" type="file" onChange={handleAudioChange} />
               <div>
@@ -735,7 +756,7 @@ const Home = () => {
                     <p>No audio uploaded</p>
                   )}
                 </figure>
-                {uploadedSound && (
+                {/* {uploadedSound && (
                   <div className="audio-features">
                     <h4>Audio Analysis:</h4>
                     {isAnalyzing ? (
@@ -754,7 +775,7 @@ const Home = () => {
                       </div>
                     )}
                   </div>
-                )}
+                )} */}
                 {isAnalyzing && (
                   <div className="progress-container">
                     <div 
@@ -764,7 +785,7 @@ const Home = () => {
                     <p>Analyzing: {progress}%</p>
                   </div>
                 )}
-                <canvas ref={visualizerRef} width="300" height="100"></canvas> {/* Add visualizer canvas */}
+                <canvas ref={visualizerRef} width="300" height="100"></canvas>
               </div>
             </div>
 
