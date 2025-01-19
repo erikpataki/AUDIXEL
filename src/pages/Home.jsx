@@ -643,7 +643,11 @@ const Home = () => {
                 />
               ) : (
                 <div className="upload-text">
-                  <p>Click here to upload an image</p>
+                  <div className='image-upload-text-main-parent'>
+                    <p className='image-upload-text'>Select or drag audio file(s)</p>
+                    <p className='image-upload-text'>(.wav, .mp3, .ogg)</p>
+                  </div>
+                  <p className='image-upload-text small-image-upload-text'>(or upload image here instead)</p>
                 </div>
               )}
             </div>

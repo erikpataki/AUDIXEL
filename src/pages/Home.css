@@ -1,4 +1,7 @@
-/* ImageUpload.css */
+* {
+    font-family: Inter;
+}
+
 .upload-parent-parent {
     display: flex;
     justify-content: center;
@@ -24,26 +27,55 @@
     height: 90%;
 }
 
-.upload-block {
-    border: 5px solid #FFFFFA;
+.upload-text {
     display: flex;
-    border-radius: 20px;
     justify-content: center;
     align-items: center;
     cursor: pointer;
     transition: border-color 0.3s ease;
     overflow: hidden;
-    width: fit-content;
-    height: fit-content;
+    width: 34.4375rem;
+    height: 20.125rem;
+    flex-shrink: 0;
+    border-radius: 2rem;
+    border: 3px solid #FFFFFA;
+    font-size: 18px;
+    color: #FFFFFA;
+    display: flex;
+    font-size: 1.5rem;
+    font-style: normal;
+    font-weight: 400;
+    line-height: normal;
+    flex-direction: column;
+    justify-content: center; /* Center content vertically */
+    align-items: center; /* Center content horizontally */
+    position: relative; /* To position the small text at the bottom */
 }
 
-.upload-block:hover {
+.upload-text:hover {
     border-color: #888;
 }
 
-.upload-text {
-    font-size: 18px;
-    color: #555;
+.image-upload-text-main-parent {
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    flex: 1; /* Take up remaining space */
+}
+
+.small-image-upload-text {
+    margin-top: 10rem;
+    position: absolute;
+    bottom: 10px; /* Adjust as needed */
+    width: 100%; /* Ensure it spans the full width */
+    text-align: center; /* Center the text */
+    font-size: small;
+}
+
+.small-image-upload-text:hover {
+    text-decoration: underline
 }
 
 .preview-image {
