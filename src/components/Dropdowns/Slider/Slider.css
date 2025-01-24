@@ -1,0 +1,89 @@
+.slider-parent {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+}
+
+.slider-label {
+    color: #0D1F22;
+    font-family: Inter;
+    font-size: 0.9rem;
+    font-style: normal;
+    font-weight: 600;
+    line-height: normal;
+}
+
+.threshold-control {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    margin-bottom: 15px;
+}
+
+.slider-number {
+    width: 35px;
+    text-align: center;
+    background: none;
+    border: none;
+    color: #0D1F22;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="range"] {
+    /* removing default appearance */
+    -webkit-appearance: none;
+    appearance: none; 
+    /* creating a custom design */
+    width: 100%;
+    cursor: pointer;
+    outline: none;
+    /*  slider progress trick  */
+    overflow: hidden;
+    border-radius: 16px;
+  }
+  
+  /* Track: webkit browsers */
+  input[type="range"]::-webkit-slider-runnable-track {
+    height: 15px;
+    background: #ccc;
+    border-radius: 16px;
+  }
+  
+  /* Track: Mozilla Firefox */
+  input[type="range"]::-moz-range-track {
+    height: 15px;
+    background: #ccc;
+    border-radius: 16px;
+  }
+  
+  /* Thumb: webkit */
+  input[type="range"]::-webkit-slider-thumb {
+    /* removing default appearance */
+    -webkit-appearance: none;
+    appearance: none; 
+    /* creating a custom design */
+    height: 15px;
+    width: 15px;
+    background-color: #fff;
+    border-radius: 50%;
+    border: 2px solid #0D1F22;
+    /*  slider progress trick  */
+    box-shadow: -407px 0 0 400px #0D1F22;
+  }
+  
+  
+  /* Thumb: Firefox */
+  input[type="range"]::-moz-range-thumb {
+    height: 15px;
+    width: 15px;
+    background-color: #fff;
+    border-radius: 50%;
+    border: 1px solid #0D1F22;
+    /*  slider progress trick  */
+    box-shadow: -407px 0 0 400px #0D1F22;
+  }
