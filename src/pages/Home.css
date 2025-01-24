@@ -4,27 +4,46 @@
 
 .upload-parent-parent {
     display: flex;
-    justify-content: center;
+    justify-content: center; 
     align-items: center;
-    height: 100vh;
-    width: 100vw;
+    height: 100%; 
+    /* overflow: hidden; */
 }
 
 .upload-parent {
-    display: grid;
-    justify-content: center;
-    align-items: center;
-    grid-template-columns: 15vw 60vw 25vw;
-    grid-gap: 10px;
-    max-height: 90vh;
+    display: flex;
+    width: 100%;
+    height: 100vh;
 }
 
 .image-upload {
-    grid-column: 2/3;
+    flex: 0 0 75%;
+    position: relative;
+    padding: 32px;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 90%;
+}
+
+.image-upload-no-image {
+    flex: 0 0 100%;
+}
+
+.file-input-label {
+    /* width: 100%;
+    height: 100%; */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.upload-block {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .upload-text {
@@ -47,9 +66,9 @@
     font-weight: 400;
     line-height: normal;
     flex-direction: column;
-    justify-content: center; /* Center content vertically */
-    align-items: center; /* Center content horizontally */
-    position: relative; /* To position the small text at the bottom */
+    justify-content: center;
+    align-items: center;
+    position: relative;
 }
 
 .upload-text:hover {
@@ -62,67 +81,59 @@
     align-items: center;
     display: flex;
     flex-direction: column;
-    flex: 1; /* Take up remaining space */
+    flex: 1;
 }
 
 .small-image-upload-text {
     margin-top: 10rem;
     position: absolute;
-    bottom: 10px; /* Adjust as needed */
-    width: 100%; /* Ensure it spans the full width */
-    text-align: center; /* Center the text */
+    bottom: 10px;
+    width: 100%;
+    text-align: center;
     font-size: small;
+    cursor: pointer;
 }
 
 .small-image-upload-text:hover {
-    text-decoration: underline
+    text-decoration: underline;
 }
 
 .preview-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 5px;
+    max-width: 100%;
+    max-height: 100%;
+    position: absolute;
+    z-index: 2;
+    image-rendering: pixelated;
+    object-fit: contain;
+    aspect-ratio: auto 1000/561;
+}
+
+.preview-image-blur {
+    max-width: 100%;
+    max-height: 100%;
+    filter: blur(1.5rem);
+    position: absolute;
+    z-index: 1;
+    image-rendering: pixelated;
+    object-fit: contain;
 }
 
 #file-input {
     height: fit-content;
 }
 
-.presets-container {
-    grid-column: 1/2;
-    background-color: #558B6E;
-    border-radius: 20px;
-    padding: 20px;
-    margin-left: 10px;
-    width: auto;
-    height: 100%;
-}
-
-.presets-container h4:hover {
-    text-decoration: underline;
-    cursor: pointer;
+.selectors-container-parent {
+    flex: 0 0 25%;
+    height: 100vh;
 }
 
 .selectors-container { 
-    grid-column: 3/4;
     background-color: #558B6E;
-    border-radius: 20px;
-    padding: 20px;
-    margin-right: 10px;
-    width: auto;
+    width: 100%;
     height: 100%;
-}
-
-.selectors-container h4, .selectors-container h3 {
-    margin: 0;
-}
-
-.selectors-container h3 {
-    margin-bottom: 10px;
-}
-
-.threshold-slider {
+    border-left: 0.1875rem solid #FFFFFA;
+    padding: 20px;
+    box-sizing: border-box; /* Ensure padding is included in width */
 }
 
 input[type="range"] {

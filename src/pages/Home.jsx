@@ -611,7 +611,7 @@ const Home = () => {
   return (
     <div className='upload-parent-parent'>
       <div className='upload-parent'>
-        {selectedImage && (
+        {/* {selectedImage && (
           <div className='presets-container'>
             <div className='presets-window'>
               <h3>Presets:</h3>
@@ -631,29 +631,48 @@ const Home = () => {
               <h4></h4>
             </div>
           </div>
-        )}
-        <div className="image-upload">
-          <label htmlFor="file-input">
+        )} */}
+        <div className={selectedImage ? "image-upload" : "image-upload image-upload-no-image"}>
             <div className="upload-block">
-              {selectedImage ? (
-                <img
-                  src={showProcessed ? processedImage : selectedImage}
-                  alt={showProcessed ? "Processed" : "Original"}
-                  className="preview-image"
-                />
-              ) : (
-                <div className="upload-text">
-                  <div className='image-upload-text-main-parent'>
-                    <p className='image-upload-text'>Select or drag audio file(s)</p>
-                    <p className='image-upload-text'>(.wav, .mp3, .ogg)</p>
-                  </div>
-                  <p className='image-upload-text small-image-upload-text'>(or upload image here instead)</p>
-                </div>
-              )}
+                {selectedImage ? (
+                  <>
+                    <img
+                      src={showProcessed ? processedImage : selectedImage}
+                      alt={showProcessed ? "Processed" : "Original"}
+                      className="preview-image"
+                    />
+                    <img
+                      src={showProcessed ? processedImage : selectedImage}
+                      alt={showProcessed ? "Processed" : "Original"}
+                      className="preview-image-blur"
+                    />
+                  </>
+                ) : (
+                  <>
+                    <label htmlFor="audio-file-input" className='file-input-label'>
+                      <div className="upload-text">
+                        <div className='image-upload-text-main-parent'>
+                          <p className='image-upload-text'>Select or drag audio file(s)</p>
+                          <p className='image-upload-text'>(.wav, .mp3, .ogg)</p>
+                        </div>
+                        <label htmlFor="image-file-input" className='file-input-label'>
+                          <p className='image-upload-text small-image-upload-text'>(or upload image here instead)</p>
+                        </label>
+                      </div>
+                    </label>
+                  </>
+                )}
             </div>
-          </label>
+          {/* </label> */}
           <input
-            id="file-input"
+            id="audio-file-input"
+            type="file"
+            accept="audio/*"
+            onChange={handleImageChange}
+            style={{ display: 'none' }}
+          />
+          <input
+            id="image-file-input"
             type="file"
             accept="image/*"
             onChange={handleImageChange}
@@ -662,142 +681,97 @@ const Home = () => {
         </div>
 
         {selectedImage && (
-          <div className='selectors-container'>
-            <h3>Advanced Controls:</h3>
-            <div className="toggle-switch">
-              <h4>Show Processed Image:</h4>
-              <label className="switch">
-                <input
-                  type="checkbox"
-                  checked={showProcessed}
-                  onChange={(e) => setShowProcessed(e.target.checked)}
-                />
-                <span className="slider round"></span>
-              </label>
-            </div>
-            <div className="threshold-slider">
-              <h4>Min Threshold:</h4>
-              <div className="threshold-control">
-                <input
-                  id="min-threshold-slider"
-                  type="range"
-                  min="0"
-                  max="255"
-                  value={minThreshold}
-                  onChange={(e) => setMinThreshold(Number(e.target.value))}
-                />
-                <input
-                  type="number"
-                  min="0"
-                  max="255"
-                  value={minThreshold}
-                  onChange={(e) => {
-                    const value = Math.min(255, Math.max(0, Number(e.target.value)));
-                    setMinThreshold(value);
-                  }}
-                  className="threshold-number"
-                />
+          <div className='selectors-container-parent'>
+            <div className='selectors-container'>
+              <h3>AUDIXEL</h3>
+              <div className="toggle-switch">
+                <h4>Show Processed Image:</h4>
+                <label className="switch">
+                  <input
+                    type="checkbox"
+                    checked={showProcessed}
+                    onChange={(e) => setShowProcessed(e.target.checked)}
+                  />
+                  <span className="slider round"></span>
+                </label>
               </div>
-              
-              <h4>Max Threshold:</h4>
-              <div className="threshold-control">
-                <input
-                  id="max-threshold-slider"
-                  type="range"
-                  min="0"
-                  max="255"
-                  value={maxThreshold}
-                  onChange={(e) => setMaxThreshold(Number(e.target.value))}
-                />
-                <input
-                  type="number"
-                  min="0"
-                  max="255"
-                  value={maxThreshold}
-                  onChange={(e) => {
-                    const value = Math.min(255, Math.max(0, Number(e.target.value)));
-                    setMaxThreshold(value);
-                  }}
-                  className="threshold-number"
-                />
+              <div className="threshold-slider">
+              <Dropdowns 
+                dropdownName={"ADVANCED SETTINGS"}
+                slider={2} 
+                firstSliderLabel={"LOWER THRESHOLD"} firstSliderValue={minThreshold} setFirstSliderValue={setMinThreshold}
+                secondSliderLabel={"UPPER THRESHOLD"} secondSliderValue={maxThreshold} setSecondSliderValue={setMaxThreshold} 
+
+                selector={1}
+                firstSelectorLabel={"SORT MODE"} firstSelectorValue={sortMode} setFirstSelectorValue={setSortMode} firstSelectorOptions={[
+                  { value: 0, label: 'Brightness' },
+                  { value: 1, label: 'Darkness' }
+                ]}
+              />
               </div>
-            </div>
 
-            <div className="sort-parameter">
-              <label htmlFor="sort-mode">Sort Mode: </label>
-              <select
-                id="sort-mode"
-                value={sortMode}
-                onChange={(e) => setSortMode(Number(e.target.value))}
-              >
-                <option value="0">Brightness</option>
-                <option value="1">Darkness</option>
-              </select>
-            </div>
+              <div className="sort-direction">
+                <label htmlFor="sort-direction">Sort Direction: </label>
+                <select
+                  id="sort-direction"
+                  value={sortDirection}
+                  onChange={(e) => setSortDirection(e.target.value)}
+                >
+                  <option value="horizontal">Horizontal</option>
+                  <option value="vertical">Vertical</option>
+                </select>
+              </div>
 
-            <div className="sort-direction">
-              <label htmlFor="sort-direction">Sort Direction: </label>
-              <select
-                id="sort-direction"
-                value={sortDirection}
-                onChange={(e) => setSortDirection(e.target.value)}
-              >
-                <option value="horizontal">Horizontal</option>
-                <option value="vertical">Vertical</option>
-              </select>
-            </div>
-
-            <Dropdowns hasDropdown={true} title="Threshold" setMaxThreshold={setMaxThreshold} maxThreshold={maxThreshold} type={"slider"} />
-
-            <div className='sound-upload'>
-              <input id="sound-file" accept="audio/*" type="file" onChange={handleAudioChange} />
-              <div>
-                <figure>
-                  <figcaption>Audio File:</figcaption>
-                  {audioFileUrl ? (
-                    <audio ref={audioRef} controls src={audioFileUrl}></audio>
-                  ) : (
-                    <p>No audio uploaded</p>
-                  )}
-                </figure>
-                {/* {uploadedSound && (
-                  <div className="audio-features">
-                    <h4>Audio Analysis:</h4>
-                    {isAnalyzing ? (
-                      <div className="analyzing">
-                        <p>Analyzing audio file...</p>
-                        <div className="spinner"></div>
-                      </div>
+              <div className='sound-upload'>
+                <input id="sound-file" accept="audio/*" type="file" onChange={handleAudioChange} />
+                <div>
+                  <figure>
+                    <figcaption>Audio File:</figcaption>
+                    {audioFileUrl ? (
+                      <audio ref={audioRef} controls src={audioFileUrl}></audio>
                     ) : (
-                      // Update display section
-                      <div className="analysis-results">
-                        <p>Average: {audioFeatures.average.toFixed(2)} dB</p>
-                        <p>Peak: {audioFeatures.peak.toFixed(2)} dB</p>
-                        <p>Low Freq ({FREQUENCY_RANGES.LOW.MIN}Hz-{FREQUENCY_RANGES.LOW.MAX}Hz): {audioFeatures.lowFreq.toFixed(2)} dB</p>
-                        <p>Mid Freq ({FREQUENCY_RANGES.MID.MIN}Hz-{FREQUENCY_RANGES.MID.MAX}Hz): {audioFeatures.midFreq.toFixed(2)} dB</p>
-                        <p>High Freq ({FREQUENCY_RANGES.HIGH.MIN}Hz-{FREQUENCY_RANGES.HIGH.MAX}Hz): {audioFeatures.highFreq.toFixed(2)} dB</p>
-                      </div>
+                      <p>No audio uploaded</p>
                     )}
-                  </div>
-                )} */}
-                {isAnalyzing && (
-                  <div className="progress-container">
-                    <div 
-                      className="progress-bar" 
-                      style={{ '--progress': `${progress}%` }}
-                    />
-                    <p>Analyzing: {progress}%</p>
-                  </div>
-                )}
-                <canvas ref={visualizerRef} width="300" height="100"></canvas>
+                  </figure>
+                  {/* {uploadedSound && (
+                    <div className="audio-features">
+                      <h4>Audio Analysis:</h4>
+                      {isAnalyzing ? (
+                        <div className="analyzing">
+                          <p>Analyzing audio file...</p>
+                          <div className="spinner"></div>
+                        </div>
+                      ) : (
+                        // Update display section
+                        <div className="analysis-results">
+                          <p>Average: {audioFeatures.average.toFixed(2)} dB</p>
+                          <p>Peak: {audioFeatures.peak.toFixed(2)} dB</p>
+                          <p>Low Freq ({FREQUENCY_RANGES.LOW.MIN}Hz-{FREQUENCY_RANGES.LOW.MAX}Hz): {audioFeatures.lowFreq.toFixed(2)} dB</p>
+                          <p>Mid Freq ({FREQUENCY_RANGES.MID.MIN}Hz-{FREQUENCY_RANGES.MID.MAX}Hz): {audioFeatures.midFreq.toFixed(2)} dB</p>
+                          <p>High Freq ({FREQUENCY_RANGES.HIGH.MIN}Hz-{FREQUENCY_RANGES.HIGH.MAX}Hz): {audioFeatures.highFreq.toFixed(2)} dB</p>
+                        </div>
+                      )}
+                    </div>
+                  )} */}
+                  {isAnalyzing && (
+                    <div className="progress-container">
+                      <div 
+                        className="progress-bar" 
+                        style={{ '--progress': `${progress}%` }}
+                      />
+                      <p>Analyzing: {progress}%</p>
+                    </div>
+                  )}
+                  {/* <canvas ref={visualizerRef} width="300" height="100"></canvas> */}
+                </div>
               </div>
-            </div>
 
-            {processedImage && (
-              <div className="download-button">
-                <button onClick={downloadImage}>Download Image</button>
-              </div>
-            )}
+              {processedImage && (
+                <div className="download-button">
+                  <button onClick={downloadImage}>Download Image</button>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
