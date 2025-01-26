@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import "./Home.css";
 import FFT from 'fft.js'; // Import the FFT library
 import Dropdowns from '../components/Dropdowns/Dropdowns';
@@ -26,6 +26,8 @@ const Home = () => {
   const [audioContext, setAudioContext] = useState(null);
   const audioRef = useRef(null);
   const visualizerRef = useRef(null); // Add reference for the visualizer canvas
+  const [combinedThreshold, setCombinedThreshold] = useState(50);
+  const debounceTimeoutRef = useRef(null);
 
   // Update conversion function to handle zero or very low magnitudes
   const magnitudeToDB = (magnitude, reference) => {
@@ -45,15 +47,30 @@ const Home = () => {
     return db;
   };
 
+  const debounce = (func, delay) => {
+    return (...args) => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+      debounceTimeoutRef.current = setTimeout(() => {
+        func(...args);
+      }, delay);
+    };
+  };
+
+  const debouncedProcessImage = useCallback(debounce((image, minThreshold, maxThreshold, sortMode, sortDirection) => {
+    processImage(image, minThreshold, maxThreshold, sortMode, sortDirection);
+  }, 300), []);
+
   useEffect(() => {
     if (selectedImage) {
       const img = new Image();
       img.src = selectedImage;
       img.onload = () => {
-        processImage(img, minThreshold, maxThreshold, sortMode, sortDirection);
+        debouncedProcessImage(img, minThreshold, maxThreshold, sortMode, sortDirection);
       };
     }
-  }, [minThreshold, maxThreshold, selectedImage, sortMode, sortDirection]);
+  }, [minThreshold, maxThreshold, selectedImage, sortMode, sortDirection, debouncedProcessImage]);
 
   const handleImageChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -608,6 +625,43 @@ const Home = () => {
     }
   }, [audioFeatures]);
 
+  const handleCombinedThresholdChange = (value) => {
+    setCombinedThreshold(value);
+    let minValue
+    if (value < 254) {
+      minValue = 128 - (value * 0.5)
+    } else {minValue = 0}
+    setMinThreshold(Math.round(minValue));
+    let maxValue
+    if (value < 112) {
+      maxValue = 128 + (value * (0.01*value))
+    } else {maxValue = 255}
+    setMaxThreshold(Math.round(maxValue));
+
+  };
+
+  const handleMinThresholdChange = (value) => {
+    setMinThreshold(value);
+    if (selectedImage) {
+      const img = new Image();
+      img.src = selectedImage;
+      img.onload = () => {
+        debouncedProcessImage(img, value, maxThreshold, sortMode, sortDirection);
+      };
+    }
+  };
+
+  const handleMaxThresholdChange = (value) => {
+    setMaxThreshold(value);
+    if (selectedImage) {
+      const img = new Image();
+      img.src = selectedImage;
+      img.onload = () => {
+        debouncedProcessImage(img, minThreshold, value, sortMode, sortDirection);
+      };
+    }
+  };
+
   return (
     <div className='upload-parent-parent'>
       <div className='upload-parent'>
@@ -683,32 +737,44 @@ const Home = () => {
         {selectedImage && (
           <div className='selectors-container-parent'>
             <div className='selectors-container'>
-              <h3>AUDIXEL</h3>
-              <div className="toggle-switch">
-                <h4>Show Processed Image:</h4>
+              <div className='title-bar'>
+                <h3 className='main-title' onClick={() => { setSelectedImage(null); setProcessedImage(null); }}>AUDIXEL</h3>
+                {/* <div className='switch-parent'> */}
                 <label className="switch">
-                  <input
-                    type="checkbox"
-                    checked={showProcessed}
-                    onChange={(e) => setShowProcessed(e.target.checked)}
-                  />
-                  <span className="slider round"></span>
-                </label>
+                    <input
+                      type="checkbox"
+                      checked={showProcessed}
+                      onChange={(e) => setShowProcessed(e.target.checked)}
+                      className='toggle-switch-input'
+                    />
+                  </label>
+                {/* </div> */}
               </div>
-              <div className="threshold-slider">
+              {/* <div className="toggle-switch">
+                <h4>Show Processed Image:</h4>
+              </div> */}
+              <Dropdowns 
+                dropdownName={"SETTINGS"}
+                slider={1} 
+                firstSliderLabel={"AMOUNT"} firstSliderValue={combinedThreshold} setFirstSliderValue={handleCombinedThresholdChange}
+              />
               <Dropdowns 
                 dropdownName={"ADVANCED SETTINGS"}
                 slider={2} 
-                firstSliderLabel={"LOWER THRESHOLD"} firstSliderValue={minThreshold} setFirstSliderValue={setMinThreshold}
-                secondSliderLabel={"UPPER THRESHOLD"} secondSliderValue={maxThreshold} setSecondSliderValue={setMaxThreshold} 
+                firstSliderLabel={"LOWER THRESHOLD"} firstSliderValue={minThreshold} setFirstSliderValue={handleMinThresholdChange}
+                secondSliderLabel={"UPPER THRESHOLD"} secondSliderValue={maxThreshold} setSecondSliderValue={handleMaxThresholdChange} 
 
                 selector={1}
-                firstSelectorLabel={"SORT MODE"} firstSelectorValue={sortMode} setFirstSelectorValue={setSortMode} firstSelectorOptions={[
+                label={"SORT MODE"} value={sortMode} setValue={setSortMode} options={[
                   { value: 0, label: 'Brightness' },
                   { value: 1, label: 'Darkness' }
                 ]}
               />
-              </div>
+              {processedImage && (
+                <div className='download-button' onClick={downloadImage} >                
+                  <Dropdowns dropdownName={"DOWNLOAD IMAGE"} hasDropdown={false} />
+                </div>
+              )}
 
               <div className="sort-direction">
                 <label htmlFor="sort-direction">Sort Direction: </label>
@@ -765,12 +831,6 @@ const Home = () => {
                   {/* <canvas ref={visualizerRef} width="300" height="100"></canvas> */}
                 </div>
               </div>
-
-              {processedImage && (
-                <div className="download-button">
-                  <button onClick={downloadImage}>Download Image</button>
-                </div>
-              )}
             </div>
           </div>
         )}

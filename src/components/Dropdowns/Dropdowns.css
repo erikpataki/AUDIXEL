@@ -7,13 +7,16 @@
     padding: 0.6rem;
     overflow: hidden;
     transition: height 0.3s ease;
+    margin-bottom: 0.9rem;
+    user-select: none;
 }
+
 
 .drop-down-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
+    /* margin-bottom: 10px; */
 }
 
 .drop-down-header:hover {
@@ -32,4 +35,12 @@
 
 .dropdown-arrow.flipped {
     transform: scaleY(-1);
+}
+
+/* .drop-down-content :last-child {
+    margin-bottom: 0;
+} */
+
+.drop-down-content > * {
+    margin-top: 15px;
 }
