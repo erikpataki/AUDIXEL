@@ -755,8 +755,9 @@ const Home = () => {
               </div> */}
               <Dropdowns 
                 dropdownName={"SETTINGS"}
-                slider={1} 
+                slider={2} 
                 firstSliderLabel={"AMOUNT"} firstSliderValue={combinedThreshold} setFirstSliderValue={handleCombinedThresholdChange}
+                secondSliderLabel={"ANGLE"} secondSliderValue={0} setSecondSliderValue={0} 
               />
               <Dropdowns 
                 dropdownName={"ADVANCED SETTINGS"}

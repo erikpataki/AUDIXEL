@@ -6,7 +6,7 @@ const Selector = ({ label, options, onChange, value }) => {
     return (
         <div className="selector">
             <label className='selector-label'>{label}</label>
-            <select className='selector-control' value={value} onChange={(e) => onChange(e.target.value)}>
+            <select className='selector-control' value={value} onChange={(e) => onChange(Number(e.target.value))}>
                 {options.map((option, index) => (
                     <option key={index} value={option.value}>
                         {option.label}
