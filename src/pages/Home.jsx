@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import "./Home.css";
 // import FFT from 'fft.js'; // Import the FFT library
 import Dropdowns from '../components/Dropdowns/Dropdowns';
+var Meyda = require("meyda");
 
 const Home = () => {
   const [selectedImage, setSelectedImage] = useState(null);
@@ -28,6 +29,7 @@ const Home = () => {
   // const visualizerRef = useRef(null); // Add reference for the visualizer canvas
   const [combinedThreshold, setCombinedThreshold] = useState(50);
   const debounceTimeoutRef = useRef(null);
+  const [audioSamples, setAudioSamples] = useState([]);
 
   const debounce = (func, delay) => {
     return (...args) => {
@@ -315,28 +317,6 @@ const Home = () => {
   
   //   draw();
   //   audio.play();
-  // };
-
-  // const handleAudioChange = async (e) => {
-  //   const file = e.target.files[0];
-  //   if (!file) return;
-  
-  //   try {
-  //     const averages = await analyzeFullAudio(file);
-  //     setAudioFeatures(averages);
-
-  //     console.log("averages", averages)
-      
-  //     // Create URL for playback after analysis
-  //     const url = URL.createObjectURL(file);
-  //     setAudioFileUrl(url);
-  //     setUploadedSound(true);
-
-  //     // Set up audio visualization
-  //     setupVisualizer(url);
-  //   } catch (error) {
-  //     console.error('Audio processing failed:', error);
-  //   }
   // };
 
   // Cleanup audio context when component unmounts
@@ -667,6 +647,117 @@ const Home = () => {
     }
   };
 
+
+  //FEATURE EXTRACTION
+  // var signal = new Array(32).fill(0).map((element, index) => {
+  //   const remainder = index % 3;
+  //   if (remainder === 0) {
+  //     return 1;
+  //   } else if (remainder === 1) {
+  //     return 0;
+  //   }
+  //   return -1;
+  // });
+
+  // let meydaExtractionTest = Meyda.extract("zcr", signal);
+
+  // console.log("meydaExtractionTest", meydaExtractionTest)
+  // console.log("signal", signal)
+
+  // Define the features to extract with their respective options
+  const FEATURES = [
+    { name: "spectralFlatness", average: true },
+    { name: "spectralCentroid", average: true },
+    // Add more features here as needed
+  ];
+
+  const handleAudioChange = async (e) => {
+    e.preventDefault(); // Prevent potential default behavior
+    const file = e.target.files[0];
+    console.log("sound-file", file);
+    
+    if (file) {
+      try {
+        // Read the file as an array buffer
+        const arrayBuffer = await file.arrayBuffer();
+        
+        // Create an AudioContext and decode the audio data
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        
+        // Get the number of channels
+        const numberOfChannels = audioBuffer.numberOfChannels;
+        console.log("Number of Channels:", numberOfChannels);
+        
+        // Combine all channels by averaging their samples
+        const channelDataCombined = Array.from({ length: audioBuffer.length }, (_, idx) => {
+          let sum = 0;
+          for (let i = 0; i < numberOfChannels; i++) {
+            sum += audioBuffer.getChannelData(i)[idx];
+          }
+          return sum / numberOfChannels;
+        });
+
+        // Define a buffer size that is a power of 2
+        const bufferSize = 512; // Example buffer size
+        
+        const totalBuffers = Math.floor(channelDataCombined.length / bufferSize);
+        const features = {};
+        
+        // Initialize features object
+        FEATURES.forEach(feature => {
+          features[feature.name] = feature.average ? [] : 0;
+        });
+
+        for (let i = 0; i < totalBuffers; i++) {
+          const buffer = channelDataCombined.slice(i * bufferSize, (i + 1) * bufferSize);
+          FEATURES.forEach(feature => {
+            const value = Meyda.extract(feature.name, buffer, { bufferSize });
+            if (feature.average) {
+              features[feature.name].push(value);
+            } else {
+              features[feature.name] += value;
+            }
+          });
+        }
+
+        // Handle any remaining samples
+        const remainingSamples = channelDataCombined.length % bufferSize;
+        if (remainingSamples > 0) {
+          const buffer = new Float32Array(bufferSize);
+          buffer.set(channelDataCombined.slice(-remainingSamples));
+          FEATURES.forEach(feature => {
+            const value = Meyda.extract(feature.name, buffer, { bufferSize });
+            if (feature.average) {
+              features[feature.name].push(value);
+            } else {
+              features[feature.name] += value;
+            }
+          });
+        }
+
+        // Compute final features
+        const finalFeatures = {};
+        FEATURES.forEach(feature => {
+          if (feature.average) {
+            const sum = features[feature.name].reduce((acc, val) => acc + val, 0);
+            finalFeatures[feature.name] = sum / features[feature.name].length;
+          } else {
+            finalFeatures[feature.name] = features[feature.name];
+          }
+        });
+
+        console.log("Final Features:", finalFeatures);
+        // Add more console logs as needed for other features
+        
+        setAudioSamples(channelDataCombined);
+
+      } catch (error) {
+        console.error("Error processing audio file:", error);
+      }
+    }
+  };
+
   return (
     <div className='upload-parent-parent'>
       <div className='upload-parent'>
@@ -794,6 +885,8 @@ const Home = () => {
                 </select>
               </div>
 
+              <input id="sound-file" accept="audio/*" type="file" onChange={handleAudioChange}/>
+
               {/* <div className='sound-upload'>
                 <input id="sound-file" accept="audio/*" type="file" onChange={handleAudioChange} />
                 <div>
@@ -843,6 +936,12 @@ const Home = () => {
       </div>
 
       <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
+      {/* {audioSamples.length > 0 && (
+        <div className='audio-samples-display'>
+          <h4>Audio Samples:</h4>
+          <pre>{JSON.stringify(audioSamples, null, 2)}</pre>
+        </div>
+      )} */}
     </div>
   );
 };
