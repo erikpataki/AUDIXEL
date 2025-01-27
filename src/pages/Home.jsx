@@ -678,6 +678,10 @@ const Home = () => {
     
     if (file) {
       try {
+        const startTime = performance.now(); // Start timer
+
+        const bufferSize = 4096;
+
         // Read the file as an array buffer
         const arrayBuffer = await file.arrayBuffer();
         
@@ -690,16 +694,41 @@ const Home = () => {
         console.log("Number of Channels:", numberOfChannels);
         
         // Combine all channels by averaging their samples
-        const channelDataCombined = Array.from({ length: audioBuffer.length }, (_, idx) => {
+        const channelDataCombined = new Float32Array(audioBuffer.length);
+        for (let idx = 0; idx < audioBuffer.length; idx++) {
           let sum = 0;
           for (let i = 0; i < numberOfChannels; i++) {
             sum += audioBuffer.getChannelData(i)[idx];
           }
-          return sum / numberOfChannels;
-        });
+          channelDataCombined[idx] = sum / numberOfChannels;
+        }
 
-        // Define a buffer size that is a power of 2
-        const bufferSize = 512; // Example buffer size
+        // Optimized normalization: Find max amplitude using a loop
+        let maxAmplitude = 0;
+        for (let idx = 0; idx < channelDataCombined.length; idx++) {
+          const absSample = Math.abs(channelDataCombined[idx]);
+          if (absSample > maxAmplitude) {
+            maxAmplitude = absSample;
+          }
+        }
+        console.log("Max Amplitude before normalization:", maxAmplitude);
+
+        if (maxAmplitude > 0) {
+          for (let idx = 0; idx < channelDataCombined.length; idx++) {
+            channelDataCombined[idx] /= maxAmplitude;
+          }
+          console.log("Normalization applied: All samples scaled by maxAmplitude.");
+        }
+
+        // **Add Verification Step After Normalization**
+        let verifyMax = 0;
+        for (let idx = 0; idx < channelDataCombined.length; idx++) {
+          const absSample = Math.abs(channelDataCombined[idx]);
+          if (absSample > verifyMax) {
+            verifyMax = absSample;
+          }
+        }
+        console.log("Verified Max Amplitude after normalization:", verifyMax); // Should be 1
         
         const totalBuffers = Math.floor(channelDataCombined.length / bufferSize);
         const features = {};
@@ -710,9 +739,14 @@ const Home = () => {
         });
 
         for (let i = 0; i < totalBuffers; i++) {
-          const buffer = channelDataCombined.slice(i * bufferSize, (i + 1) * bufferSize);
+          const buffer = channelDataCombined.subarray(i * bufferSize, (i + 1) * bufferSize);
           FEATURES.forEach(feature => {
-            const value = Meyda.extract(feature.name, buffer, { bufferSize });
+            const value = Meyda.extract(feature.name, buffer, {
+              bufferSize: bufferSize,
+              sampleRate: audioContext.sampleRate,
+              // windowingFunction: "hamming" // Added windowing function
+            });
+            // console.log(`Buffer ${i + 1}/${totalBuffers}, Feature "${feature.name}":`, value);
             if (feature.average) {
               features[feature.name].push(value);
             } else {
@@ -725,9 +759,14 @@ const Home = () => {
         const remainingSamples = channelDataCombined.length % bufferSize;
         if (remainingSamples > 0) {
           const buffer = new Float32Array(bufferSize);
-          buffer.set(channelDataCombined.slice(-remainingSamples));
+          buffer.set(channelDataCombined.subarray(channelDataCombined.length - remainingSamples));
           FEATURES.forEach(feature => {
-            const value = Meyda.extract(feature.name, buffer, { bufferSize });
+            const value = Meyda.extract(feature.name, buffer, {
+              bufferSize: bufferSize,
+              sampleRate: audioContext.sampleRate,
+              // windowingFunction: "hamming" // Added windowing function
+            });
+            // console.log(`Remaining Buffer, Feature "${feature.name}":`, value);
             if (feature.average) {
               features[feature.name].push(value);
             } else {
@@ -746,6 +785,10 @@ const Home = () => {
             finalFeatures[feature.name] = features[feature.name];
           }
         });
+
+        const endTime = performance.now(); // End timer
+        const elapsedTime = (endTime - startTime) / 1000; // Convert to seconds
+        console.log(`Audio feature extraction took ${elapsedTime.toFixed(2)} seconds.`); // Log elapsed time in seconds
 
         console.log("Final Features:", finalFeatures);
         // Add more console logs as needed for other features
