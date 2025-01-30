@@ -3,12 +3,11 @@ import "./Dropdowns.css";
 import Slider from "./Slider/Slider";
 import Selector from "./Selector/Selector";
 
-function Dropdowns({ dropdownName, hasDropdown,
-    slider, 
-    firstSliderLabel, firstSliderValue, setFirstSliderValue, 
-    secondSliderLabel, secondSliderValue, setSecondSliderValue,
-    selector,
-    label, value, setValue, options,
+function Dropdowns({
+    dropdownName,
+    hasDropdown,
+    sliders = [], // Accept an array of slider objects
+    selectors = [], // Accept an array of selector objects
 }) 
 { 
     const [isCollapsed, setIsCollapsed] = useState(true);
@@ -37,9 +36,23 @@ function Dropdowns({ dropdownName, hasDropdown,
             </div>
             {!isCollapsed && (
                 <div className="drop-down-content">
-                    {slider >= 1 && <Slider label={firstSliderLabel} value={firstSliderValue} setValue={setFirstSliderValue} />}
-                    {slider >= 2 && <Slider label={secondSliderLabel} value={secondSliderValue} setValue={setSecondSliderValue} />}
-                    {selector >= 1 && <Selector label={label} value={value} onChange={setValue} options={options} />}
+                    {sliders.map((slider, index) => (
+                        <Slider
+                            key={index}
+                            label={slider.label}
+                            value={slider.value}
+                            setValue={slider.setValue}
+                        />
+                    ))}
+                    {selectors.map((selector, index) => (
+                        <Selector
+                            key={index}
+                            label={selector.label}
+                            value={selector.value}
+                            onChange={selector.setValue}
+                            options={selector.options}
+                        />
+                    ))}
                 </div>
             )}
         </div>

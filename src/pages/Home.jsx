@@ -2,7 +2,8 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import "./Home.css";
 // import FFT from 'fft.js'; // Import the FFT library
 import Dropdowns from '../components/Dropdowns/Dropdowns';
-var Meyda = require("meyda");
+import Meyda from "meyda";
+import Slider from '../components/Dropdowns/Slider/Slider';
 
 const Home = () => {
   const [selectedImage, setSelectedImage] = useState(null);
@@ -30,6 +31,8 @@ const Home = () => {
   const [combinedThreshold, setCombinedThreshold] = useState(50);
   const debounceTimeoutRef = useRef(null);
   const [audioSamples, setAudioSamples] = useState([]);
+  const [audioFeatures, setAudioFeatures] = useState({});
+  const [brightness, setBrightness] = useState(128);
 
   const debounce = (func, delay) => {
     return (...args) => {
@@ -610,20 +613,25 @@ const Home = () => {
 
 
   // Threshold slider handlers
-  const handleCombinedThresholdChange = (value) => {
-    setCombinedThreshold(value);
-    let minValue
-    if (value < 254) {
-      minValue = 128 - (value * 0.5)
-    } else {minValue = 0}
-    setMinThreshold(Math.round(minValue));
-    let maxValue
-    if (value < 112) {
-      maxValue = 128 + (value * (0.01*value))
-    } else {maxValue = 255}
-    setMaxThreshold(Math.round(maxValue));
+  const handleThresholdChange = (type, value) => {
+    if (type === 'amount') {
+        setCombinedThreshold(value);
+    } else if (type === 'brightness') {
+        setBrightness(value);
+    }
 
-  };
+    // Recalculate minThreshold and maxThreshold based on updated values
+    const newBrightness = type === 'brightness' ? value : brightness;
+    const newCombinedThreshold = type === 'amount' ? value : combinedThreshold;
+
+    let minValue = newBrightness - (newCombinedThreshold * 0.5);
+    minValue = Math.max(0, Math.round(minValue)); // Cap at 0
+    setMinThreshold(minValue);
+
+    let maxValue = newBrightness + (newCombinedThreshold * (0.005 * newCombinedThreshold));
+    maxValue = Math.min(255, Math.round(maxValue)); // Cap at 255
+    setMaxThreshold(maxValue);
+};
 
   const handleMinThresholdChange = (value) => {
     setMinThreshold(value);
@@ -646,7 +654,6 @@ const Home = () => {
       };
     }
   };
-
 
   //FEATURE EXTRACTION
   // var signal = new Array(32).fill(0).map((element, index) => {
@@ -672,6 +679,7 @@ const Home = () => {
     // Add more features here as needed
   ];
 
+  let finalFeatures = {};
   const handleAudioChange = async (e) => {
     e.preventDefault(); // Prevent potential default behavior
     const file = e.target.files[0];
@@ -714,24 +722,27 @@ const Home = () => {
         }
         console.log("Max Amplitude before normalization:", maxAmplitude);
 
-        if (maxAmplitude > 0) {
+        if (maxAmplitude > 0 && maxAmplitude !== 1) {
           for (let idx = 0; idx < channelDataCombined.length; idx++) {
             channelDataCombined[idx] /= maxAmplitude;
           }
           console.log("Normalization applied: All samples scaled by maxAmplitude.");
+        } else {
+          console.log("No normalization needed: Max amplitude is 1.");
         }
 
-        // **Add Verification Step After Normalization**
-        let verifyMax = 0;
-        for (let idx = 0; idx < channelDataCombined.length; idx++) {
-          const absSample = Math.abs(channelDataCombined[idx]);
-          if (absSample > verifyMax) {
-            verifyMax = absSample;
-          }
-        }
-        console.log("Verified Max Amplitude after normalization:", verifyMax); // Should be 1
+        // Verification After Normalization
+        // let verifyMax = 0;
+        // for (let idx = 0; idx < channelDataCombined.length; idx++) {
+        //   const absSample = Math.abs(channelDataCombined[idx]);
+        //   if (absSample > verifyMax) {
+        //     verifyMax = absSample;
+        //   }
+        // }
+        // console.log("Verified Max Amplitude after normalization:", verifyMax); // Should be 1
         
         const totalBuffers = Math.floor(channelDataCombined.length / bufferSize);
+        const remainingSamples = channelDataCombined.length % bufferSize;
         const features = {};
         
         // Initialize features object
@@ -745,9 +756,7 @@ const Home = () => {
             const value = Meyda.extract(feature.name, buffer, {
               bufferSize: bufferSize,
               sampleRate: audioContext.sampleRate,
-              // windowingFunction: "hamming" // Added windowing function
             });
-            // console.log(`Buffer ${i + 1}/${totalBuffers}, Feature "${feature.name}":`, value);
             if (feature.average) {
               features[feature.name].push(value);
             } else {
@@ -756,8 +765,7 @@ const Home = () => {
           });
         }
 
-        // Handle any remaining samples
-        const remainingSamples = channelDataCombined.length % bufferSize;
+        // Handle any remaining samples by padding with zeros to reach bufferSize
         if (remainingSamples > 0) {
           const buffer = new Float32Array(bufferSize);
           buffer.set(channelDataCombined.subarray(channelDataCombined.length - remainingSamples));
@@ -765,19 +773,18 @@ const Home = () => {
             const value = Meyda.extract(feature.name, buffer, {
               bufferSize: bufferSize,
               sampleRate: audioContext.sampleRate,
-              // windowingFunction: "hamming" // Added windowing function
             });
-            // console.log(`Remaining Buffer, Feature "${feature.name}":`, value);
             if (feature.average) {
-              features[feature.name].push(value);
+              // Calculate the proportion of valid samples
+              const validProportion = remainingSamples / bufferSize;
+              features[feature.name].push(value * validProportion);
             } else {
-              features[feature.name] += value;
+              features[feature.name] += value * (remainingSamples / bufferSize);
             }
           });
         }
 
-        // Compute final features
-        const finalFeatures = {};
+        // Compute final features excluding padded zeroes
         FEATURES.forEach(feature => {
           if (feature.average) {
             const sum = features[feature.name].reduce((acc, val) => acc + val, 0);
@@ -792,7 +799,6 @@ const Home = () => {
         console.log(`Audio feature extraction took ${elapsedTime.toFixed(2)} seconds.`); // Log elapsed time in seconds
 
         console.log("Final Features:", finalFeatures);
-        // Add more console logs as needed for other features
         
         setAudioSamples(channelDataCombined);
 
@@ -800,6 +806,50 @@ const Home = () => {
         console.error("Error processing audio file:", error);
       }
     }
+  };
+
+  // Define sliders as an array of objects
+  const settingsSliders = [
+    {
+        label: "AMOUNT",
+        value: combinedThreshold,
+        setValue: (value) => handleThresholdChange('amount', value), // Updated
+    },
+    {
+        label: "BRIGHTNESS",
+        value: brightness,
+        setValue: (value) => handleThresholdChange('brightness', value), // Updated
+    },
+    {
+        label: "ANGLE",
+        value: 0,
+        setValue: () => {},
+    },
+    // Add more sliders here as needed
+  ];
+
+  const advancedSettingsSliders = [
+    {
+        label: "LOWER THRESHOLD",
+        value: minThreshold,
+        setValue: handleMinThresholdChange,
+    },
+    {
+        label: "UPPER THRESHOLD",
+        value: maxThreshold,
+        setValue: handleMaxThresholdChange,
+    },
+    // Add more sliders here as needed
+  ];
+
+  const sortModeSelector = {
+    label: "SORT MODE",
+    value: sortMode,
+    setValue: setSortMode,
+    options: [
+        { value: 0, label: 'Brightness' },
+        { value: 1, label: 'Darkness' }
+    ],
   };
 
   return (
@@ -894,22 +944,15 @@ const Home = () => {
                 <h4>Show Processed Image:</h4>
               </div> */}
               <Dropdowns 
-                dropdownName={"SETTINGS"}
-                slider={2} 
-                firstSliderLabel={"AMOUNT"} firstSliderValue={combinedThreshold} setFirstSliderValue={handleCombinedThresholdChange}
-                secondSliderLabel={"ANGLE"} secondSliderValue={0} setSecondSliderValue={0} 
+                dropdownName="SETTINGS"
+                sliders={settingsSliders}
+                hasDropdown={true}
               />
               <Dropdowns 
-                dropdownName={"ADVANCED SETTINGS"}
-                slider={2} 
-                firstSliderLabel={"LOWER THRESHOLD"} firstSliderValue={minThreshold} setFirstSliderValue={handleMinThresholdChange}
-                secondSliderLabel={"UPPER THRESHOLD"} secondSliderValue={maxThreshold} setSecondSliderValue={handleMaxThresholdChange} 
-
-                selector={1}
-                label={"SORT MODE"} value={sortMode} setValue={setSortMode} options={[
-                  { value: 0, label: 'Brightness' },
-                  { value: 1, label: 'Darkness' }
-                ]}
+                dropdownName="ADVANCED SETTINGS"
+                sliders={advancedSettingsSliders}
+                selectors={[sortModeSelector]}
+                hasDropdown={true}
               />
               {processedImage && (
                 <div className='download-button' onClick={downloadImage} >                
@@ -931,7 +974,7 @@ const Home = () => {
 
               <input id="sound-file" accept="audio/*" type="file" onChange={handleAudioChange}/>
               <h4>Analysis results:</h4>
-              <h4></h4>
+              <h4>{JSON.stringify(finalFeatures, null, 2)}</h4>
 
               {/* <div className='sound-upload'>
                 <input id="sound-file" accept="audio/*" type="file" onChange={handleAudioChange} />
@@ -983,7 +1026,7 @@ const Home = () => {
 
       <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
       {/* {audioSamples.length > 0 && (
-        <div className='audio-samples-display'>
+        <div className='audio-samples-display'></div>
           <h4>Audio Samples:</h4>
           <pre>{JSON.stringify(audioSamples, null, 2)}</pre>
         </div>
