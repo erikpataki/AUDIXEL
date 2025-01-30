@@ -668,6 +668,7 @@ const Home = () => {
   const FEATURES = [
     { name: "spectralFlatness", average: true },
     { name: "spectralCentroid", average: true },
+    { name: "rms", average: true },
     // Add more features here as needed
   ];
 
@@ -929,6 +930,8 @@ const Home = () => {
               </div>
 
               <input id="sound-file" accept="audio/*" type="file" onChange={handleAudioChange}/>
+              <h4>Analysis results:</h4>
+              <h4></h4>
 
               {/* <div className='sound-upload'>
                 <input id="sound-file" accept="audio/*" type="file" onChange={handleAudioChange} />
