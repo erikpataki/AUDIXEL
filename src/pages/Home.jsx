@@ -387,6 +387,8 @@ const Home = () => {
             const r = pixels[i];
             const g = pixels[i + 1];
             const b = pixels[i + 2];
+            const a = pixels[i + 3]; // Added alpha check
+            if (a === 0) return false; // Exclude fully transparent pixels
             const value = (r + g + b) / 3;
             return value >= minThreshold && value <= maxThreshold;
           };
@@ -424,16 +426,31 @@ const Home = () => {
               }
 
               if ((!shouldSort || x === width - 1) && isInSortRange) {
-                pixelsToSort.sort((a, b) => a.sortValue - b.sortValue);
+                if (pixelsToSort.length > 0) { // Ensure there are pixels to sort
+                  pixelsToSort.sort((a, b) => a.sortValue - b.sortValue);
 
-                for (let j = 0; j < pixelsToSort.length; j++) {
-                  const targetI = (y * width + (startX + j)) * 4;
-                  pixels[targetI] = pixelsToSort[j].r;
-                  pixels[targetI + 1] = pixelsToSort[j].g;
-                  pixels[targetI + 2] = pixelsToSort[j].b;
-                  pixels[targetI + 3] = pixelsToSort[j].a;
+                  for (let j = 0; j < pixelsToSort.length; j++) {
+                    const targetI = (y * width + (startX + j)) * 4;
+                    pixels[targetI] = pixelsToSort[j].r;
+                    pixels[targetI + 1] = pixelsToSort[j].g;
+                    pixels[targetI + 2] = pixelsToSort[j].b;
+                    pixels[targetI + 3] = pixelsToSort[j].a;
+                  }
                 }
                 isInSortRange = false;
+              }
+            }
+
+            // Handle the case where the entire row is within the threshold
+            if (isInSortRange && pixelsToSort.length > 0) {
+              pixelsToSort.sort((a, b) => a.sortValue - b.sortValue);
+
+              for (let j = 0; j < pixelsToSort.length; j++) {
+                const targetI = (y * width + (startX + j)) * 4;
+                pixels[targetI] = pixelsToSort[j].r;
+                pixels[targetI + 1] = pixelsToSort[j].g;
+                pixels[targetI + 2] = pixelsToSort[j].b;
+                pixels[targetI + 3] = pixelsToSort[j].a;
               }
             }
           }
@@ -591,18 +608,24 @@ const Home = () => {
 
     let minValue = newBrightness - (newCombinedThreshold * 0.5);
     minValue = Math.max(0, Math.round(minValue)); // Cap at 0
-    setMinThreshold(minValue);
 
-    let maxValue = newBrightness + (newCombinedThreshold * (0.005 * newCombinedThreshold));
+    let maxValue = newBrightness + (newCombinedThreshold * 0.5); // Corrected calculation
     maxValue = Math.min(255, Math.round(maxValue)); // Cap at 255
+
+    // Ensure minThreshold is not greater than maxThreshold
+    if (minValue > maxValue) {
+        [minValue, maxValue] = [maxValue, minValue];
+    }
+
+    setMinThreshold(minValue);
     setMaxThreshold(maxValue);
 
-    // Optionally, trigger image processing on angle change
+    // Trigger image processing with updated threshold values
     if (selectedImage) {
       const img = new Image();
       img.src = selectedImage;
       img.onload = () => {
-        debouncedProcessImage(img, minThreshold, maxThreshold, sortMode, angle);
+        debouncedProcessImage(img, minValue, maxValue, sortMode, angle); // Use updated values
       };
     }
 };
