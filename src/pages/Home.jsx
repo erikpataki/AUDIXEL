@@ -13,9 +13,8 @@ const Home = () => {
   const [minThreshold, setMinThreshold] = useState(40);
   const [maxThreshold, setMaxThreshold] = useState(170);
   const [sortMode, setSortMode] = useState(0); // 0 = brightness, 1 = darkness
-  const [sortDirection, setSortDirection] = useState('horizontal'); // 'horizontal' or 'vertical'
-  // const [audioFileUrl, setAudioFileUrl] = useState(null); // Store audio file URL
   const [showProcessed, setShowProcessed] = useState(true);
+  // const [audioFileUrl, setAudioFileUrl] = useState(null); // Store audio file URL
   // const [audioFeatures, setAudioFeatures] = useState({
   //   average: 0,
   //   peak: 0,
@@ -33,6 +32,7 @@ const Home = () => {
   const [audioSamples, setAudioSamples] = useState([]);
   const [audioFeatures, setAudioFeatures] = useState({});
   const [brightness, setBrightness] = useState(128);
+  const [angle, setAngle] = useState(0);
 
   const debounce = (func, delay) => {
     return (...args) => {
@@ -45,8 +45,8 @@ const Home = () => {
     };
   };
 
-  const debouncedProcessImage = useCallback(debounce((image, minThreshold, maxThreshold, sortMode, sortDirection) => {
-    processImage(image, minThreshold, maxThreshold, sortMode, sortDirection);
+  const debouncedProcessImage = useCallback(debounce((image, minThreshold, maxThreshold, sortMode, angle) => {
+    processImage(image, minThreshold, maxThreshold, sortMode, angle);
   }, 300), []);
 
   useEffect(() => {
@@ -54,10 +54,10 @@ const Home = () => {
       const img = new Image();
       img.src = selectedImage;
       img.onload = () => {
-        debouncedProcessImage(img, minThreshold, maxThreshold, sortMode, sortDirection);
+        debouncedProcessImage(img, minThreshold, maxThreshold, sortMode, angle);
       };
     }
-  }, [minThreshold, maxThreshold, selectedImage, sortMode, sortDirection, debouncedProcessImage]);
+  }, [minThreshold, maxThreshold, selectedImage, sortMode, angle, debouncedProcessImage]);
 
   const handleImageChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -71,7 +71,7 @@ const Home = () => {
 
         img.onload = () => {
           setSelectedImage(event.target.result);
-          processImage(img, minThreshold, maxThreshold, sortMode, sortDirection);
+          processImage(img, minThreshold, maxThreshold, sortMode, angle);
         };
       };
 
@@ -332,19 +332,53 @@ const Home = () => {
   // }, [audioContext]);
 
   // Pixel sorting function
-  const processImage = async (image, minThreshold, maxThreshold, sortMode, sortDirection) => {
+  const processImage = async (image, minThreshold, maxThreshold, sortMode, angle) => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
-    canvas.width = image.width;
-    canvas.height = image.height;
-    ctx.drawImage(image, 0, 0);
 
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    // Calculate radians from angle
+    const radians = (angle * Math.PI) / 180;
+
+    // Calculate new canvas dimensions based on rotation
+    const sin = Math.abs(Math.sin(radians));
+    const cos = Math.abs(Math.cos(radians));
+    const newWidth = Math.ceil(image.width * cos + image.height * sin);
+    const newHeight = Math.ceil(image.width * sin + image.height * cos);
+
+    canvas.width = newWidth;
+    canvas.height = newHeight;
+    
+    // Clear any existing transformations on the main context
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    
+    // Create a temporary canvas for processing
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d');
+    tempCanvas.width = newWidth;
+    tempCanvas.height = newHeight;
+    
+    // Clear the temporary canvas
+    tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
+    
+    // Save the temporary context state
+    tempCtx.save();
+    
+    // Move to center for rotation
+    tempCtx.translate(newWidth / 2, newHeight / 2);
+    tempCtx.rotate(radians);
+    tempCtx.translate(-image.width / 2, -image.height / 2);
+    tempCtx.drawImage(image, 0, 0);
+    
+    // Get image data from the temporary canvas
+    const imageData = tempCtx.getImageData(0, 0, newWidth, newHeight);
     const data = new Uint8ClampedArray(imageData.data);
 
+    // console.log("imageData", imageData)
+    // console.log("image", image)
+    // console.log("data", data)
     const workerBlob = new Blob([`
       self.onmessage = function(e) {
-        const { data, width, height, sortDirection, minThreshold, maxThreshold, sortMode } = e.data;
+        const { data, width, height, minThreshold, maxThreshold, sortMode } = e.data;
         
         const processChunk = (data, width, height) => {
           const pixels = new Uint8ClampedArray(data);
@@ -353,7 +387,7 @@ const Home = () => {
             const r = pixels[i];
             const g = pixels[i + 1];
             const b = pixels[i + 2];
-            const value = (r + g + b) / 3; // Simplified since we only need this for thresholding
+            const value = (r + g + b) / 3;
             return value >= minThreshold && value <= maxThreshold;
           };
 
@@ -364,84 +398,42 @@ const Home = () => {
             return sortMode === 0 ? (r + g + b) : -(r + g + b);
           };
 
-          if (sortDirection === 'horizontal') {
-            for (let y = 0; y < height; y++) {
-              let startX = 0;
-              let isInSortRange = false;
-              let pixelsToSort = [];
+          for (let y = 0; y < height; y++) {
+            let startX = 0;
+            let isInSortRange = false;
+            let pixelsToSort = [];
 
-              for (let x = 0; x < width; x++) {
-                const i = (y * width + x) * 4;
-                const shouldSort = meetsThreshold(i);
-
-                if (shouldSort && !isInSortRange) {
-                  startX = x;
-                  isInSortRange = true;
-                  pixelsToSort = [];
-                }
-
-                if (isInSortRange) {
-                  pixelsToSort.push({
-                    r: pixels[i],
-                    g: pixels[i + 1],
-                    b: pixels[i + 2],
-                    a: pixels[i + 3],
-                    sortValue: getSortValue(i)
-                  });
-                }
-
-                if ((!shouldSort || x === width - 1) && isInSortRange) {
-                  pixelsToSort.sort((a, b) => a.sortValue - b.sortValue);
-
-                  for (let j = 0; j < pixelsToSort.length; j++) {
-                    const targetI = (y * width + (startX + j)) * 4;
-                    pixels[targetI] = pixelsToSort[j].r;
-                    pixels[targetI + 1] = pixelsToSort[j].g;
-                    pixels[targetI + 2] = pixelsToSort[j].b;
-                    pixels[targetI + 3] = pixelsToSort[j].a;
-                  }
-                  isInSortRange = false;
-                }
-              }
-            }
-          } else if (sortDirection === 'vertical') {
             for (let x = 0; x < width; x++) {
-              let startY = 0;
-              let isInSortRange = false;
-              let pixelsToSort = [];
+              const i = (y * width + x) * 4;
+              const shouldSort = meetsThreshold(i);
 
-              for (let y = 0; y < height; y++) {
-                const i = (y * width + x) * 4;
-                const shouldSort = meetsThreshold(i);
+              if (shouldSort && !isInSortRange) {
+                startX = x;
+                isInSortRange = true;
+                pixelsToSort = [];
+              }
 
-                if (shouldSort && !isInSortRange) {
-                  startY = y;
-                  isInSortRange = true;
-                  pixelsToSort = [];
+              if (isInSortRange) {
+                pixelsToSort.push({
+                  r: pixels[i],
+                  g: pixels[i + 1],
+                  b: pixels[i + 2],
+                  a: pixels[i + 3],
+                  sortValue: getSortValue(i)
+                });
+              }
+
+              if ((!shouldSort || x === width - 1) && isInSortRange) {
+                pixelsToSort.sort((a, b) => a.sortValue - b.sortValue);
+
+                for (let j = 0; j < pixelsToSort.length; j++) {
+                  const targetI = (y * width + (startX + j)) * 4;
+                  pixels[targetI] = pixelsToSort[j].r;
+                  pixels[targetI + 1] = pixelsToSort[j].g;
+                  pixels[targetI + 2] = pixelsToSort[j].b;
+                  pixels[targetI + 3] = pixelsToSort[j].a;
                 }
-
-                if (isInSortRange) {
-                  pixelsToSort.push({
-                    r: pixels[i],
-                    g: pixels[i + 1],
-                    b: pixels[i + 2],
-                    a: pixels[i + 3],
-                    sortValue: getSortValue(i)
-                  });
-                }
-
-                if ((!shouldSort || y === height - 1) && isInSortRange) {
-                  pixelsToSort.sort((a, b) => a.sortValue - b.sortValue);
-
-                  for (let j = 0; j < pixelsToSort.length; j++) {
-                    const targetI = ((startY + j) * width + x) * 4;
-                    pixels[targetI] = pixelsToSort[j].r;
-                    pixels[targetI + 1] = pixelsToSort[j].g;
-                    pixels[targetI + 2] = pixelsToSort[j].b;
-                    pixels[targetI + 3] = pixelsToSort[j].a;
-                  }
-                  isInSortRange = false;
-                }
+                isInSortRange = false;
               }
             }
           }
@@ -457,92 +449,65 @@ const Home = () => {
     const workerCount = navigator.hardwareConcurrency || 4;
     const workers = [];
 
-    if (sortDirection === 'horizontal') {
-      const chunkHeight = Math.ceil(canvas.height / workerCount);
+    // Always perform horizontal sorting
+    const chunkHeight = Math.ceil(canvas.height / workerCount);
+    
+    for (let i = 0; i < workerCount; i++) {
+      const worker = new Worker(workerUrl);
+      const startY = i * chunkHeight;
+      const endY = Math.min(startY + chunkHeight, canvas.height);
       
-      for (let i = 0; i < workerCount; i++) {
-        const worker = new Worker(workerUrl);
-        const startY = i * chunkHeight;
-        const endY = Math.min(startY + chunkHeight, canvas.height);
-        
-        const chunk = data.slice(startY * canvas.width * 4, endY * canvas.width * 4);
-        
-        workers.push(new Promise(resolve => {
-          worker.onmessage = (e) => {
-            data.set(e.data, startY * canvas.width * 4);
-            worker.terminate();
-            resolve();
-          };
-          
-          worker.postMessage({
-            data: chunk,
-            width: canvas.width,
-            height: endY - startY,
-            sortDirection,
-            minThreshold,
-            maxThreshold,
-            sortMode
-          });
-        }));
-      }
-    } else { // vertical sorting
-      const chunkWidth = Math.ceil(canvas.width / workerCount);
+      const chunk = data.slice(startY * canvas.width * 4, endY * canvas.width * 4);
       
-      for (let i = 0; i < workerCount; i++) {
-        const worker = new Worker(workerUrl);
-        const startX = i * chunkWidth;
-        const endX = Math.min(startX + chunkWidth, canvas.width);
-        const chunk = new Uint8ClampedArray(canvas.height * (endX - startX) * 4);
+      workers.push(new Promise(resolve => {
+        worker.onmessage = (e) => {
+          data.set(e.data, startY * canvas.width * 4);
+          worker.terminate();
+          resolve();
+        };
         
-        // Extract vertical strip of pixels
-        for (let y = 0; y < canvas.height; y++) {
-          for (let x = startX; x < endX; x++) {
-            const sourceIndex = (y * canvas.width + x) * 4;
-            const targetIndex = (y * (endX - startX) + (x - startX)) * 4;
-            chunk[targetIndex] = data[sourceIndex];
-            chunk[targetIndex + 1] = data[sourceIndex + 1];
-            chunk[targetIndex + 2] = data[sourceIndex + 2];
-            chunk[targetIndex + 3] = data[sourceIndex + 3];
-          }
-        }
-        
-        workers.push(new Promise(resolve => {
-          worker.onmessage = (e) => {
-            // Copy processed data back to main array
-            const processedChunk = e.data;
-            for (let y = 0; y < canvas.height; y++) {
-              for (let x = startX; x < endX; x++) {
-                const sourceIndex = (y * (endX - startX) + (x - startX)) * 4;
-                const targetIndex = (y * canvas.width + x) * 4;
-                data[targetIndex] = processedChunk[sourceIndex];
-                data[targetIndex + 1] = processedChunk[sourceIndex + 1];
-                data[targetIndex + 2] = processedChunk[sourceIndex + 2];
-                data[targetIndex + 3] = processedChunk[sourceIndex + 3];
-              }
-            }
-            worker.terminate();
-            resolve();
-          };
-          
-          worker.postMessage({
-            data: chunk,
-            width: endX - startX,
-            height: canvas.height,
-            sortDirection,
-            minThreshold,
-            maxThreshold,
-            sortMode
-          });
-        }));
-      }
+        worker.postMessage({
+          data: chunk,
+          width: canvas.width,
+          height: endY - startY,
+          minThreshold,
+          maxThreshold,
+          sortMode
+        });
+      }));
     }
 
     await Promise.all(workers);
     URL.revokeObjectURL(workerUrl);
     
     imageData.data.set(data);
-    ctx.putImageData(imageData, 0, 0);
-    setProcessedImage(canvas.toDataURL());
+    tempCtx.putImageData(imageData, 0, 0);
+    
+    // Restore the temporary canvas context to remove transformations
+    tempCtx.restore();
+    
+    // Clear the main canvas and draw the processed image
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(tempCanvas, 0, 0);
+    
+    // Rotate the processed image back to original orientation
+    const rotatedBackCanvas = document.createElement('canvas');
+    const rotatedBackCtx = rotatedBackCanvas.getContext('2d');
+    
+    // Set rotated back canvas size to original image dimensions
+    rotatedBackCanvas.width = image.width;
+    rotatedBackCanvas.height = image.height;
+    
+    // Translate and rotate back
+    rotatedBackCtx.translate(rotatedBackCanvas.width / 2, rotatedBackCanvas.height / 2);
+    rotatedBackCtx.rotate(-radians);
+    rotatedBackCtx.translate(-newWidth / 2, -newHeight / 2);
+    
+    // Draw the processed image onto the rotated back canvas
+    rotatedBackCtx.drawImage(canvas, 0, 0);
+    
+    // Update the processed image with the rotated back image
+    setProcessedImage(rotatedBackCanvas.toDataURL());
   };
 
   // Download processed image
@@ -631,6 +596,15 @@ const Home = () => {
     let maxValue = newBrightness + (newCombinedThreshold * (0.005 * newCombinedThreshold));
     maxValue = Math.min(255, Math.round(maxValue)); // Cap at 255
     setMaxThreshold(maxValue);
+
+    // Optionally, trigger image processing on angle change
+    if (selectedImage) {
+      const img = new Image();
+      img.src = selectedImage;
+      img.onload = () => {
+        debouncedProcessImage(img, minThreshold, maxThreshold, sortMode, angle);
+      };
+    }
 };
 
   const handleMinThresholdChange = (value) => {
@@ -639,7 +613,7 @@ const Home = () => {
       const img = new Image();
       img.src = selectedImage;
       img.onload = () => {
-        debouncedProcessImage(img, value, maxThreshold, sortMode, sortDirection);
+        debouncedProcessImage(img, value, maxThreshold, sortMode, angle);
       };
     }
   };
@@ -650,7 +624,7 @@ const Home = () => {
       const img = new Image();
       img.src = selectedImage;
       img.onload = () => {
-        debouncedProcessImage(img, minThreshold, value, sortMode, sortDirection);
+        debouncedProcessImage(img, minThreshold, value, sortMode, angle);
       };
     }
   };
@@ -822,8 +796,8 @@ const Home = () => {
     },
     {
         label: "ANGLE",
-        value: 0,
-        setValue: () => {},
+        value: angle,
+        setValue: setAngle,
     },
     // Add more sliders here as needed
   ];
@@ -959,18 +933,6 @@ const Home = () => {
                   <Dropdowns dropdownName={"DOWNLOAD IMAGE"} hasDropdown={false} />
                 </div>
               )}
-
-              <div className="sort-direction">
-                <label htmlFor="sort-direction">Sort Direction: </label>
-                <select
-                  id="sort-direction"
-                  value={sortDirection}
-                  onChange={(e) => setSortDirection(e.target.value)}
-                >
-                  <option value="horizontal">Horizontal</option>
-                  <option value="vertical">Vertical</option>
-                </select>
-              </div>
 
               <input id="sound-file" accept="audio/*" type="file" onChange={handleAudioChange}/>
               <h4>Analysis results:</h4>
