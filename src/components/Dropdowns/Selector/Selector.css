@@ -1,0 +1,27 @@
+.selector {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+}
+
+.selector-label {
+    color: #0D1F22;
+    font-family: Inter;
+    font-size: 0.9rem;
+    font-style: normal;
+    font-weight: 600;
+    line-height: normal;
+}
+
+.selector-control {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    /* margin-bottom: 15px; */
+    margin-right: 35px;
+    width: 128px;
+    border-radius: 15px;
+    color: #FFFFFA;
+    background-color: #0D1F22;
+    text-align: center; /* Added to center the text */
+}
