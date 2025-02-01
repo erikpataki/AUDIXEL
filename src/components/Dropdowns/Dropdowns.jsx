@@ -42,6 +42,7 @@ function Dropdowns({
                             label={slider.label}
                             value={slider.value}
                             setValue={slider.setValue}
+                            maxValue={slider.maxValue}
                         />
                     ))}
                     {selectors.map((selector, index) => (

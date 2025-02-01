@@ -1,7 +1,7 @@
 import React from 'react';
 import './Slider.css';
 
-const Slider = ({ label, value, setValue }) => {
+const Slider = ({ label, value, setValue, maxValue }) => {
     return (
         <div className="slider-parent">
             <label className="slider-label">{label}</label>
@@ -9,7 +9,7 @@ const Slider = ({ label, value, setValue }) => {
                 <input
                     type="range"
                     min="0"
-                    max="255"
+                    max= {maxValue ? maxValue : "255"}
                     value={value}
                     onChange={(e) => setValue(Number(e.target.value))}
                     className='slider-range'

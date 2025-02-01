@@ -373,9 +373,6 @@ const Home = () => {
     const imageData = tempCtx.getImageData(0, 0, newWidth, newHeight);
     const data = new Uint8ClampedArray(imageData.data);
 
-    // console.log("imageData", imageData)
-    // console.log("image", image)
-    // console.log("data", data)
     const workerBlob = new Blob([`
       self.onmessage = function(e) {
         const { data, width, height, minThreshold, maxThreshold, sortMode } = e.data;
@@ -673,6 +670,7 @@ const Home = () => {
     { name: "spectralFlatness", average: true },
     { name: "spectralCentroid", average: true },
     { name: "rms", average: true },
+    { name: "spectralSlope", average: true }
     // Add more features here as needed
   ];
 
@@ -821,6 +819,7 @@ const Home = () => {
         label: "ANGLE",
         value: angle,
         setValue: setAngle,
+        maxValue: 360,
     },
     // Add more sliders here as needed
   ];
