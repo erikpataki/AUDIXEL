@@ -19,19 +19,19 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
   return (
     <div className="image-upload">
       <div className="upload-block">
-        {selectedImage ? (
-          <>
-            <img
-              src={showProcessed ? processedImage : selectedImage}
-              alt={showProcessed ? "Processed" : "Original"}
-              className="preview-image"
+        {/* {selectedImage ? (
+          <> */}
+        <img
+            src={showProcessed ? processedImage : selectedImage}
+            alt={showProcessed ? "Processed" : "Original"}
+            className="preview-image"
+        />
+        <img
+            src={showProcessed ? processedImage : selectedImage}
+            alt={showProcessed ? "Processed" : "Original"}
+            className="preview-image-blur"
             />
-            <img
-              src={showProcessed ? processedImage : selectedImage}
-              alt={showProcessed ? "Processed" : "Original"}
-              className="preview-image-blur"
-            />
-          </>
+          {/* </>
         ) : (
           <label htmlFor="image-file-input" className='file-input-label'>
             <div className="upload-text">
@@ -41,7 +41,7 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
               </div>
             </div>
           </label>
-        )}
+        )} */}
       </div>
       <input
         id="image-file-input"

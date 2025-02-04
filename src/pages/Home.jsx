@@ -5,12 +5,10 @@ import Meyda from "meyda";
 import Slider from '../components/Dropdowns/Slider/Slider';
 import Canvas from '../components/Canvas/Canvas';
 
-const Home = () => {
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [processedImage, setProcessedImage] = useState(null);
+const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedImage }) => {
   const [minThreshold, setMinThreshold] = useState(40);
   const [maxThreshold, setMaxThreshold] = useState(170);
-  const [sortMode, setSortMode] = useState(0); // 0 = brightness, 1 = darkness
+  const [sortMode, setSortMode] = useState(0); // 0 = brightness, 1 = darkness, 2 = hue, 3 = saturation, 4 = lightness
   const [showProcessed, setShowProcessed] = useState(true);
   const [combinedThreshold, setCombinedThreshold] = useState(50);
   const debounceTimeoutRef = useRef(null);
@@ -45,25 +43,6 @@ const Home = () => {
     }
   }, [minThreshold, maxThreshold, selectedImage, sortMode, angle, debouncedProcessImage]);
 
-  const handleImageChange = (e) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-
-      reader.onload = function (event) {
-        const img = new Image();
-        img.src = event.target.result;
-
-        img.onload = () => {
-          setSelectedImage(event.target.result);
-          processImage(img, minThreshold, maxThreshold, sortMode, angle);
-        };
-      };
-
-      reader.readAsDataURL(file);
-    }
-  };
-
   const processImage = async (image, minThreshold, maxThreshold, sortMode, angle) => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
@@ -95,7 +74,7 @@ const Home = () => {
     // Save the temporary context state
     tempCtx.save();
     
-    // Move to center for rotation
+    // Rotate around center point and draw image
     tempCtx.translate(newWidth / 2, newHeight / 2);
     tempCtx.rotate(radians);
     tempCtx.translate(-image.width / 2, -image.height / 2);
@@ -105,45 +84,85 @@ const Home = () => {
     const imageData = tempCtx.getImageData(0, 0, newWidth, newHeight);
     const data = new Uint8ClampedArray(imageData.data);
 
+    // Create a worker blob to process image data in a separate thread for better performance. Means interface won't freeze while processing
     const workerBlob = new Blob([`
       self.onmessage = function(e) {
         const { data, width, height, minThreshold, maxThreshold, sortMode } = e.data;
         
+        // Function to convert RGBA to HSL
+        const rgbaToHsl = (r, g, b) => {
+          r /= 255;
+          g /= 255;
+          b /= 255;
+          const max = Math.max(r, g, b);
+          const min = Math.min(r, g, b);
+          let h, s, l = (max + min) / 2;
+
+          if (max === min) {
+            h = s = 0; // achromatic
+          } else {
+            const d = max - min;
+            s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+            switch (max) {
+              case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+              case g: h = (b - r) / d + 2; break;
+              case b: h = (r - g) / d + 4; break;
+            }
+            h /= 6;
+          }
+          return [h * 360, s * 100, l * 100];
+        };
+
+        // Function to process a chunk of image data
         const processChunk = (data, width, height) => {
           const pixels = new Uint8ClampedArray(data);
           
+          // Function to check if a pixel meets the threshold
           const meetsThreshold = (i) => {
             const r = pixels[i];
             const g = pixels[i + 1];
             const b = pixels[i + 2];
-            const a = pixels[i + 3]; // Added alpha check
-            if (a === 0) return false; // Exclude fully transparent pixels
+            const a = pixels[i + 3];
+            if (a === 0) return false; // Exclude transparent pixels
             const value = (r + g + b) / 3;
             return value >= minThreshold && value <= maxThreshold;
           };
 
+          // Function to get the sort value of a pixel
           const getSortValue = (i) => {
             const r = pixels[i];
             const g = pixels[i + 1];
             const b = pixels[i + 2];
-            return sortMode === 0 ? (r + g + b) : -(r + g + b);
+            const [h, s, l] = rgbaToHsl(r, g, b);
+            switch (sortMode) {
+              case 0: return r + g + b; // Brightness
+              case 1: return -(r + g + b); // Darkness
+              case 2: return h; // Hue
+              case 3: return s; // Saturation
+              case 4: return l; // Lightness
+              default: return r + g + b; // Default to brightness
+            }
           };
 
+          // Loop through each row of pixels
           for (let y = 0; y < height; y++) {
             let startX = 0;
             let isInSortRange = false;
             let pixelsToSort = [];
 
+            // Loop through each pixel in the row
             for (let x = 0; x < width; x++) {
               const i = (y * width + x) * 4;
               const shouldSort = meetsThreshold(i);
 
+              // Start collecting pixels to sort
               if (shouldSort && !isInSortRange) {
                 startX = x;
                 isInSortRange = true;
                 pixelsToSort = [];
               }
 
+              // Collect pixels to sort
               if (isInSortRange) {
                 pixelsToSort.push({
                   r: pixels[i],
@@ -154,8 +173,9 @@ const Home = () => {
                 });
               }
 
+              // Sort and replace pixels when the range ends
               if ((!shouldSort || x === width - 1) && isInSortRange) {
-                if (pixelsToSort.length > 0) { // Ensure there are pixels to sort
+                if (pixelsToSort.length > 0) {
                   pixelsToSort.sort((a, b) => a.sortValue - b.sortValue);
 
                   for (let j = 0; j < pixelsToSort.length; j++) {
@@ -186,6 +206,7 @@ const Home = () => {
           return pixels;
         };
 
+        // Process the image data and send it back to the main thread
         const processed = processChunk(data, width, height);
         self.postMessage(processed);
       };
@@ -336,10 +357,10 @@ const Home = () => {
     const newCombinedThreshold = type === 'amount' ? value : combinedThreshold;
 
     let minValue = newBrightness - (newCombinedThreshold * 0.5);
-    minValue = Math.max(0, Math.round(minValue)); // Cap at 0
+    minValue = Math.max(0, Math.floor(minValue)); // Cap at 0
 
-    let maxValue = newBrightness + (newCombinedThreshold * 0.5); // Corrected calculation
-    maxValue = Math.min(255, Math.round(maxValue)); // Cap at 255
+    let maxValue = newBrightness + (newCombinedThreshold * (0.0029*newCombinedThreshold)); // Corrected calculation
+    maxValue = Math.min(255, Math.ceil(maxValue)); // Cap at 255
 
     // Ensure minThreshold is not greater than maxThreshold
     if (minValue > maxValue) {
@@ -576,7 +597,10 @@ const Home = () => {
     setValue: setSortMode,
     options: [
         { value: 0, label: 'Brightness' },
-        { value: 1, label: 'Darkness' }
+        { value: 1, label: 'Darkness' },
+        { value: 2, label: 'Hue' },
+        { value: 3, label: 'Saturation' },
+        { value: 4, label: 'Lightness' }
     ],
   };
 
