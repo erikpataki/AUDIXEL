@@ -423,7 +423,8 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     { name: "spectralFlatness", average: true },
     { name: "spectralCentroid", average: true },
     { name: "rms", average: true },
-    { name: "spectralSlope", average: true }
+    { name: "spectralSlope", average: true },
+    { name: "mfcc", average: false },
     // Add more features here as needed
   ];
 
@@ -492,6 +493,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
         const totalBuffers = Math.floor(channelDataCombined.length / bufferSize);
         const remainingSamples = channelDataCombined.length % bufferSize;
         const features = {};
+        const individualBufferValues = []; // New variable to store individual buffer values
         
         // Initialize features object
         FEATURES.forEach(feature => {
@@ -500,28 +502,33 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
 
         for (let i = 0; i < totalBuffers; i++) {
           const buffer = channelDataCombined.subarray(i * bufferSize, (i + 1) * bufferSize);
+          const bufferFeatures = {}; // Store features for the current buffer
           FEATURES.forEach(feature => {
             const value = Meyda.extract(feature.name, buffer, {
               bufferSize: bufferSize,
               sampleRate: audioContext.sampleRate,
             });
+            bufferFeatures[feature.name] = value; // Store individual buffer feature value
             if (feature.average) {
               features[feature.name].push(value);
             } else {
               features[feature.name] += value;
             }
           });
+          individualBufferValues.push(bufferFeatures); // Add current buffer features to the array
         }
 
         // Handle any remaining samples by padding with zeros to reach bufferSize
         if (remainingSamples > 0) {
           const buffer = new Float32Array(bufferSize);
           buffer.set(channelDataCombined.subarray(channelDataCombined.length - remainingSamples));
+          const bufferFeatures = {}; // Store features for the current buffer
           FEATURES.forEach(feature => {
             const value = Meyda.extract(feature.name, buffer, {
               bufferSize: bufferSize,
               sampleRate: audioContext.sampleRate,
             });
+            bufferFeatures[feature.name] = value; // Store individual buffer feature value
             if (feature.average) {
               // Calculate the proportion of valid samples
               const validProportion = remainingSamples / bufferSize;
@@ -530,6 +537,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
               features[feature.name] += value * (remainingSamples / bufferSize);
             }
           });
+          individualBufferValues.push(bufferFeatures); // Add current buffer features to the array
         }
 
         // Compute final features excluding padded zeroes
@@ -547,6 +555,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
         console.log(`Audio feature extraction took ${elapsedTime.toFixed(2)} seconds.`); // Log elapsed time in seconds
 
         console.log("Final Features:", finalFeatures);
+        console.log("Individual Buffer Values:", individualBufferValues); // Log individual buffer values
         
         setAudioSamples(channelDataCombined);
 
