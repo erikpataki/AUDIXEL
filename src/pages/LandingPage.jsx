@@ -23,22 +23,31 @@ const LandingPage = ({ setSelectedImage, setProcessedImage }) => {
   return (
     <div className="image-upload">
       <div className="upload-block">
-        <label htmlFor="image-file-input" className='file-input-label'>
+        <label htmlFor="audio-file-input" className='file-input-label'>
           <div className="upload-text">
             <div className='image-upload-text-main-parent'>
-              <p className='image-upload-text'>Select or drag image file(s)</p>
-              <p className='image-upload-text'>(.jpg, .png, .gif)</p>
+              <p className='image-upload-text'>Select or drag audio file(s)</p>
+              <p className='image-upload-text'>(.wav, .mp3, .ogg)</p>
             </div>
+            <label htmlFor='image-file-input' className='image-upload-text small-image-upload-text'>
+              <p>(or upload your own image here)</p>
+            </label>
           </div>
         </label>
       </div>
       <input
-        id="image-file-input"
+        id="audio-file-input"
+        type="file"
+        accept="audio/*"
+        // onChange={handleImageChange}
+        style={{ display: 'none' }}
+      />
+      <input id="image-file-input"
         type="file"
         accept="image/*"
         onChange={handleImageChange}
-        style={{ display: 'none' }}
-      />
+        style={{ display: 'none' }}>
+      </input>
     </div>
   );
 };

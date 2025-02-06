@@ -2,6 +2,7 @@ import React from 'react';
 import './Slider.css';
 
 const Slider = ({ label, value, setValue, maxValue }) => {
+    let max = maxValue ? maxValue : 255
     return (
         <div className="slider-parent">
             <label className="slider-label">{label}</label>
@@ -9,18 +10,18 @@ const Slider = ({ label, value, setValue, maxValue }) => {
                 <input
                     type="range"
                     min="0"
-                    max= {maxValue ? maxValue : "255"}
+                    max= {max}
                     value={value}
-                    onChange={(e) => setValue(Number(e.target.value))}
+                    onChange={(e) => setValue(parseInt(e.target.value))}
                     className='slider-range'
                 />
                 <input
                     type="number"
                     min="0"
-                    max="255"
+                    max={max}
                     value={value}
                     onChange={(e) => {
-                        const value = Math.min(255, Math.max(0, Number(e.target.value)));
+                        const value = Math.min(max, Math.max(0, parseInt(e.target.value)));
                         setValue(value);
                     }}
                     className="slider-number"

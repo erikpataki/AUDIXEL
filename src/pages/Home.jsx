@@ -10,12 +10,12 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
   const [maxThreshold, setMaxThreshold] = useState(170);
   const [sortMode, setSortMode] = useState(0); // 0 = brightness, 1 = darkness, 2 = hue, 3 = saturation, 4 = lightness
   const [showProcessed, setShowProcessed] = useState(true);
-  const [combinedThreshold, setCombinedThreshold] = useState(50);
+  const [combinedThreshold, setCombinedThreshold] = useState(150);
   const debounceTimeoutRef = useRef(null);
   const [audioSamples, setAudioSamples] = useState([]);
   const [audioFeatures, setAudioFeatures] = useState({});
   const [brightness, setBrightness] = useState(128);
-  const [angle, setAngle] = useState(0);
+  const [angle, setAngle] = useState(115);
   const canvasRef = useRef(null);
 
   const debounce = (func, delay) => {
