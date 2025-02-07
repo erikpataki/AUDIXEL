@@ -558,6 +558,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
         console.log("Individual Buffer Values:", individualBufferValues); // Log individual buffer values
         
         setAudioSamples(channelDataCombined);
+        setAudioFeatures(finalFeatures); // Set audioFeatures state
 
       } catch (error) {
         console.error("Error processing audio file:", error);
@@ -623,6 +624,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
           setSelectedImage={setSelectedImage}
           setProcessedImage={setProcessedImage}
           canvasRef={canvasRef}
+          audioFeatures={audioFeatures} // Pass audioFeatures to Canvas
         />
         {selectedImage && (
           <div className='selectors-container-parent'>
