@@ -17,6 +17,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
   const [brightness, setBrightness] = useState(128);
   const [angle, setAngle] = useState(115);
   const canvasRef = useRef(null);
+  const [individualBufferValues, setIndividualBufferValues] = useState([]);
 
   const debounce = (func, delay) => {
     return (...args) => {
@@ -44,7 +45,12 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
   }, [minThreshold, maxThreshold, selectedImage, sortMode, angle, debouncedProcessImage]);
 
   const processImage = async (image, minThreshold, maxThreshold, sortMode, angle) => {
+    console.log("processImage called", image);
     const canvas = canvasRef.current;
+    if (!canvas) {
+      console.error("Canvas ref is not available.");
+      return;
+    }
     const ctx = canvas.getContext('2d');
 
     // Calculate radians from angle
@@ -80,14 +86,21 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     tempCtx.translate(-image.width / 2, -image.height / 2);
     tempCtx.drawImage(image, 0, 0);
     
+    console.log("Image dimensions", image.width, image.height);
+    console.log("Temp canvas dimensions", tempCanvas.width, tempCanvas.height);
+    console.log("drawImage called");
+
     // Get image data from the temporary canvas
     const imageData = tempCtx.getImageData(0, 0, newWidth, newHeight);
+    console.log("imageData", imageData);
     const data = new Uint8ClampedArray(imageData.data);
+    console.log("Data before worker", data);
 
     // Create a worker blob to process image data in a separate thread for better performance. Means interface won't freeze while processing
     const workerBlob = new Blob([`
       self.onmessage = function(e) {
         const { data, width, height, minThreshold, maxThreshold, sortMode } = e.data;
+        console.log("Worker received data", data, width, height, minThreshold, maxThreshold, sortMode);
         
         // Function to convert RGBA to HSL
         const rgbaToHsl = (r, g, b) => {
@@ -116,6 +129,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
         // Function to process a chunk of image data
         const processChunk = (data, width, height) => {
           const pixels = new Uint8ClampedArray(data);
+          console.log("Processing chunk", width, height);
           
           // Function to check if a pixel meets the threshold
           const meetsThreshold = (i) => {
@@ -203,6 +217,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
               }
             }
           }
+          console.log("Processed pixels", pixels);
           return pixels;
         };
 
@@ -217,25 +232,25 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     const workers = [];
 
     // Always perform horizontal sorting
-    const chunkHeight = Math.ceil(canvas.height / workerCount);
+    const chunkHeight = Math.ceil(newHeight / workerCount);
     
     for (let i = 0; i < workerCount; i++) {
       const worker = new Worker(workerUrl);
       const startY = i * chunkHeight;
-      const endY = Math.min(startY + chunkHeight, canvas.height);
+      const endY = Math.min(startY + chunkHeight, newHeight);
       
-      const chunk = data.slice(startY * canvas.width * 4, endY * canvas.width * 4);
+      const chunk = imageData.data.slice(startY * newWidth * 4, endY * newWidth * 4);
       
       workers.push(new Promise(resolve => {
         worker.onmessage = (e) => {
-          data.set(e.data, startY * canvas.width * 4);
+          imageData.data.set(e.data, startY * newWidth * 4);
           worker.terminate();
           resolve();
         };
         
         worker.postMessage({
           data: chunk,
-          width: canvas.width,
+          width: newWidth,
           height: endY - startY,
           minThreshold,
           maxThreshold,
@@ -247,7 +262,6 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     await Promise.all(workers);
     URL.revokeObjectURL(workerUrl);
     
-    imageData.data.set(data);
     tempCtx.putImageData(imageData, 0, 0);
     
     // Restore the temporary canvas context to remove transformations
@@ -274,7 +288,9 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     rotatedBackCtx.drawImage(canvas, 0, 0);
     
     // Update the processed image with the rotated back image
-    setProcessedImage(rotatedBackCanvas.toDataURL());
+    const rotatedBackDataURL = rotatedBackCanvas.toDataURL();
+    console.log("rotatedBackCanvas.toDataURL()", rotatedBackDataURL);
+    setProcessedImage(rotatedBackDataURL);
   };
 
   // Download processed image
@@ -559,6 +575,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
         
         setAudioSamples(channelDataCombined);
         setAudioFeatures(finalFeatures); // Set audioFeatures state
+        setIndividualBufferValues(individualBufferValues);
 
       } catch (error) {
         console.error("Error processing audio file:", error);
@@ -625,6 +642,8 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
           setProcessedImage={setProcessedImage}
           canvasRef={canvasRef}
           audioFeatures={audioFeatures} // Pass audioFeatures to Canvas
+          individualBufferValues={individualBufferValues}
+          debouncedProcessImage={debouncedProcessImage}
         />
         {selectedImage && (
           <div className='selectors-container-parent'>
@@ -658,8 +677,6 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
               )}
 
               <input id="sound-file" accept="audio/*" type="file" onChange={handleAudioChange}/>
-              <h4>Analysis results:</h4>
-              <h4>{JSON.stringify(finalFeatures, null, 2)}</h4>
             </div>
           </div>
         )}
