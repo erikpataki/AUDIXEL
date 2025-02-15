@@ -1,11 +1,15 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import p5 from 'p5';
 import "./Canvas.css";
 
-const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage, setProcessedImage, canvasRef, audioFeatures, individualBufferValues, debouncedProcessImage }) => {
+const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage, setProcessedImage, canvasRef, audioFeatures, individualBufferValues, debouncedProcessImage, horizontalResolutionValue, verticalResolutionValue }) => {
   const p5ContainerRef = useRef(null);
   const p5InstanceRef = useRef(null);
   const processingCompletedRef = useRef(false); // Add a ref to track processing
+  const [imageLoaded, setImageLoaded] = useState(false); // Add a new state
+
+  let paletteSelected1;
+  let paletteSelected2;
 
   useEffect(() => {
     if (selectedImage) {
@@ -17,63 +21,147 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
         canvas.width = img.width;
         canvas.height = img.height;
         ctx.drawImage(img, 0, 0);
+        setImageLoaded(true); // Set the state to true when image is loaded
       };
     }
   }, [selectedImage, canvasRef]);
-  
-  let colors = [];
 
   useEffect(() => {
-    if (audioFeatures && Object.keys(audioFeatures).length > 0 && individualBufferValues) {
+    if (audioFeatures && Object.keys(audioFeatures).length > 0 && individualBufferValues && imageLoaded) { // Add imageLoaded to the dependency array
       console.log("Audio Features received:", audioFeatures);
       console.log("Individual Buffer Values received:", individualBufferValues);
+
+      // Remove the old p5 instance if it exists
+      if (p5InstanceRef.current) {
+        p5InstanceRef.current.remove();
+        p5InstanceRef.current = null;
+      }
+
+      // Get container dimensions
+      const container = p5ContainerRef.current;
+      const containerWidth = container.offsetWidth;
+      const containerHeight = container.offsetHeight;
+
+      // Calculate aspect ratio
+      const aspectRatio = containerWidth / containerHeight;
+
+      // Adjust canvas dimensions
+      let canvasWidth = horizontalResolutionValue;
+      let canvasHeight = verticalResolutionValue;
+
+      if (canvasWidth / canvasHeight > aspectRatio) {
+        canvasWidth = canvasHeight * aspectRatio;
+      } else {
+        canvasHeight = canvasWidth / aspectRatio;
+      }
+
       const sketch = (p) => {
         p.setup = () => {
           const container = p5ContainerRef.current;
-          const canvas = p.createCanvas(container.offsetWidth, container.offsetHeight);
+          const canvas = p.createCanvas(horizontalResolutionValue, verticalResolutionValue);
           canvas.parent(container);
+          p.angleMode(p.DEGREES);
+          paletteSelected1 = p.random(palettes);
+          paletteSelected2 = p.random(palettes);
           console.log("p5 setup called");
           p.noLoop();
-          generateColors();
         };
 
         p.draw = () => {
-          p.background(20);
+          p.background(paletteSelected1[0]);
           for (let i = 0; i < 200; i++) {
-            drawBlob(p.random(p.width), p.random(p.height), p.random(50, 200));
+            if (p.random() < 0.5) {
+              poly(p.random(p.width), p.random(p.height), p.random(50, 200), p);
+            } else {
+              distortedCircle(p.random(p.width), p.random(p.height), p.random(50, 200), p);
+            }
           }
 
-          // Convert p canvas to data URL and set as selected image
           const dataUrl = p.canvas.toDataURL();
           setSelectedImage(dataUrl);
-          
+
           // Trigger image processing with the new data URL
           if (!processingCompletedRef.current) {
-            const img = new Image();
-            img.src = dataUrl;
-            img.onload = () => {
-              debouncedProcessImage(img, 40, 170, 0, 115);
-              processingCompletedRef.current = true; // Set the flag to true
-            };
+            debouncedProcessImage(dataUrl, 40, 170, 0, 115);
+            processingCompletedRef.current = true; // Set the flag to true
           }
         };
-        
-        function drawBlob(x, y, size) {
-          let col = p.random(colors);
+
+        function poly(x, y, r, p) {
+          let col1 = p.color(p.random(paletteSelected1));
+          col1.setAlpha(30)
+          let col2 = p.color(p.random(paletteSelected2));
           p.noStroke();
-          for (let i = size; i > 0; i -= 5) {
-            p.fill(col[0], col[1], col[2], p.map(i, 0, size, 50, 200));
-            p.ellipse(x + p.noise(i) * 50, y + p.noise(i + 100) * 50, i * 2, i * 1.5);
+          let gradientFill = p.drawingContext.createLinearGradient(
+            0,
+            -r,
+            0,
+            r
+          );
+          gradientFill.addColorStop(0, p.color(col1));
+          gradientFill.addColorStop(1, p.color(col2));
+          p.drawingContext.fillStyle = gradientFill;
+          p.push();
+          p.translate(x, y)
+          p.rotate(p.random(360))
+          let verticesNums = p.int(p.random(3, 6))
+          let depth = p.random(0.1, 0.5)
+          p.beginShape();
+          for (let i = 0; i < 360; i += 1) {
+            let radius = r + (r * depth * p.sin(i * verticesNums));
+            let ex = radius * p.sin(i);
+            let ey = radius * p.cos(i);
+            p.vertex(ex, ey)
           }
+          p.endShape(p.CLOSE)
+          p.pop();
         }
-        
-        function generateColors() {
-          colors = [
-            [200, 20, 20], // Red
-            [250, 100, 150], // Pink
-            [20, 20, 200], // Blue
-            [100, 50, 200] // Purple
-          ];
+
+        function distortedCircle(x, y, r, p) {
+          let col1 = p.color(p.random(paletteSelected1));
+          col1.setAlpha(30)
+          let col2 = p.color(p.random(paletteSelected1));
+          p.noStroke();
+          let gradientFill = p.drawingContext.createLinearGradient(
+            0,
+            -r,
+            0,
+            r
+          );
+          gradientFill.addColorStop(0, p.color(col1));
+          gradientFill.addColorStop(1, p.color(col1));
+          p.drawingContext.fillStyle = gradientFill;
+          p.push();
+          p.translate(x, y)
+          //points
+          let p1 = p.createVector(0, -r / 2);
+          let p2 = p.createVector(r / 2, 0);
+          let p3 = p.createVector(0, r / 2);
+          let p4 = p.createVector(-r / 2, 0)
+          //anker
+          let val = 0.3;
+          let random_a8_1 = p.random(-r * val, r * val)
+          let random_a2_3 = p.random(-r * val, r * val)
+          let random_a4_5 = p.random(-r * val, r * val)
+          let random_a6_7 = p.random(-r * val, r * val)
+          let ran_anker_lenA = r * p.random(0.2, 0.5)
+          let ran_anker_lenB = r * p.random(0.2, 0.5)
+          let a1 = p.createVector(ran_anker_lenA, -r / 2 + random_a8_1);
+          let a2 = p.createVector(r / 2 + random_a2_3, -ran_anker_lenB);
+          let a3 = p.createVector(r / 2 - random_a2_3, ran_anker_lenA);
+          let a4 = p.createVector(ran_anker_lenB, r / 2 + random_a4_5);
+          let a5 = p.createVector(-ran_anker_lenA, r / 2 - random_a4_5);
+          let a6 = p.createVector(-r / 2 + random_a6_7, ran_anker_lenB);
+          let a7 = p.createVector(-r / 2 - random_a6_7, -ran_anker_lenA);
+          let a8 = p.createVector(-ran_anker_lenB, -r / 2 - random_a8_1);
+          p.beginShape();
+          p.vertex(p1.x, p1.y);
+          p.bezierVertex(a1.x, a1.y, a2.x, a2.y, p2.x, p2.y)
+          p.bezierVertex(a3.x, a3.y, a4.x, a4.y, p3.x, p3.y)
+          p.bezierVertex(a5.x, a5.y, a6.x, a6.y, p4.x, p4.y)
+          p.bezierVertex(a7.x, a7.y, a8.x, a8.y, p1.x, p1.y)
+          p.endShape(p.CLOSE);
+          p.pop();
         }
       };
 
@@ -88,7 +176,7 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
         p5InstanceRef.current = null;
       }
     };
-  }, [audioFeatures, setSelectedImage, setProcessedImage, individualBufferValues, debouncedProcessImage, canvasRef]);
+  }, [audioFeatures, setSelectedImage, setProcessedImage, individualBufferValues, debouncedProcessImage, canvasRef, imageLoaded, horizontalResolutionValue, verticalResolutionValue]);
 
   return (
     <div className="image-upload">
@@ -103,31 +191,39 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
           alt={showProcessed ? "Processed" : "Original"}
           className="preview-image-blur"
         />
+        <div
+          id="p5-canvas-container"
+          ref={p5ContainerRef}
+          style={{ 
+            position: 'absolute', 
+            top: 0, 
+            left: 0, 
+            width: '100%', 
+            height: '100%', 
+            zIndex: 3,
+          }}>
+            <canvas 
+              style={{
+                maxWidth: '100%',
+                maxHeight: '100%',
+                objectFit: 'contain',
+                imageRendering: 'pixelated',
+              }}
+            />
+        </div>
       </div>
-      <input
-        id="image-file-input"
-        type="file"
-        accept="image/*"
-        onChange={(e) => {
-          if (e.target.files && e.target.files.length > 0) {
-            const file = e.target.files[0];
-            const reader = new FileReader();
-            reader.onload = function (event) {
-              setSelectedImage(event.target.result);
-            };
-            reader.readAsDataURL(file);
-          }
-        }}
-        style={{ display: 'none' }}
-      />
       <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
-      <div
-        id="p5-canvas-container"
-        ref={p5ContainerRef}
-        style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 3 }}>
-      </div>
     </div>
   );
 };
+
+// Define palettes outside the component
+const palettes = [
+  ["#264653", "#2A9D8F", "#E9C46A", "#F4A261", "#E76F51"],
+  ["#641A1D", "#9A2B2E", "#D03D3F", "#F25C54", "#F08A5D"],
+  ["#2EC4B6", "#CBF3F0", "#FFBF69", "#F4A261", "#264653"],
+  ["#003049", "#D62828", "#F77F00", "#FCBF49", "#EAE2B7"],
+  ["#495464", "#577590", "#4D908E", "#F9C80E", "#F94144"]
+];
 
 export default Canvas;

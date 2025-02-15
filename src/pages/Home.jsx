@@ -18,6 +18,8 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
   const [angle, setAngle] = useState(115);
   const canvasRef = useRef(null);
   const [individualBufferValues, setIndividualBufferValues] = useState([]);
+  const [horizontalResolutionValue, setHorizontalResolutionValue] = useState(1000);
+  const [verticalResolutionValue, setVerticalResolutionValue] = useState(1000);
 
   const debounce = (func, delay) => {
     return (...args) => {
@@ -30,8 +32,8 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     };
   };
 
-  const debouncedProcessImage = useCallback(debounce((image, minThreshold, maxThreshold, sortMode, angle) => {
-    processImage(image, minThreshold, maxThreshold, sortMode, angle);
+  const debouncedProcessImage = useCallback(debounce((dataUrl, minThreshold, maxThreshold, sortMode, angle) => {
+    processImage(dataUrl, minThreshold, maxThreshold, sortMode, angle);
   }, 300), []);
 
   useEffect(() => {
@@ -39,19 +41,27 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
       const img = new Image();
       img.src = selectedImage;
       img.onload = () => {
-        debouncedProcessImage(img, minThreshold, maxThreshold, sortMode, angle);
+        debouncedProcessImage(selectedImage, minThreshold, maxThreshold, sortMode, angle);
       };
     }
   }, [minThreshold, maxThreshold, selectedImage, sortMode, angle, debouncedProcessImage]);
 
-  const processImage = async (image, minThreshold, maxThreshold, sortMode, angle) => {
-    console.log("processImage called", image);
+  const processImage = async (dataUrl, minThreshold, maxThreshold, sortMode, angle) => {
+    console.log("processImage called", dataUrl);
     const canvas = canvasRef.current;
     if (!canvas) {
       console.error("Canvas ref is not available.");
       return;
     }
     const ctx = canvas.getContext('2d');
+
+    const image = new Image();
+    image.src = dataUrl;
+    await new Promise((resolve) => {
+      image.onload = () => {
+        resolve();
+      };
+    });
 
     // Calculate radians from angle
     const radians = (angle * Math.PI) / 180;
@@ -644,6 +654,8 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
           audioFeatures={audioFeatures} // Pass audioFeatures to Canvas
           individualBufferValues={individualBufferValues}
           debouncedProcessImage={debouncedProcessImage}
+          horizontalResolutionValue={horizontalResolutionValue}
+          verticalResolutionValue={verticalResolutionValue}
         />
         {selectedImage && (
           <div className='selectors-container-parent'>
@@ -677,6 +689,26 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
               )}
 
               <input id="sound-file" accept="audio/*" type="file" onChange={handleAudioChange}/>
+              <input
+                type="number"
+                min="1000"
+                max={4000}
+                value={horizontalResolutionValue}
+                onChange={(e) => {
+                  setHorizontalResolutionValue(e.target.value);
+                }}
+                // className="slider-number"
+              />              
+              <input
+                type="number"
+                min="1000"
+                max={4000}
+                value={verticalResolutionValue}
+                onChange={(e) => {
+                  setVerticalResolutionValue(e.target.value);
+                }}
+                // className="slider-number"
+              />
             </div>
           </div>
         )}
