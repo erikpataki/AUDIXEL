@@ -69,11 +69,14 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
 
         p.draw = () => {
           p.background(paletteSelected1[0]);
-          for (let i = 0; i < 200; i++) {
+          // Loop to draw multiple shapes
+          for (let i = 0; i < 200; i++) { // Draws 200 shapes
             if (p.random() < 0.5) {
-              poly(p.random(p.width), p.random(p.height), p.random(50, 200), p);
+              // Draw a polygon with random parameters
+              poly(p.random(p.width), p.random(p.height), p.random(50, 200), p); // x, y, radius, p5 instance
             } else {
-              distortedCircle(p.random(p.width), p.random(p.height), p.random(50, 200), p);
+              // Draw a distorted circle with random parameters
+              distortedCircle(p.random(p.width), p.random(p.height), p.random(50, 200), p); // x, y, radius, p5 instance
             }
           }
 
@@ -88,6 +91,7 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
         };
 
         function poly(x, y, r, p) {
+          // Function to draw a polygon
           let col1 = p.color(p.random(paletteSelected1));
           col1.setAlpha(30)
           let col2 = p.color(p.random(paletteSelected2));
@@ -118,6 +122,7 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
         }
 
         function distortedCircle(x, y, r, p) {
+          // Function to draw a distorted circle
           let col1 = p.color(p.random(paletteSelected1));
           col1.setAlpha(30)
           let col2 = p.color(p.random(paletteSelected1));

@@ -306,12 +306,43 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
   // Download processed image
   const downloadImage = () => {
     const canvas = canvasRef.current;
-    canvas.toBlob((blob) => {
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = 'AUDIXEL-album-cover.png';
-      link.click();
-    }, 'image/png');
+    if (!canvas) {
+      console.error("Canvas ref is not available.");
+      return;
+    }
+
+    const img = new Image();
+    img.src = selectedImage;
+    img.onload = () => {
+      // Create a temporary canvas for the final rotated image
+      const finalCanvas = document.createElement('canvas');
+      const finalCtx = finalCanvas.getContext('2d');
+
+      // Set final canvas size to original image dimensions
+      finalCanvas.width = img.width;
+      finalCanvas.height = img.height;
+
+      // Calculate radians from angle
+      const radians = (angle * Math.PI) / 180;
+
+      // Translate and rotate back to original orientation
+      finalCtx.translate(finalCanvas.width / 2, finalCanvas.height / 2);
+      finalCtx.rotate(-radians);
+
+      // Translate back to the top-left corner for drawing
+      finalCtx.translate(-canvas.width / 2, -canvas.height / 2);
+
+      // Draw the processed image onto the final canvas
+      finalCtx.drawImage(canvas, 0, 0);
+
+      // Use toBlob on the final canvas
+      finalCanvas.toBlob((blob) => {
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'AUDIXEL-album-cover.png';
+        link.click();
+      }, 'image/png');
+    };
   };
 
 
