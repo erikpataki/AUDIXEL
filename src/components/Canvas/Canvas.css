@@ -16,3 +16,7 @@
     z-index: 1;
     object-fit: contain;
 }
+
+.p5Canvas {
+    display: none;
+}
