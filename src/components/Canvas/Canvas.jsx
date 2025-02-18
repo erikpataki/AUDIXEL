@@ -68,9 +68,9 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
         };
 
         p.draw = () => {
-          p.background(paletteSelected1[0]);
+          p.background(0); // Set background to black
           // Loop to draw multiple shapes
-          for (let i = 0; i < 200; i++) { // Draws 200 shapes
+          for (let i = 0; i < individualBufferValues.length; i++) { // Draws a shape for each buffer
             if (p.random() < 0.5) {
               // Draw a polygon with random parameters
               poly(p.random(p.width), p.random(p.height), p.random(50, 200), p); // x, y, radius, p5 instance
@@ -92,9 +92,9 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
 
         function poly(x, y, r, p) {
           // Function to draw a polygon
-          let col1 = p.color(p.random(paletteSelected1));
+          let col1 = p.color(p.random(paletteSelected1)); // Colour 1 - sets the first color for the gradient
           col1.setAlpha(30)
-          let col2 = p.color(p.random(paletteSelected2));
+          let col2 = p.color(p.random(paletteSelected2)); // Colour 2 - sets the second color for the gradient
           p.noStroke();
           let gradientFill = p.drawingContext.createLinearGradient(
             0,
@@ -123,9 +123,9 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
 
         function distortedCircle(x, y, r, p) {
           // Function to draw a distorted circle
-          let col1 = p.color(p.random(paletteSelected1));
+          let col1 = p.color(p.random(paletteSelected1)); // Colour 1 - sets the first color for the gradient
           col1.setAlpha(30)
-          let col2 = p.color(p.random(paletteSelected1));
+          let col2 = p.color(p.random(paletteSelected1)); // Colour 2 - sets the second color for the gradient
           p.noStroke();
           let gradientFill = p.drawingContext.createLinearGradient(
             0,
@@ -134,7 +134,7 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
             r
           );
           gradientFill.addColorStop(0, p.color(col1));
-          gradientFill.addColorStop(1, p.color(col1));
+          gradientFill.addColorStop(1, p.color(col2));
           p.drawingContext.fillStyle = gradientFill;
           p.push();
           p.translate(x, y)

@@ -18,8 +18,8 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
   const [angle, setAngle] = useState(115);
   const canvasRef = useRef(null);
   const [individualBufferValues, setIndividualBufferValues] = useState([]);
-  const [horizontalResolutionValue, setHorizontalResolutionValue] = useState(1000);
-  const [verticalResolutionValue, setVerticalResolutionValue] = useState(1000);
+  const [horizontalResolutionValue, setHorizontalResolutionValue] = useState(2000);
+  const [verticalResolutionValue, setVerticalResolutionValue] = useState(2000);
 
   const debounce = (func, delay) => {
     return (...args) => {
@@ -47,7 +47,6 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
   }, [minThreshold, maxThreshold, selectedImage, sortMode, angle, debouncedProcessImage]);
 
   const processImage = async (dataUrl, minThreshold, maxThreshold, sortMode, angle) => {
-    console.log("processImage called", dataUrl);
     const canvas = canvasRef.current;
     if (!canvas) {
       console.error("Canvas ref is not available.");
@@ -96,21 +95,14 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     tempCtx.translate(-image.width / 2, -image.height / 2);
     tempCtx.drawImage(image, 0, 0);
     
-    console.log("Image dimensions", image.width, image.height);
-    console.log("Temp canvas dimensions", tempCanvas.width, tempCanvas.height);
-    console.log("drawImage called");
-
     // Get image data from the temporary canvas
     const imageData = tempCtx.getImageData(0, 0, newWidth, newHeight);
-    console.log("imageData", imageData);
     const data = new Uint8ClampedArray(imageData.data);
-    console.log("Data before worker", data);
 
     // Create a worker blob to process image data in a separate thread for better performance. Means interface won't freeze while processing
     const workerBlob = new Blob([`
       self.onmessage = function(e) {
         const { data, width, height, minThreshold, maxThreshold, sortMode } = e.data;
-        console.log("Worker received data", data, width, height, minThreshold, maxThreshold, sortMode);
         
         // Function to convert RGBA to HSL
         const rgbaToHsl = (r, g, b) => {
@@ -139,7 +131,6 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
         // Function to process a chunk of image data
         const processChunk = (data, width, height) => {
           const pixels = new Uint8ClampedArray(data);
-          console.log("Processing chunk", width, height);
           
           // Function to check if a pixel meets the threshold
           const meetsThreshold = (i) => {
@@ -227,7 +218,6 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
               }
             }
           }
-          console.log("Processed pixels", pixels);
           return pixels;
         };
 
@@ -299,7 +289,6 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     
     // Update the processed image with the rotated back image
     const rotatedBackDataURL = rotatedBackCanvas.toDataURL();
-    console.log("rotatedBackCanvas.toDataURL()", rotatedBackDataURL);
     setProcessedImage(rotatedBackDataURL);
   };
 
@@ -479,9 +468,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
   const FEATURES = [
     { name: "spectralFlatness", average: true },
     { name: "spectralCentroid", average: true },
-    { name: "rms", average: true },
-    { name: "spectralSlope", average: true },
-    { name: "mfcc", average: false },
+    { name: "spectralKurtosis", average: true },
     // Add more features here as needed
   ];
 
