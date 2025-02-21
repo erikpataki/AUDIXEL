@@ -4,6 +4,9 @@ import Dropdowns from '../components/Dropdowns/Dropdowns';
 import Meyda from "meyda";
 import Slider from '../components/Dropdowns/Slider/Slider';
 import Canvas from '../components/Canvas/Canvas';
+import * as tf from '@tensorflow/tfjs';
+import { preprocess, shortenAudio } from '../audioUtils.js';
+import inferenceWorker from '../inference.js?worker';
 
 const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedImage }) => {
   const [minThreshold, setMinThreshold] = useState(40);
@@ -22,6 +25,32 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
   const [verticalResolutionValue, setVerticalResolutionValue] = useState(2000);
   const [uploadedFile, setUploadedFile] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [EssentiaWASM, setEssentiaWASM] = useState(null);
+  const [essentia, setEssentia] = useState(null);
+  const [moodModel, setMoodModel] = useState(null);
+  const modelNames = [
+    'mood_happy-musicnn-msd-2',
+    'mood_sad-musicnn-msd-2',
+    'mood_relaxed-musicnn-msd-2',
+    'mood_aggressive-musicnn-msd-2',
+    'danceability-musicnn-msd-2'
+  ];
+  const [inferenceWorkers, setInferenceWorkers] = useState({});
+  const [inferenceResultPromises, setInferenceResultPromises] = useState([]);
+  const [essentiaAnalysis, setEssentiaAnalysis] = useState(null);
+  const [previousSpectrum, setPreviousSpectrum] = useState(null);
+  const [moodPredictions, setMoodPredictions] = useState({
+    happy: 0,
+    sad: 0,
+    relaxed: 0,
+    aggressive: 0,
+    danceability: 0
+  });
+  const [featureExtractionWorker, setFeatureExtractionWorker] = useState(null);
+
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  const audioCtx = new AudioContext();
+  const KEEP_PERCENTAGE = 0.15;
 
   const debounce = (func, delay) => {
     return (...args) => {
@@ -231,7 +260,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
 
     const workerUrl = URL.createObjectURL(workerBlob);
     const workerCount = navigator.hardwareConcurrency || 4;
-    const workers = [];
+    const workers = {};
 
     // Always perform horizontal sorting
     const chunkHeight = Math.ceil(newHeight / workerCount);
@@ -243,7 +272,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
       
       const chunk = imageData.data.slice(startY * newWidth * 4, endY * newWidth * 4);
       
-      workers.push(new Promise(resolve => {
+      workers[i] = new Promise(resolve => {
         worker.onmessage = (e) => {
           imageData.data.set(e.data, startY * newWidth * 4);
           worker.terminate();
@@ -258,10 +287,10 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
           maxThreshold,
           sortMode
         });
-      }));
+      });
     }
 
-    await Promise.all(workers);
+    await Promise.all(Object.values(workers));
     URL.revokeObjectURL(workerUrl);
     
     tempCtx.putImageData(imageData, 0, 0);
@@ -486,227 +515,83 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
   let bufferSize = 512;
   let finalFeatures = {};
   const handleAudioChange = async (e) => {
-    e.preventDefault(); // Prevent potential default behavior
-    file = e.target.files[0];
-    console.log("sound-file", file);
+    e.preventDefault();
+    const file = e.target.files[0];
     
     if (file) {
-      setUploadedFile(file); // Store the uploaded file in state
-
+      setUploadedFile(file);
+      setIsProcessing(true);
+      
       try {
-        setIsProcessing(true); // Start processing
-        const startTime = performance.now(); // Start timer
-
-        // Read the file as an array buffer
-        const arrayBuffer = await file.arrayBuffer();
-        
-        // Create an AudioContext and decode the audio data
+        // Existing Meyda processing
+        const audioBuffer = await file.arrayBuffer();
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        const decodedAudio = await audioContext.decodeAudioData(audioBuffer);
         
-        // Get the number of channels
-        const numberOfChannels = audioBuffer.numberOfChannels;
-        // console.log("Number of Channels:", numberOfChannels);
+        const numberOfChannels = decodedAudio.numberOfChannels;
+        const channelDataCombined = new Float32Array(decodedAudio.length);
         
-        // Combine all channels by averaging their samples
-        const channelDataCombined = new Float32Array(audioBuffer.length);
-        for (let idx = 0; idx < audioBuffer.length; idx++) {
+        for (let i = 0; i < decodedAudio.length; i++) {
           let sum = 0;
-          for (let i = 0; i < numberOfChannels; i++) {
-            sum += audioBuffer.getChannelData(i)[idx];
+          for (let channel = 0; channel < numberOfChannels; channel++) {
+            sum += decodedAudio.getChannelData(channel)[i];
           }
-          channelDataCombined[idx] = sum / numberOfChannels;
+          channelDataCombined[i] = sum / numberOfChannels;
         }
 
-        // Optimized normalization: Find max amplitude using a loop
-        // let maxAmplitude = 0;
-        // for (let idx = 0; idx < channelDataCombined.length; idx++) {
-        //   const absSample = Math.abs(channelDataCombined[idx]);
-        //   if (absSample > maxAmplitude) {
-        //     maxAmplitude = absSample;
-        //   }
-        // }
-        // console.log("Max Amplitude before normalization:", maxAmplitude);
-
-        // if (maxAmplitude > 0 && maxAmplitude !== 1) {
-        //   for (let idx = 0; idx < channelDataCombined.length; idx++) {
-        //     channelDataCombined[idx] /= maxAmplitude;
-        //   }
-        //   console.log("Normalization applied: All samples scaled by maxAmplitude.");
-        // } else {
-        //   console.log("No normalization needed: Max amplitude is 1.");
-        // }
-
-        // Verification After Normalization
-        // let verifyMax = 0;
-        // for (let idx = 0; idx < channelDataCombined.length; idx++) {
-        //   const absSample = Math.abs(channelDataCombined[idx]);
-        //   if (absSample > verifyMax) {
-        //     verifyMax = absSample;
-        //   }
-        // }
-        // console.log("Verified Max Amplitude after normalization:", verifyMax); // Should be 1
-        
-        const totalBuffers = Math.floor(channelDataCombined.length / bufferSize);
-        const remainingSamples = channelDataCombined.length % bufferSize;
-        const features = {};
-        const individualBufferValues = []; // New variable to store individual buffer values
-        
-        // Initialize accumulation objects for averages
-        FEATURES.forEach(feature => {
-          // For average calculations, use an array so we can later compute the average
-          features[feature.name] = feature.average ? [] : 0;
-          
-          // Initialize finalFeatures for this feature once (outside of the buffer loop)
-          finalFeatures[feature.name] = {
-            average: feature.average ? 0 : undefined,
-            // For min, start with Infinity so that any proper value is less
-            min: feature.min ? Infinity : undefined,
-            // For max, start with -Infinity so that any proper value is greater
-            max: feature.max ? -Infinity : undefined,
-          };
-        });
-
-        for (let i = 0; i < totalBuffers; i++) {
-          const buffer = channelDataCombined.subarray(i * bufferSize, (i + 1) * bufferSize);
-          const bufferFeatures = {}; // Store individual buffer feature values
-
-          FEATURES.forEach(feature => {
+        // Keep existing Meyda feature extraction
+        const bufferSize = 512;
+        for (let i = 0; i < channelDataCombined.length; i += bufferSize) {
+          const chunk = channelDataCombined.slice(i, i + bufferSize);
+          if (chunk.length === bufferSize) {
             try {
-              const value = Meyda.extract(feature.name, buffer, {
-                bufferSize: bufferSize,
-                sampleRate: audioContext.sampleRate,
-              });
-
-              // Check if value is valid before processing
-              if (value === null || value === undefined || Number.isNaN(value)) {
-                // console.warn(`Invalid ${feature.name} value:`, value);
-                return; // Skip this feature for this buffer
-              }
-
-              // Normalize only spectral kurtosis
-              let normalizedValue = value;
-              if (feature.name === 'spectralKurtosis') {
-                const minKurtosis = -25;
-                const maxKurtosis = 25;
-                normalizedValue = Math.max(0, Math.min(1, 
-                  (value - minKurtosis) / (maxKurtosis - minKurtosis)
-                ));
-              }
-
-              // Ensure normalized value is valid before storing
-              if (!Number.isNaN(normalizedValue)) {
-                bufferFeatures[feature.name] = normalizedValue;
-
-                // For average accumulation:
-                if (feature.average) {
-                  features[feature.name].push(normalizedValue);
-                } else {
-                  features[feature.name] += normalizedValue;
-                }
-
-                // Update min/max only if value is valid
-                if (feature.min && (!finalFeatures[feature.name].min || normalizedValue < finalFeatures[feature.name].min)) {
-                  finalFeatures[feature.name].min = normalizedValue;
-                }
-                if (feature.max && (!finalFeatures[feature.name].max || normalizedValue > finalFeatures[feature.name].max)) {
-                  finalFeatures[feature.name].max = normalizedValue;
-                }
-              }
-            } catch (error) {
-              console.error(`Error processing ${feature.name}:`, error);
-            }
-          });
-
-          individualBufferValues.push(bufferFeatures);
-        }
-
-        // Handle any remaining samples by padding with zeros to reach bufferSize
-        if (remainingSamples > 0) {
-          const buffer = new Float32Array(bufferSize);
-          buffer.set(channelDataCombined.subarray(channelDataCombined.length - remainingSamples));
-          const bufferFeatures = {};
-
-          FEATURES.forEach(feature => {
-            const value = Meyda.extract(feature.name, buffer, {
-              bufferSize: bufferSize,
-              sampleRate: audioContext.sampleRate,
-            });
-            bufferFeatures[feature.name] = value;
-
-            if (feature.average) {
-              // Weight the value according to the proportion of valid samples
-              const validProportion = remainingSamples / bufferSize;
-              features[feature.name].push(value * validProportion);
-            } else {
-              features[feature.name] += value * (remainingSamples / bufferSize);
-            }
-
-            // Update min for remaining samples:
-            if (feature.min && value < finalFeatures[feature.name].min) {
-              finalFeatures[feature.name].min = value;
-              // console.log(`Buffer ${totalBuffers}: new min for ${feature.name} = ${value}`);
-            }
-
-            // Update max for remaining samples:
-            if (feature.max && value > finalFeatures[feature.name].max) {
-              finalFeatures[feature.name].max = value;
-              // console.log(`Buffer ${totalBuffers}: new max for ${feature.name} = ${value}`);
-            }
-          });
-
-          individualBufferValues.push(bufferFeatures);
-        }
-
-        // When computing final averages, add trimming of start/end buffers
-        FEATURES.forEach(feature => {
-          if (feature.average) {
-            const validValues = features[feature.name].filter(val => 
-              val !== null && 
-              val !== undefined && 
-              !Number.isNaN(val)
-            );
-            
-            if (validValues.length > 0) {
-              // Calculate how many samples to skip at start and end (1/20th each)
-              const skipCount = Math.floor(validValues.length / 20);
-              
-              // Get the middle 90% of values (skip first and last 5%)
-              const trimmedValues = validValues.slice(skipCount, -skipCount);
-              
-              if (trimmedValues.length > 0) {
-                const sum = trimmedValues.reduce((acc, val) => acc + val, 0);
-                finalFeatures[feature.name].average = sum / trimmedValues.length;
-              } else {
-                console.warn(`No valid values remaining after trimming for ${feature.name}`);
-                finalFeatures[feature.name].average = 0;
-              }
-            } else {
-              console.warn(`No valid values for ${feature.name} average calculation`);
-              finalFeatures[feature.name].average = 0;
+              const features = Meyda.extract(["rms", "zcr", "energy"], chunk);
+              setAudioFeatures(prev => ({
+                ...prev,
+                ...features
+              }));
+            } catch (chunkError) {
+              console.error("Error processing chunk:", chunkError);
             }
           }
-        });
+        }
 
-        const endTime = performance.now(); // End timer
-        const elapsedTime = (endTime - startTime) / 1000; // Convert to seconds
-        console.log(`Audio feature extraction took ${elapsedTime.toFixed(2)} seconds.`); // Log elapsed time in seconds
+        // New Essentia mood detection
+        const preprocessedAudio = preprocess(decodedAudio);
+        await audioCtx.suspend();
 
-        console.log("Final Features:", finalFeatures);
-        console.log("Individual Buffer Values:", individualBufferValues); // Log individual buffer values
-        
-        setAudioSamples(channelDataCombined);
-        setAudioFeatures(finalFeatures); // Set audioFeatures state
-        setIndividualBufferValues(individualBufferValues);
+        let audioData = shortenAudio(preprocessedAudio, KEEP_PERCENTAGE, true);
 
-        console.log("Audio File Sample Rate:", audioBuffer.sampleRate);
-        console.log("Audio Context Sample Rate:", audioContext.sampleRate);
+        if (!featureExtractionWorker) {
+          createFeatureExtractionWorker();
+        }
+
+        if (Object.keys(inferenceWorkers).length === 0) {
+          createInferenceWorkers();
+        }
+
+        featureExtractionWorker.postMessage({
+          audio: audioData.buffer
+        }, [audioData.buffer]);
 
       } catch (error) {
-        console.error("Error processing audio file:", error);
+        console.error("Error processing audio:", error);
       } finally {
-        setIsProcessing(false); // End processing
+        setIsProcessing(false);
       }
+    }
+  };
+
+  const handleInferenceResult = (msg) => {
+    if (msg.data.predictions) {
+      const mood = msg.data.name;
+      const prediction = msg.data.predictions;
+      
+      // Update state with mood prediction
+      setMoodPredictions(prev => ({
+        ...prev,
+        [mood]: prediction
+      }));
     }
   };
 
@@ -757,6 +642,96 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
         { value: 4, label: 'Lightness' }
     ],
   };
+
+  const createFeatureExtractionWorker = () => {
+    featureExtractionWorker = new Worker('./src/featureExtraction.js');
+    featureExtractionWorker.onmessage = (msg) => {
+      if (msg.data.features) {
+        modelNames.forEach((name) => {
+          inferenceWorkers[name].postMessage({
+            features: msg.data.features
+          });
+        });
+        msg.data.features = null;
+      }
+      featureExtractionWorker.terminate();
+    };
+  };
+
+  const createInferenceWorkers = () => {
+    modelNames.forEach((name) => {
+      inferenceWorkers[name] = new inferenceWorker();
+      inferenceWorkers[name].postMessage({
+        name: name
+      });
+      inferenceWorkers[name].onmessage = (msg) => {
+        if (msg.data.predictions) {
+          const predictions = msg.data.predictions;
+          inferenceResultPromises.push(new Promise((resolve) => {
+            resolve({ [name]: predictions });
+          }));
+          collectPredictions();
+          console.log(`${name} predictions:`, predictions);
+        }
+      };
+    });
+  };
+
+  const collectPredictions = () => {
+    if (inferenceResultPromises.length === modelNames.length) {
+      Promise.all(inferenceResultPromises).then((predictions) => {
+        const allPredictions = {};
+        Object.assign(allPredictions, ...predictions);
+        console.log('All mood predictions:', allPredictions);
+        setMoodPredictions(allPredictions);
+        inferenceResultPromises = [];
+      });
+    }
+  };
+
+  useEffect(() => {
+    const loadEssentia = async () => {
+      try {
+        if (window.EssentiaWASM) {
+          console.log("Starting Essentia initialization...");
+          const wasmModule = await window.EssentiaWASM();
+          console.log("WASM module loaded:", wasmModule);
+          
+          // Check if we have the VectorFloat constructor
+          if (!wasmModule.VectorFloat) {
+            console.error("VectorFloat not found in WASM module:", wasmModule);
+            return;
+          }
+
+          const essentiaInstance = new wasmModule.EssentiaJS(false);
+          essentiaInstance.arrayToVector = wasmModule.arrayToVector;
+          setEssentia(essentiaInstance);
+          
+          console.log("Essentia initialized successfully");
+          console.log("About to create inference workers...");
+          createInferenceWorkers();
+          console.log("Called createInferenceWorkers");
+        } else {
+          console.error("EssentiaWASM not found on window object");
+        }
+      } catch (error) {
+        console.error("Error loading Essentia:", error, error.stack);
+      }
+    };
+
+    loadEssentia();
+  }, []);
+
+  useEffect(() => {
+    if (Object.keys(inferenceWorkers).length > 0) {
+      console.log('Inference workers created:', inferenceWorkers);
+      // Test sending a message to one worker
+      const testWorker = inferenceWorkers[modelNames[0]];
+      if (testWorker) {
+        testWorker.postMessage({ test: 'initialization' });
+      }
+    }
+  }, [inferenceWorkers]);
 
   return (
     <div className='upload-parent-parent'>
