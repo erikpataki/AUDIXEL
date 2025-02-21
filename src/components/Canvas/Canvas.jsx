@@ -125,6 +125,7 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
               // console.log("individualBufferValues[i].spectralFlatness + (individualBufferValues[i].spectralCentroid/(bufferSize/4)))/2:", (individualBufferValues[i].spectralFlatness + (individualBufferValues[i].spectralCentroid/(bufferSize/4)))/2);
               // Draw a polygon with random parameters
               poly(p.random(p.width), p.random(p.height), individualBufferValues[i].energy, p, individualBufferValues[i].spectralKurtosis); // x, y, radius, p5 instance
+              // distortedCircle(p.random(p.width), p.random(p.height), p.random(50, 200), p); // x, y, radius, p5 instance
             } 
             // else {
             //   // Draw a distorted circle with random parameters
@@ -174,50 +175,50 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
           p.pop();
         }
 
-        // function distortedCircle(x, y, r, p) {
-        //   // Function to draw a distorted circle
-        //   p.noStroke();
-        //   let gradientFill = p.drawingContext.createLinearGradient(
-        //     0,
-        //     -r,
-        //     0,
-        //     r
-        //   );
-        //   gradientFill.addColorStop(0, p.color(col1));
-        //   gradientFill.addColorStop(1, p.color(col2));
-        //   p.drawingContext.fillStyle = gradientFill;
-        //   p.push();
-        //   p.translate(x, y)
-        //   //points
-        //   let p1 = p.createVector(0, -r / 2);
-        //   let p2 = p.createVector(r / 2, 0);
-        //   let p3 = p.createVector(0, r / 2);
-        //   let p4 = p.createVector(-r / 2, 0)
-        //   //anker
-        //   let val = 0.3;
-        //   let random_a8_1 = p.random(-r * val, r * val)
-        //   let random_a2_3 = p.random(-r * val, r * val)
-        //   let random_a4_5 = p.random(-r * val, r * val)
-        //   let random_a6_7 = p.random(-r * val, r * val)
-        //   let ran_anker_lenA = r * p.random(0.2, 0.5)
-        //   let ran_anker_lenB = r * p.random(0.2, 0.5)
-        //   let a1 = p.createVector(ran_anker_lenA, -r / 2 + random_a8_1);
-        //   let a2 = p.createVector(r / 2 + random_a2_3, -ran_anker_lenB);
-        //   let a3 = p.createVector(r / 2 - random_a2_3, ran_anker_lenA);
-        //   let a4 = p.createVector(ran_anker_lenB, r / 2 + random_a4_5);
-        //   let a5 = p.createVector(-ran_anker_lenA, r / 2 - random_a4_5);
-        //   let a6 = p.createVector(-r / 2 + random_a6_7, ran_anker_lenB);
-        //   let a7 = p.createVector(-r / 2 - random_a6_7, -ran_anker_lenA);
-        //   let a8 = p.createVector(-ran_anker_lenB, -r / 2 - random_a8_1);
-        //   p.beginShape();
-        //   p.vertex(p1.x, p1.y);
-        //   p.bezierVertex(a1.x, a1.y, a2.x, a2.y, p2.x, p2.y)
-        //   p.bezierVertex(a3.x, a3.y, a4.x, a4.y, p3.x, p3.y)
-        //   p.bezierVertex(a5.x, a5.y, a6.x, a6.y, p4.x, p4.y)
-        //   p.bezierVertex(a7.x, a7.y, a8.x, a8.y, p1.x, p1.y)
-        //   p.endShape(p.CLOSE);
-        //   p.pop();
-        // }
+        function distortedCircle(x, y, r, p) {
+          // Function to draw a distorted circle
+          p.noStroke();
+          let gradientFill = p.drawingContext.createLinearGradient(
+            0,
+            -r,
+            0,
+            r
+          );
+          gradientFill.addColorStop(0, p.color(col1));
+          gradientFill.addColorStop(1, p.color(col2));
+          p.drawingContext.fillStyle = gradientFill;
+          p.push();
+          p.translate(x, y)
+          //points
+          let p1 = p.createVector(0, -r / 2);
+          let p2 = p.createVector(r / 2, 0);
+          let p3 = p.createVector(0, r / 2);
+          let p4 = p.createVector(-r / 2, 0)
+          //anker
+          let val = 0.3;
+          let random_a8_1 = p.random(-r * val, r * val)
+          let random_a2_3 = p.random(-r * val, r * val)
+          let random_a4_5 = p.random(-r * val, r * val)
+          let random_a6_7 = p.random(-r * val, r * val)
+          let ran_anker_lenA = r * p.random(0.2, 0.5)
+          let ran_anker_lenB = r * p.random(0.2, 0.5)
+          let a1 = p.createVector(ran_anker_lenA, -r / 2 + random_a8_1);
+          let a2 = p.createVector(r / 2 + random_a2_3, -ran_anker_lenB);
+          let a3 = p.createVector(r / 2 - random_a2_3, ran_anker_lenA);
+          let a4 = p.createVector(ran_anker_lenB, r / 2 + random_a4_5);
+          let a5 = p.createVector(-ran_anker_lenA, r / 2 - random_a4_5);
+          let a6 = p.createVector(-r / 2 + random_a6_7, ran_anker_lenB);
+          let a7 = p.createVector(-r / 2 - random_a6_7, -ran_anker_lenA);
+          let a8 = p.createVector(-ran_anker_lenB, -r / 2 - random_a8_1);
+          p.beginShape();
+          p.vertex(p1.x, p1.y);
+          p.bezierVertex(a1.x, a1.y, a2.x, a2.y, p2.x, p2.y)
+          p.bezierVertex(a3.x, a3.y, a4.x, a4.y, p3.x, p3.y)
+          p.bezierVertex(a5.x, a5.y, a6.x, a6.y, p4.x, p4.y)
+          p.bezierVertex(a7.x, a7.y, a8.x, a8.y, p1.x, p1.y)
+          p.endShape(p.CLOSE);
+          p.pop();
+        }
       };
 
       // Store the p instance in the ref
