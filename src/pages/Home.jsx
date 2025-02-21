@@ -20,6 +20,8 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
   const [individualBufferValues, setIndividualBufferValues] = useState([]);
   const [horizontalResolutionValue, setHorizontalResolutionValue] = useState(2000);
   const [verticalResolutionValue, setVerticalResolutionValue] = useState(2000);
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const debounce = (func, delay) => {
     return (...args) => {
@@ -97,7 +99,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     
     // Get image data from the temporary canvas
     const imageData = tempCtx.getImageData(0, 0, newWidth, newHeight);
-    const data = new Uint8ClampedArray(imageData.data);
+    // const data = new Uint8ClampedArray(imageData.data);
 
     // Create a worker blob to process image data in a separate thread for better performance. Means interface won't freeze while processing
     const workerBlob = new Blob([`
@@ -328,8 +330,14 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
       finalCanvas.toBlob((blob) => {
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = 'AUDIXEL-album-cover.png';
+        const downloadFilename = uploadedFile 
+        ? `${uploadedFile.name.replace(/\.[^/.]+$/, "")}-album-cover.png` 
+        : `AUDIXEL-album-cover.png`;
+        link.download = downloadFilename;
         link.click();
+
+        // Clean up the object URL after download
+        URL.revokeObjectURL(link.href);
       }, 'image/png');
     };
   };
@@ -466,23 +474,28 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
 
   // Define the features to extract with their respective options
   const FEATURES = [
-    { name: "spectralFlatness", average: true },
-    { name: "spectralCentroid", average: true },
-    { name: "spectralKurtosis", average: true },
+    { name: "spectralFlatness", average: true, min: true, max: true  },
+    { name: "spectralCentroid", average: true, min: true, max: true },
+    { name: "energy", average: true, min: true, max: true },
+    { name: "spectralKurtosis", average: true, min: true, max: true },
+    { name: "spectralSpread", average: true, min: true, max: true },
     // Add more features here as needed
   ];
 
+  let file;
+  let bufferSize = 512;
   let finalFeatures = {};
   const handleAudioChange = async (e) => {
     e.preventDefault(); // Prevent potential default behavior
-    const file = e.target.files[0];
+    file = e.target.files[0];
     console.log("sound-file", file);
     
     if (file) {
-      try {
-        const startTime = performance.now(); // Start timer
+      setUploadedFile(file); // Store the uploaded file in state
 
-        const bufferSize = 4096;
+      try {
+        setIsProcessing(true); // Start processing
+        const startTime = performance.now(); // Start timer
 
         // Read the file as an array buffer
         const arrayBuffer = await file.arrayBuffer();
@@ -493,7 +506,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
         
         // Get the number of channels
         const numberOfChannels = audioBuffer.numberOfChannels;
-        console.log("Number of Channels:", numberOfChannels);
+        // console.log("Number of Channels:", numberOfChannels);
         
         // Combine all channels by averaging their samples
         const channelDataCombined = new Float32Array(audioBuffer.length);
@@ -506,23 +519,23 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
         }
 
         // Optimized normalization: Find max amplitude using a loop
-        let maxAmplitude = 0;
-        for (let idx = 0; idx < channelDataCombined.length; idx++) {
-          const absSample = Math.abs(channelDataCombined[idx]);
-          if (absSample > maxAmplitude) {
-            maxAmplitude = absSample;
-          }
-        }
-        console.log("Max Amplitude before normalization:", maxAmplitude);
+        // let maxAmplitude = 0;
+        // for (let idx = 0; idx < channelDataCombined.length; idx++) {
+        //   const absSample = Math.abs(channelDataCombined[idx]);
+        //   if (absSample > maxAmplitude) {
+        //     maxAmplitude = absSample;
+        //   }
+        // }
+        // console.log("Max Amplitude before normalization:", maxAmplitude);
 
-        if (maxAmplitude > 0 && maxAmplitude !== 1) {
-          for (let idx = 0; idx < channelDataCombined.length; idx++) {
-            channelDataCombined[idx] /= maxAmplitude;
-          }
-          console.log("Normalization applied: All samples scaled by maxAmplitude.");
-        } else {
-          console.log("No normalization needed: Max amplitude is 1.");
-        }
+        // if (maxAmplitude > 0 && maxAmplitude !== 1) {
+        //   for (let idx = 0; idx < channelDataCombined.length; idx++) {
+        //     channelDataCombined[idx] /= maxAmplitude;
+        //   }
+        //   console.log("Normalization applied: All samples scaled by maxAmplitude.");
+        // } else {
+        //   console.log("No normalization needed: Max amplitude is 1.");
+        // }
 
         // Verification After Normalization
         // let verifyMax = 0;
@@ -539,58 +552,139 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
         const features = {};
         const individualBufferValues = []; // New variable to store individual buffer values
         
-        // Initialize features object
+        // Initialize accumulation objects for averages
         FEATURES.forEach(feature => {
+          // For average calculations, use an array so we can later compute the average
           features[feature.name] = feature.average ? [] : 0;
+          
+          // Initialize finalFeatures for this feature once (outside of the buffer loop)
+          finalFeatures[feature.name] = {
+            average: feature.average ? 0 : undefined,
+            // For min, start with Infinity so that any proper value is less
+            min: feature.min ? Infinity : undefined,
+            // For max, start with -Infinity so that any proper value is greater
+            max: feature.max ? -Infinity : undefined,
+          };
         });
 
         for (let i = 0; i < totalBuffers; i++) {
           const buffer = channelDataCombined.subarray(i * bufferSize, (i + 1) * bufferSize);
-          const bufferFeatures = {}; // Store features for the current buffer
+          const bufferFeatures = {}; // Store individual buffer feature values
+
           FEATURES.forEach(feature => {
-            const value = Meyda.extract(feature.name, buffer, {
-              bufferSize: bufferSize,
-              sampleRate: audioContext.sampleRate,
-            });
-            bufferFeatures[feature.name] = value; // Store individual buffer feature value
-            if (feature.average) {
-              features[feature.name].push(value);
-            } else {
-              features[feature.name] += value;
+            try {
+              const value = Meyda.extract(feature.name, buffer, {
+                bufferSize: bufferSize,
+                sampleRate: audioContext.sampleRate,
+              });
+
+              // Check if value is valid before processing
+              if (value === null || value === undefined || Number.isNaN(value)) {
+                // console.warn(`Invalid ${feature.name} value:`, value);
+                return; // Skip this feature for this buffer
+              }
+
+              // Normalize only spectral kurtosis
+              let normalizedValue = value;
+              if (feature.name === 'spectralKurtosis') {
+                const minKurtosis = -25;
+                const maxKurtosis = 25;
+                normalizedValue = Math.max(0, Math.min(1, 
+                  (value - minKurtosis) / (maxKurtosis - minKurtosis)
+                ));
+              }
+
+              // Ensure normalized value is valid before storing
+              if (!Number.isNaN(normalizedValue)) {
+                bufferFeatures[feature.name] = normalizedValue;
+
+                // For average accumulation:
+                if (feature.average) {
+                  features[feature.name].push(normalizedValue);
+                } else {
+                  features[feature.name] += normalizedValue;
+                }
+
+                // Update min/max only if value is valid
+                if (feature.min && (!finalFeatures[feature.name].min || normalizedValue < finalFeatures[feature.name].min)) {
+                  finalFeatures[feature.name].min = normalizedValue;
+                }
+                if (feature.max && (!finalFeatures[feature.name].max || normalizedValue > finalFeatures[feature.name].max)) {
+                  finalFeatures[feature.name].max = normalizedValue;
+                }
+              }
+            } catch (error) {
+              console.error(`Error processing ${feature.name}:`, error);
             }
           });
-          individualBufferValues.push(bufferFeatures); // Add current buffer features to the array
+
+          individualBufferValues.push(bufferFeatures);
         }
 
         // Handle any remaining samples by padding with zeros to reach bufferSize
         if (remainingSamples > 0) {
           const buffer = new Float32Array(bufferSize);
           buffer.set(channelDataCombined.subarray(channelDataCombined.length - remainingSamples));
-          const bufferFeatures = {}; // Store features for the current buffer
+          const bufferFeatures = {};
+
           FEATURES.forEach(feature => {
             const value = Meyda.extract(feature.name, buffer, {
               bufferSize: bufferSize,
               sampleRate: audioContext.sampleRate,
             });
-            bufferFeatures[feature.name] = value; // Store individual buffer feature value
+            bufferFeatures[feature.name] = value;
+
             if (feature.average) {
-              // Calculate the proportion of valid samples
+              // Weight the value according to the proportion of valid samples
               const validProportion = remainingSamples / bufferSize;
               features[feature.name].push(value * validProportion);
             } else {
               features[feature.name] += value * (remainingSamples / bufferSize);
             }
+
+            // Update min for remaining samples:
+            if (feature.min && value < finalFeatures[feature.name].min) {
+              finalFeatures[feature.name].min = value;
+              // console.log(`Buffer ${totalBuffers}: new min for ${feature.name} = ${value}`);
+            }
+
+            // Update max for remaining samples:
+            if (feature.max && value > finalFeatures[feature.name].max) {
+              finalFeatures[feature.name].max = value;
+              // console.log(`Buffer ${totalBuffers}: new max for ${feature.name} = ${value}`);
+            }
           });
-          individualBufferValues.push(bufferFeatures); // Add current buffer features to the array
+
+          individualBufferValues.push(bufferFeatures);
         }
 
-        // Compute final features excluding padded zeroes
+        // When computing final averages, add trimming of start/end buffers
         FEATURES.forEach(feature => {
           if (feature.average) {
-            const sum = features[feature.name].reduce((acc, val) => acc + val, 0);
-            finalFeatures[feature.name] = sum / features[feature.name].length;
-          } else {
-            finalFeatures[feature.name] = features[feature.name];
+            const validValues = features[feature.name].filter(val => 
+              val !== null && 
+              val !== undefined && 
+              !Number.isNaN(val)
+            );
+            
+            if (validValues.length > 0) {
+              // Calculate how many samples to skip at start and end (1/20th each)
+              const skipCount = Math.floor(validValues.length / 20);
+              
+              // Get the middle 90% of values (skip first and last 5%)
+              const trimmedValues = validValues.slice(skipCount, -skipCount);
+              
+              if (trimmedValues.length > 0) {
+                const sum = trimmedValues.reduce((acc, val) => acc + val, 0);
+                finalFeatures[feature.name].average = sum / trimmedValues.length;
+              } else {
+                console.warn(`No valid values remaining after trimming for ${feature.name}`);
+                finalFeatures[feature.name].average = 0;
+              }
+            } else {
+              console.warn(`No valid values for ${feature.name} average calculation`);
+              finalFeatures[feature.name].average = 0;
+            }
           }
         });
 
@@ -605,8 +699,13 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
         setAudioFeatures(finalFeatures); // Set audioFeatures state
         setIndividualBufferValues(individualBufferValues);
 
+        console.log("Audio File Sample Rate:", audioBuffer.sampleRate);
+        console.log("Audio Context Sample Rate:", audioContext.sampleRate);
+
       } catch (error) {
         console.error("Error processing audio file:", error);
+      } finally {
+        setIsProcessing(false); // End processing
       }
     }
   };
@@ -663,6 +762,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     <div className='upload-parent-parent'>
       <div className='upload-parent'>
         <Canvas
+          bufferSize={bufferSize}
           selectedImage={selectedImage}
           processedImage={processedImage}
           showProcessed={showProcessed}
