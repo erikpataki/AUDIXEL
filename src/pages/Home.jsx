@@ -2,8 +2,9 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import "./Home.css";
 import Dropdowns from '../components/Dropdowns/Dropdowns';
 import Meyda from "meyda";
-import Slider from '../components/Dropdowns/Slider/Slider';
+// import Slider from '../components/Dropdowns/Slider/Slider';
 import Canvas from '../components/Canvas/Canvas';
+import * as realtimeBpm from 'realtime-bpm-analyzer';
 
 const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedImage }) => {
   const [minThreshold, setMinThreshold] = useState(40);
@@ -476,6 +477,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
 
   // Define the features to extract with their respective options
   const FEATURES = [
+    // Meyda features
     { name: "spectralFlatness", average: true, min: true, max: true },
     { name: "spectralCentroid", average: true, min: true, max: true },
     { name: "energy", average: true, min: true, max: true },
@@ -510,9 +512,23 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
         const audioContext = new (window.AudioContext || window.webkitAudioContext)();
         const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
 
+
         let previousSignal = null;
         const features = {};
         const finalFeatures = {};
+
+        const reader = new FileReader();
+        reader.addEventListener('load', () => {
+          // The file is uploaded, now we decode it
+          audioContext.decodeAudioData(reader.result, audioBuffer => {
+            // The result is passed to the analyzer
+            realtimeBpm.analyzeFullBuffer(audioBuffer).then(topCandidates => {
+              // Do something with the BPM
+              console.log('topCandidates', topCandidates);
+            });
+          });
+        });
+        reader.readAsArrayBuffer(file);
         
         // Initialize arrays for each feature
         FEATURES.forEach(feature => {

@@ -11,7 +11,7 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
   // let paletteSelected1;
   // let paletteSelected2;
 
-  console.log("audioFeatures:", audioFeatures);
+  // console.log("audioFeatures:", audioFeatures);
   // console.log("(audioFeatures.energy.max - audioFeatures.energy.min)*100:", (30/(audioFeatures.energy.max - audioFeatures.energy.min))*100);
   // console.log("individualBufferValues:", individualBufferValues);
 
@@ -53,15 +53,21 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
 
     if (value) {
       r = Math.max(0, Math.min(255, Math.round(127 * (1 - value))));
-      g = Math.max(0, Math.min(255, Math.round(Math.abs(audioFeatures.spectralKurtosis.average)*value)));
+      // g = Math.max(0, Math.min(255, Math.round(Math.abs(audioFeatures.spectralKurtosis.average)*value)));
+      g = Math.round(Math.floor(Math.random() * (256* (1-value))));
       b = Math.max(0, Math.min(255, Math.round(127 * value)));
 
-      color1 = `rgba(${r}, ${g}, ${b}, 0.3)`;
+      color1 = `rgba(${r}, ${g}, ${b}, 0.4)`;
       // color2 = `rgba(${b}, ${g}, ${r}, 0.3)`; // Inverse RGB values for contrast
       // color2 = color1;
       let darkenFactor = 0.6; // 80% of the original brightness
       // let color2 = `rgba(${ Math.round(r * darkenFactor)}, ${Math.round(g * darkenFactor)}, ${Math.round(b * darkenFactor)}, 0.3)`;
-      color2 = `rgba(${Math.max(0, Math.min(255, Math.round(r * darkenFactor)))}, ${Math.max(0, Math.min(255, Math.round(g * darkenFactor)))}, ${Math.max(0, Math.min(255, Math.round(b * darkenFactor)))}, 0.3)`;
+      // color2 = `rgba(${Math.max(0, Math.min(255, Math.round(r * darkenFactor)))}, ${Math.max(0, Math.min(255, Math.round(g * darkenFactor)))}, ${Math.max(0, Math.min(255, Math.round(b * darkenFactor)))}, 0.3)`;
+      if (r > b) {
+        color2 = "rgba(0, 0, 0, 0.2)";  // black with 0.2 opacity
+      } else {
+        color2 = "rgba(255, 255, 255, 0.2)";  // white with 0.2 opacity
+      }    
     }
     // }
 
@@ -124,7 +130,7 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
             let kurtosisRange = audioFeatures.spectralKurtosis.max*0.4 - audioFeatures.spectralKurtosis.min;
             let normalizedKurtosis = (individualBufferValues[i].spectralKurtosis - audioFeatures.spectralKurtosis.min) / kurtosisRange;
 
-            console.log("normalizedKurtosis:", normalizedKurtosis)
+            // console.log("normalizedKurtosis:", normalizedKurtosis)
             
             // Calculate aggressiveness using normalized kurtosis
             let aggressiveness = (individualBufferValues[i].energy / audioFeatures.energy.max) * 0 + 
