@@ -11,7 +11,7 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
   // let paletteSelected1;
   // let paletteSelected2;
 
-  // console.log("audioFeatures:", audioFeatures);
+  console.log("audioFeatures:", audioFeatures);
   // console.log("(audioFeatures.energy.max - audioFeatures.energy.min)*100:", (30/(audioFeatures.energy.max - audioFeatures.energy.min))*100);
   // console.log("individualBufferValues:", individualBufferValues);
 
@@ -30,37 +30,45 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
     }
   }, [selectedImage, canvasRef]);
 
+  let color1
+  let color2
   function getAudioRGBA(value) {
-    // Ensure value is clamped between 0 and 1
-    value = Math.max(0, Math.min(1, value));
+    // Convert value (0-1) to RGB
+    // High value (aggressive) = more red (255, 0, 0)
+    // Medium value = more green (0, 255, 0)
+    // Low value (mellow) = more blue (0, 0, 255)
     
-    let r, g, b;
-    let t = 0
-    
-    if (value < 0.5) {
-        // Transition from blue to green
-        t = value * 2; // Scale to range 0 - 1
-        r = 0;
-        g = Math.round(t * 255);
-        b = Math.round((1 - t) * 255);
-    } else {
-        // Transition from green to red
-        t = (value - 0.5) * 2; // Scale to range 0 - 1
-        r = Math.round(t * 255);
-        g = Math.round((1 - t) * 255);
-        b = 0;
-        // console.log("t:", t);
-    }
-    
-    let color1 = `rgba(${r}, ${g}, ${b}, 0.01)`;
-    // let color1 = `rgba(${r}, ${g}, ${b}, ${Math.max(0.1, Math.min(0.3, value/3))})`;
-    let darkenFactor = 0.6; // 80% of the original brightness
-    // let color2 = `rgba(${ Math.round(r * darkenFactor)}, ${Math.round(g * darkenFactor)}, ${Math.round(b * darkenFactor)}, 0.3)`;
-    let color2 = `rgba(${Math.max(0, Math.min(255, Math.round(r * darkenFactor)))}, ${Math.max(0, Math.min(255, Math.round(g * darkenFactor)))}, ${Math.max(0, Math.min(255, Math.round(b * darkenFactor)))}, 0.3)`;
-    // let color2 = color1
-    // console.log("color1:", color1, "color2:", color2);
-    // console.log("Math.round(r * darkenFactor):", Math.round(r * darkenFactor));
     // console.log("value:", value);
+
+    
+    // if (value < 0.5) {
+    //   // From blue to green (0.0 to 0.5)
+      
+    //   b = Math.round(255 * (1 - value));
+    //   g = Math.round(255 * value);
+    //   r = 0;
+    // } else {
+      // From green to red (0.5 to 1.0)
+    let r, g, b;
+
+    if (value) {
+      r = Math.max(0, Math.min(255, Math.round(127 * (1 - value))));
+      g = Math.max(0, Math.min(255, Math.round(Math.abs(audioFeatures.spectralKurtosis.average)*value)));
+      b = Math.max(0, Math.min(255, Math.round(127 * value)));
+
+      color1 = `rgba(${r}, ${g}, ${b}, 0.3)`;
+      // color2 = `rgba(${b}, ${g}, ${r}, 0.3)`; // Inverse RGB values for contrast
+      // color2 = color1;
+      let darkenFactor = 0.6; // 80% of the original brightness
+      // let color2 = `rgba(${ Math.round(r * darkenFactor)}, ${Math.round(g * darkenFactor)}, ${Math.round(b * darkenFactor)}, 0.3)`;
+      color2 = `rgba(${Math.max(0, Math.min(255, Math.round(r * darkenFactor)))}, ${Math.max(0, Math.min(255, Math.round(g * darkenFactor)))}, ${Math.max(0, Math.min(255, Math.round(b * darkenFactor)))}, 0.3)`;
+    }
+    // }
+
+    // console.log("r:", r, "g:", g, "b:", b);
+
+    // Color 1 and 2 now have full opacity but different RGB values
+    
     return { color1, color2 };
   }
 
@@ -111,26 +119,27 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
         p.draw = () => {
           p.background(0); // Set background to black
           // Loop to draw multiple shapes
-          for (let i = 0; i < individualBufferValues.length; i++) { // Draws a shape for each buffer
-            // console.log("Math.min(individualBufferValues[i].spectralFlatness*5, 1):", Math.min(individualBufferValues[i].spectralFlatness*5, 1));
-            // console.log("individualBufferValues[i].spectralFlatness:", Math.min(individualBufferValues[i].spectralFlatness, 1));
-            // console.log("individualBufferValues[i].spectralCentroid:", individualBufferValues[i].spectralCentroid/(bufferSize/4));
-            // console.log("individualBufferValues[i].spectralKurtosis:", individualBufferValues[i].spectralKurtosis);
-            // console.log("(Math.min(individualBufferValues[i].spectralFlatness*5, 1) + (individualBufferValues[i].spectralCentroid/(bufferSize/4)) + individualBufferValues[i].spectralKurtosis)/3:", (Math.min(individualBufferValues[i].spectralFlatness*5, 1) + (individualBufferValues[i].spectralCentroid/(bufferSize/4)) + individualBufferValues[i].spectralKurtosis)/3);
-            // console.log("individualBufferValues[i].energy:", individualBufferValues[i].energy);
-            col1 = getAudioRGBA(((Math.min(individualBufferValues[i].spectralFlatness*5, 1) + (1 - (individualBufferValues[i].spectralCentroid)/(bufferSize/4)) + (1-individualBufferValues[i].spectralKurtosis))/3)).color1;
-            col2 = getAudioRGBA(((Math.min(individualBufferValues[i].spectralFlatness*5, 1) + (1 - (individualBufferValues[i].spectralCentroid)/(bufferSize/4)) + (1-individualBufferValues[i].spectralKurtosis))/3)).color2;
-            // console.log("col1:", col1, "col2:", col2);
-            if (individualBufferValues[i].energy > (audioFeatures.energy.average * 0.2) && individualBufferValues[i].spectralKurtosis !== 0 && individualBufferValues[i].spectralFlatness !== 0 && individualBufferValues[i].spectralCentroid !== 0) {
-              // console.log("individualBufferValues[i].spectralFlatness + (individualBufferValues[i].spectralCentroid/(bufferSize/4)))/2:", (individualBufferValues[i].spectralFlatness + (individualBufferValues[i].spectralCentroid/(bufferSize/4)))/2);
-              // Draw a polygon with random parameters
-              poly(p.random(p.width), p.random(p.height), individualBufferValues[i].energy, p, individualBufferValues[i].spectralKurtosis); // x, y, radius, p5 instance
-              // distortedCircle(p.random(p.width), p.random(p.height), p.random(50, 200), p); // x, y, radius, p5 instance
-            } 
-            // else {
-            //   // Draw a distorted circle with random parameters
-            //   distortedCircle(p.random(p.width), p.random(p.height), p.random(50, 200), p); // x, y, radius, p5 instance
-            // }
+          for (let i = 0; i < individualBufferValues.length; i++) {
+            // Normalize spectral kurtosis to 0-1 range
+            let kurtosisRange = audioFeatures.spectralKurtosis.max*0.4 - audioFeatures.spectralKurtosis.min;
+            let normalizedKurtosis = (individualBufferValues[i].spectralKurtosis - audioFeatures.spectralKurtosis.min) / kurtosisRange;
+
+            console.log("normalizedKurtosis:", normalizedKurtosis)
+            
+            // Calculate aggressiveness using normalized kurtosis
+            let aggressiveness = (individualBufferValues[i].energy / audioFeatures.energy.max) * 0 + 
+                                (normalizedKurtosis) * 1;
+            aggressiveness = Math.max(0, Math.min(1, aggressiveness));
+            
+            col1 = getAudioRGBA(aggressiveness).color1;
+            col2 = getAudioRGBA(aggressiveness).color2;
+
+            if (individualBufferValues[i].energy > (audioFeatures.energy.average * 0.2) && 
+                individualBufferValues[i].spectralKurtosis !== 0 && 
+                individualBufferValues[i].spectralFlatness !== 0 && 
+                individualBufferValues[i].spectralCentroid !== 0) {
+              poly(p.random(p.width), p.random(p.height), individualBufferValues[i].energy*1.2, p, normalizedKurtosis);
+            }
           }
 
           const dataUrl = p.canvas.toDataURL();
