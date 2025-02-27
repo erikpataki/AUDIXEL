@@ -6,7 +6,7 @@ import Meyda from "meyda";
 import Canvas from '../components/Canvas/Canvas';
 import * as realtimeBpm from 'realtime-bpm-analyzer';
 
-const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedImage }) => {
+const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedImage, initialAudioFile }) => {
   const [minThreshold, setMinThreshold] = useState(40);
   const [maxThreshold, setMaxThreshold] = useState(170);
   const [sortMode, setSortMode] = useState(0); // 0 = brightness, 1 = darkness, 2 = hue, 3 = saturation, 4 = lightness
@@ -25,6 +25,8 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
   const [isProcessing, setIsProcessing] = useState(false);
   const [onsets, setOnsets] = useState([]);
   const [bpm, setBpm] = useState(null);
+  const [pendingHorizontalResolution, setPendingHorizontalResolution] = useState(horizontalResolutionValue);
+  const [pendingVerticalResolution, setPendingVerticalResolution] = useState(verticalResolutionValue);
 
   const debounce = (func, delay) => {
     return (...args) => {
@@ -478,31 +480,53 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
   // Define the features to extract with their respective options
   const FEATURES = [
     // Meyda features
-    { name: "spectralFlatness", average: true, min: true, max: true },
+    // { name: "spectralFlatness", average: true, min: true, max: true }, //Useless
     { name: "spectralCentroid", average: true, min: true, max: true },
     { name: "energy", average: true, min: true, max: true },
-    { name: "spectralKurtosis", average: true, min: true, max: true },
+    { name: "spectralKurtosis", average: true, min: true, max: true }, //Doesnt work as intended
     { name: "spectralSpread", average: true, min: true, max: true },
-    { name: "rms", average: true, min: true, max: true },
+    // { name: "rms", average: true, min: true, max: true }, //Useless
     { name: "zcr", average: true, min: true, max: true },
-    // { name: "spectralFlux", average: true},
+    // { name: "spectralFlux", average: true}, // Can't get it to work. Always gives error
     { name: "spectralRolloff", average: true, min: true, max: true },
-    { name: "powerSpectrum", average: true, min: true, max: true },
-    { name: "spectralCrest", average: true, min: true, max: true },
+    // { name: "powerSpectrum", average: true, min: true, max: true }, // Doesn't work, meant to be showing energy of frequencies. put in audio thats EQ'd to be between 4000hz - 20000hz and its saying it has high bass frequencies at the lowest frequencies (0Hz - 93Hz
+    // { name: "spectralCrest", average: true, min: true, max: true }, //Doesnt correlate - very similar for each song
     { name: "chroma", average: true, min: true, max: true },
     { name: "mfcc", average: true, min: true, max: true },
+    // { name: "spectralSlope", average: true, min: true, max: true }, //Broken
+    // { name: "spectralSkewness", average: true, min: true, max: true }, //Unclear, doesn't correlate properly
+    // { name: "perceptualSpread", average: true, min: true, max: true }, //Same for each song
   ];
 
-  let file;
+  // let file;
   let bufferSize = 512;
-  let finalFeatures = {};
-  const handleAudioChange = async (e) => {
-    e.preventDefault();
-    file = e.target.files[0];
+  // let finalFeatures = {};
+  const handleAudioChange = async (e, existingFile = null) => {
+    let file;
+    if (existingFile) {
+      // Handle file object coming from landing page
+      file = existingFile.file || existingFile;
+      setUploadedFile(file); // Set the uploaded file state
+    } else {
+      e.preventDefault();
+      file = e.target.files[0];
+      setUploadedFile(file);
+    }
+    
     console.log("sound-file", file);
     
     if (file) {
-      setUploadedFile(file);
+      // Create a default image if no image is selected
+      if (!selectedImage) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 1000;
+        canvas.height = 1000;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        const defaultImage = canvas.toDataURL();
+        setSelectedImage(defaultImage);
+      }
 
       try {
         setIsProcessing(true);
@@ -634,7 +658,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
           individualBufferValues.push(bufferFeatures);
         }
 
-        // When computing final averages, add trimming of start/end buffers
+        // When computing final averages
         FEATURES.forEach(feature => {
           if (feature.average) {
             const validValues = features[feature.name].filter(val => 
@@ -643,6 +667,30 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
               !Number.isNaN(val)
             );
             
+            // if (validValues.length > 0) {
+            //   // Special handling for spectralKurtosis
+            //   if (feature.name === "spectralKurtosis") {
+            //     // Use absolute values for spectralKurtosis average
+            //     const absoluteValues = validValues.map(x => Math.abs(x));
+            //     const sum = absoluteValues.reduce((acc, val) => acc + val, 0);
+            //     finalFeatures[feature.name].average = sum / absoluteValues.length;
+            //   } else {
+            //     // Regular average calculation for other features
+            //     const skipCount = Math.floor(validValues.length / 20);
+            //     const trimmedValues = validValues.slice(skipCount, -skipCount);
+                
+            //     if (trimmedValues.length > 0) {
+            //       const sum = trimmedValues.reduce((acc, val) => acc + val, 0);
+            //       finalFeatures[feature.name].average = sum / trimmedValues.length;
+            //     } else {
+            //       console.warn(`No valid values remaining after trimming for ${feature.name}`);
+            //       finalFeatures[feature.name].average = 0;
+            //     }
+            //   }
+            // } else {
+            //   console.warn(`No valid values for ${feature.name} average calculation`);
+            //   finalFeatures[feature.name].average = 0;
+            // }
             if (validValues.length > 0) {
               // Calculate how many samples to skip at start and end (1/20th each)
               const skipCount = Math.floor(validValues.length / 20);
@@ -685,6 +733,13 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
       }
     }
   };
+
+  // Add useEffect to handle initial audio file
+  useEffect(() => {
+    if (initialAudioFile) {
+      handleAudioChange(null, initialAudioFile);
+    }
+  }, [initialAudioFile]);
 
   // Define sliders as an array of objects
   const settingsSliders = [
@@ -734,6 +789,17 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     ],
   };
 
+  // Then create a new function to handle reprocessing
+  const reprocessAudio = () => {
+    if (uploadedFile) {
+      setHorizontalResolutionValue(pendingHorizontalResolution);
+      setVerticalResolutionValue(pendingVerticalResolution);
+      handleAudioChange(null, uploadedFile);
+    } else {
+      console.warn("No audio file has been uploaded yet");
+    }
+  };
+
   return (
     <div className='upload-parent-parent'>
       <div className='upload-parent'>
@@ -776,32 +842,52 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
                 selectors={[sortModeSelector]}
                 hasDropdown={true}
               />
+              <div className='download-button' onClick={reprocessAudio}>                
+                <Dropdowns dropdownName={"PROCESS AUDIO AGAIN"} hasDropdown={false} />
+              </div>
               {processedImage && (
                 <div className='download-button' onClick={downloadImage} >                
                   <Dropdowns dropdownName={"DOWNLOAD IMAGE"} hasDropdown={false} />
                 </div>
               )}
 
-              <input id="sound-file" accept="audio/*" type="file" onChange={handleAudioChange}/>
+              <input 
+                id="sound-file" 
+                accept="audio/*" 
+                type="file" 
+                onChange={handleAudioChange}
+                value=""
+                ref={(element) => {
+                  if (element) {
+                    // Create a new DataTransfer object
+                    const dataTransfer = new DataTransfer();
+                    
+                    // If we have an uploaded file, add it to the DataTransfer object
+                    if (uploadedFile) {
+                      dataTransfer.items.add(uploadedFile);
+                      // Set the files property of the input element
+                      element.files = dataTransfer.files;
+                    }
+                  }
+                }}
+              />
               <input
                 type="number"
                 min="1000"
                 max={4000}
-                value={horizontalResolutionValue}
+                value={pendingHorizontalResolution}
                 onChange={(e) => {
-                  setHorizontalResolutionValue(e.target.value);
+                  setPendingHorizontalResolution(e.target.value);
                 }}
-                // className="slider-number"
               />              
               <input
                 type="number"
                 min="1000"
                 max={4000}
-                value={verticalResolutionValue}
+                value={pendingVerticalResolution}
                 onChange={(e) => {
-                  setVerticalResolutionValue(e.target.value);
+                  setPendingVerticalResolution(e.target.value);
                 }}
-                // className="slider-number"
               />
             </div>
           </div>

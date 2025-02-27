@@ -8,13 +8,14 @@ import { useState } from 'react';
 const App = () => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [processedImage, setProcessedImage] = useState(null);
+  const [initialAudioFile, setInitialAudioFile] = useState(null);
 
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Layout />}>
-          <Route index element={<LandingPage setSelectedImage={setSelectedImage} setProcessedImage={setProcessedImage} />} />
-          <Route path='home' element={<Home selectedImage={selectedImage} processedImage={processedImage} setSelectedImage={setSelectedImage} setProcessedImage={setProcessedImage} />} />
+          <Route index element={<LandingPage setSelectedImage={setSelectedImage} setProcessedImage={setProcessedImage} setInitialAudioFile={setInitialAudioFile} />} />
+          <Route path='home' element={<Home selectedImage={selectedImage} processedImage={processedImage} setSelectedImage={setSelectedImage} setProcessedImage={setProcessedImage} initialAudioFile={initialAudioFile} />} />
         </Route>
       </Routes>
     </BrowserRouter>

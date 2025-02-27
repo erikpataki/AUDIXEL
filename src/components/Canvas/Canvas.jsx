@@ -52,22 +52,27 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
     let r, g, b;
 
     if (value) {
-      r = Math.max(0, Math.min(255, Math.round(127 * (1 - value))));
+      // console.log("value:", value)
+      r = Math.max(0, Math.min(255, Math.round(256 * (value))));
+      // r = 255
       // g = Math.max(0, Math.min(255, Math.round(Math.abs(audioFeatures.spectralKurtosis.average)*value)));
-      g = Math.round(Math.floor(Math.random() * (256* (1-value))));
-      b = Math.max(0, Math.min(255, Math.round(127 * value)));
+      g = Math.round(Math.floor(Math.random() * ((256-80) * (1 - value)) + 80));
+      // g=0
+      b = Math.max(0, Math.min(255, Math.round(256 * (1 - value))));
+      // b=0
+      // console.log("b:", b)
 
       color1 = `rgba(${r}, ${g}, ${b}, 0.4)`;
       // color2 = `rgba(${b}, ${g}, ${r}, 0.3)`; // Inverse RGB values for contrast
       // color2 = color1;
-      let darkenFactor = 0.6; // 80% of the original brightness
+      // let darkenFactor = 0.6; // 80% of the original brightness
       // let color2 = `rgba(${ Math.round(r * darkenFactor)}, ${Math.round(g * darkenFactor)}, ${Math.round(b * darkenFactor)}, 0.3)`;
       // color2 = `rgba(${Math.max(0, Math.min(255, Math.round(r * darkenFactor)))}, ${Math.max(0, Math.min(255, Math.round(g * darkenFactor)))}, ${Math.max(0, Math.min(255, Math.round(b * darkenFactor)))}, 0.3)`;
       if (r > b) {
         color2 = "rgba(0, 0, 0, 0.2)";  // black with 0.2 opacity
       } else {
         color2 = "rgba(255, 255, 255, 0.2)";  // white with 0.2 opacity
-      }    
+      }
     }
     // }
 
@@ -125,26 +130,72 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
         p.draw = () => {
           p.background(0); // Set background to black
           // Loop to draw multiple shapes
+
+          // Calculate mean and standard deviation of kurtosis values
+          // let kurtosisValues = individualBufferValues.map(buffer => buffer.spectralKurtosis).filter(value => !isNaN(value));
+          // console.log("kurtosisValues:", kurtosisValues)
+          // let mean = kurtosisValues.reduce((a, b) => a + b, 0) / kurtosisValues.length;
+          // console.log("mean:", mean)
+          // let stdDev = Math.sqrt(
+          //   kurtosisValues.map(x => Math.pow(x - mean, 2))
+          //               .reduce((a, b) => a + b, 0) / kurtosisValues.length
+          // );
+          // console.log("stdDev:", stdDev)
+
+          // Filter out outliers (values more than 2 standard deviations from mean)
+          // let filteredKurtosis = kurtosisValues.filter(x => 
+          //   Math.abs(x - mean) <= 0.3 * stdDev
+          // );
+          // console.log("filteredKurtosis:", filteredKurtosis)
+
+          // Get min and max from filtered values
+          // let filteredMin = Math.min(...filteredKurtosis);
+          // let filteredMax = Math.max(...filteredKurtosis);
+          // let filteredRange = filteredMax - filteredMin;
+          // console.log("filteredRange:", filteredRange)
+          let kurtosisRange = audioFeatures.spectralKurtosis.max - audioFeatures.spectralKurtosis.min;
+          // console.log("kurtosisRange:", kurtosisRange)
+
           for (let i = 0; i < individualBufferValues.length; i++) {
-            // Normalize spectral kurtosis to 0-1 range
-            let kurtosisRange = audioFeatures.spectralKurtosis.max*0.4 - audioFeatures.spectralKurtosis.min;
-            let normalizedKurtosis = (individualBufferValues[i].spectralKurtosis - audioFeatures.spectralKurtosis.min) / kurtosisRange;
+            if (individualBufferValues[i].spectralKurtosis && individualBufferValues[i].spectralKurtosis !== 0 && individualBufferValues[i].energy > 1) {
+              // Normalize spectral kurtosis to 0-1 range
+              // let kurtosisRange = audioFeatures.spectralKurtosis.max*0.4 - audioFeatures.spectralKurtosis.min;
+              // let normalizedKurtosis = (individualBufferValues[i].spectralKurtosis
+              //    - audioFeatures.spectralKurtosis.min
+              //   ) / kurtosisRange;
+              // console.log("zcr:", individualBufferValues[i].zcr)
 
-            // console.log("normalizedKurtosis:", normalizedKurtosis)
-            
-            // Calculate aggressiveness using normalized kurtosis
-            let aggressiveness = (individualBufferValues[i].energy / audioFeatures.energy.max) * 0 + 
-                                (normalizedKurtosis) * 1;
-            aggressiveness = Math.max(0, Math.min(1, aggressiveness));
-            
-            col1 = getAudioRGBA(aggressiveness).color1;
-            col2 = getAudioRGBA(aggressiveness).color2;
 
-            if (individualBufferValues[i].energy > (audioFeatures.energy.average * 0.2) && 
-                individualBufferValues[i].spectralKurtosis !== 0 && 
-                individualBufferValues[i].spectralFlatness !== 0 && 
-                individualBufferValues[i].spectralCentroid !== 0) {
-              poly(p.random(p.width), p.random(p.height), individualBufferValues[i].energy*1.2, p, normalizedKurtosis);
+              let normalizedKurtosis = (individualBufferValues[i].spectralKurtosis - audioFeatures.spectralKurtosis.min) / kurtosisRange;
+              // let normalizedKurtosis = (individualBufferValues[i].spectralKurtosis - audioFeatures.spectralKurtosis.min)
+
+              // console.log("normalizedKurtosis:", normalizedKurtosis)
+              // console.log(Math.max(0, Math.min(1, (individualBufferValues[i].energy / 0.9*audioFeatures.energy.average))))
+              
+              // Calculate aggressiveness using normalized kurtosis
+              // let aggressiveness = (normalizedKurtosis);
+              let aggressiveness = ((individualBufferValues[i].zcr - 10)/20);
+              let sizeMultipler;
+              if (aggressiveness > 1) {
+                sizeMultipler = aggressiveness;
+              } else {
+                sizeMultipler = 1;
+              }
+              aggressiveness = Math.max(0.0001, Math.min(1, aggressiveness));
+
+              // console.log("aggressiveness:", aggressiveness)
+              
+              col1 = getAudioRGBA(aggressiveness).color1;
+              col2 = getAudioRGBA(aggressiveness).color2;
+              // col1 = getAudioRGBA(1).color1;
+              // col2 = getAudioRGBA(1).color2;
+
+              if (individualBufferValues[i].energy > (audioFeatures.energy.average * 0.2) && 
+                  individualBufferValues[i].spectralKurtosis !== 0 && 
+                  individualBufferValues[i].spectralFlatness !== 0 && 
+                  individualBufferValues[i].spectralCentroid !== 0) {
+                poly(p.random(p.width), p.random(p.height), (individualBufferValues[i].energy*0.9)*sizeMultipler, p, normalizedKurtosis);
+              }
             }
           }
 
@@ -174,7 +225,7 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
           p.translate(x, y)
           p.rotate(p.random(360))
           // verticesNums sets how many points the shape has
-          let verticesNums = p.int(p.random(3, 6))
+          let verticesNums = p.int(Math.max(3, Math.min(10, Math.round(spectralKurtosis*10))))
           // depth sets how close the bits that go into the shape are to the center
           // let depth = p.random(0.1, 0.5)
           // console.log("spectralKurtosis:", spectralKurtosis/2);

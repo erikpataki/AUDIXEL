@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import "./LandingPage.css";
 
-const LandingPage = ({ setSelectedImage, setProcessedImage }) => {
+const LandingPage = ({ setSelectedImage, setProcessedImage, setInitialAudioFile }) => {
   const navigate = useNavigate();
 
   const handleImageChange = (e) => {
@@ -17,6 +17,19 @@ const LandingPage = ({ setSelectedImage, setProcessedImage }) => {
       };
 
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAudioChange = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      setInitialAudioFile({
+        file: file,
+        name: file.name
+      });
+      setSelectedImage(null);
+      setProcessedImage(null);
+      navigate('/home');
     }
   };
 
@@ -39,7 +52,7 @@ const LandingPage = ({ setSelectedImage, setProcessedImage }) => {
         id="audio-file-input"
         type="file"
         accept="audio/*"
-        // onChange={handleImageChange}
+        onChange={handleAudioChange}
         style={{ display: 'none' }}
       />
       <input id="image-file-input"
