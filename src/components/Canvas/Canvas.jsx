@@ -30,56 +30,22 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
     }
   }, [selectedImage, canvasRef]);
 
-  let color1
-  let color2
   function getAudioRGBA(value) {
-    // Convert value (0-1) to RGB
-    // High value (aggressive) = more red (255, 0, 0)
-    // Medium value = more green (0, 255, 0)
-    // Low value (mellow) = more blue (0, 0, 255)
+    console.log("value:", value);
+    let hue = (1-value) * 240;
+    let saturation = 100;
+    let lightness = 50;
     
-    // console.log("value:", value);
-
-    
-    // if (value < 0.5) {
-    //   // From blue to green (0.0 to 0.5)
-      
-    //   b = Math.round(255 * (1 - value));
-    //   g = Math.round(255 * value);
-    //   r = 0;
-    // } else {
-      // From green to red (0.5 to 1.0)
-    let r, g, b;
-
-    if (value) {
-      // console.log("value:", value)
-      r = Math.max(0, Math.min(255, Math.round(256 * (value))));
-      // r = 255
-      // g = Math.max(0, Math.min(255, Math.round(Math.abs(audioFeatures.spectralKurtosis.average)*value)));
-      g = Math.round(Math.floor(Math.random() * ((256-80) * (1 - value)) + 80));
-      // g=0
-      b = Math.max(0, Math.min(255, Math.round(256 * (1 - value))));
-      // b=0
-      // console.log("b:", b)
-
-      color1 = `rgba(${r}, ${g}, ${b}, 0.4)`;
-      // color2 = `rgba(${b}, ${g}, ${r}, 0.3)`; // Inverse RGB values for contrast
-      // color2 = color1;
-      // let darkenFactor = 0.6; // 80% of the original brightness
-      // let color2 = `rgba(${ Math.round(r * darkenFactor)}, ${Math.round(g * darkenFactor)}, ${Math.round(b * darkenFactor)}, 0.3)`;
-      // color2 = `rgba(${Math.max(0, Math.min(255, Math.round(r * darkenFactor)))}, ${Math.max(0, Math.min(255, Math.round(g * darkenFactor)))}, ${Math.max(0, Math.min(255, Math.round(b * darkenFactor)))}, 0.3)`;
-      if (r > b) {
-        color2 = "rgba(0, 0, 0, 0.2)";  // black with 0.2 opacity
-      } else {
-        color2 = "rgba(255, 255, 255, 0.2)";  // white with 0.2 opacity
-      }
+    let color1 = `hsla(${hue}, ${saturation}%, ${lightness}%, 0.3)`;
+    // let color2 = `hsla(${(hue + 180) % 360}, ${saturation}%, ${lightness}%, 0.3)`;
+    let color2;
+    if (value > 0.5) {
+      color2 = `hsla(0, 0%, 0%, 0.3)`;
+    } else {
+      color2 = `hsla(0, 0%, 100%, 0.3)`;
     }
-    // }
 
-    // console.log("r:", r, "g:", g, "b:", b);
-
-    // Color 1 and 2 now have full opacity but different RGB values
-    
+    // console.log("color1:", color1, "color2:", color2);
     return { color1, color2 };
   }
 
@@ -174,26 +140,23 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
               
               // Calculate aggressiveness using normalized kurtosis
               // let aggressiveness = (normalizedKurtosis);
-              let aggressiveness = ((individualBufferValues[i].zcr - 10)/20);
+              let aggressiveness = ((individualBufferValues[i].zcr - 10)/30);
               let sizeMultipler;
               if (aggressiveness > 1) {
                 sizeMultipler = aggressiveness;
               } else {
                 sizeMultipler = 1;
               }
-              aggressiveness = Math.max(0.0001, Math.min(1, aggressiveness));
+              aggressiveness = Math.max(0, Math.min(1, aggressiveness));
 
               // console.log("aggressiveness:", aggressiveness)
-              
               col1 = getAudioRGBA(aggressiveness).color1;
               col2 = getAudioRGBA(aggressiveness).color2;
               // col1 = getAudioRGBA(1).color1;
               // col2 = getAudioRGBA(1).color2;
 
-              if (individualBufferValues[i].energy > (audioFeatures.energy.average * 0.2) && 
-                  individualBufferValues[i].spectralKurtosis !== 0 && 
-                  individualBufferValues[i].spectralFlatness !== 0 && 
-                  individualBufferValues[i].spectralCentroid !== 0) {
+              if (individualBufferValues[i].energy > (audioFeatures.energy.average * 0.2) && aggressiveness !== 0) {
+
                 poly(p.random(p.width), p.random(p.height), (individualBufferValues[i].energy*0.9)*sizeMultipler, p, normalizedKurtosis);
               }
             }
