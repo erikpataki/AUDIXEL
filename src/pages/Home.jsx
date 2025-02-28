@@ -15,14 +15,13 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
   const debounceTimeoutRef = useRef(null);
   const [audioSamples, setAudioSamples] = useState([]);
   const [audioFeatures, setAudioFeatures] = useState({});
-  const [brightness, setBrightness] = useState(128);
+  const [middlePoint, setMiddlePoint] = useState(128);
   const [angle, setAngle] = useState(115);
   const canvasRef = useRef(null);
   const [individualBufferValues, setIndividualBufferValues] = useState([]);
   const [horizontalResolutionValue, setHorizontalResolutionValue] = useState(2000);
   const [verticalResolutionValue, setVerticalResolutionValue] = useState(2000);
   const [uploadedFile, setUploadedFile] = useState(null);
-  const [isProcessing, setIsProcessing] = useState(false);
   const [onsets, setOnsets] = useState([]);
   const [bpm, setBpm] = useState(null);
   const [pendingHorizontalResolution, setPendingHorizontalResolution] = useState(horizontalResolutionValue);
@@ -43,15 +42,39 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     processImage(dataUrl, minThreshold, maxThreshold, sortMode, angle);
   }, 300), []);
 
-  useEffect(() => {
-    if (selectedImage) {
-      const img = new Image();
-      img.src = selectedImage;
-      img.onload = () => {
-        debouncedProcessImage(selectedImage, minThreshold, maxThreshold, sortMode, angle);
-      };
+  const handleThresholdChange = (type, value) => {
+    if (type === 'amount') {
+      setCombinedThreshold(value);
+    } else if (type === 'middlePoint') {
+      setMiddlePoint(value);
     }
-  }, [minThreshold, maxThreshold, selectedImage, sortMode, angle, debouncedProcessImage]);
+
+    // Recalculate minThreshold and maxThreshold based on updated values
+    const newMiddlePoint = type === 'middlePoint' ? value : middlePoint;
+    const newCombinedThreshold = type === 'amount' ? value : combinedThreshold;
+
+    let minValue = newMiddlePoint - (newCombinedThreshold * 0.5);
+    minValue = Math.max(0, Math.floor(minValue)); // Cap at 0
+
+    let maxValue = newMiddlePoint + (newCombinedThreshold * (0.0029*newCombinedThreshold)); // Corrected calculation
+    maxValue = Math.min(255, Math.ceil(maxValue)); // Cap at 255
+
+    // Ensure minThreshold is not greater than maxThreshold
+    if (minValue > maxValue) {
+      [minValue, maxValue] = [maxValue, minValue];
+    }
+
+    setMinThreshold(minValue);
+    setMaxThreshold(maxValue);
+  };
+
+  const handleMinThresholdChange = (value) => {
+    setMinThreshold(value);
+  };
+
+  const handleMaxThresholdChange = (value) => {
+    setMaxThreshold(value);
+  };
 
   const processImage = async (dataUrl, minThreshold, maxThreshold, sortMode, angle) => {
     const canvas = canvasRef.current;
@@ -64,9 +87,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     const image = new Image();
     image.src = dataUrl;
     await new Promise((resolve) => {
-      image.onload = () => {
-        resolve();
-      };
+      image.onload = resolve;
     });
 
     // Calculate radians from angle
@@ -347,160 +368,30 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     };
   };
 
-
-// preset selection
-  // const presetSelector = (preset) => {
-  //   switch (preset) {
-  //     case 'default':
-  //       setMinThreshold(27);
-  //       setMaxThreshold(173);
-  //       setSortMode(0);
-  //       setSortDirection('horizontal');
-  //       break;
-  //     case 'techno':
-  //       setMinThreshold(176);
-  //       setMaxThreshold(200);
-  //       setSortMode(0);
-  //       setSortDirection('vertical');
-  //       break;
-  //     case 'dnb':
-  //       setMinThreshold(80);
-  //       setMaxThreshold(90);
-  //       setSortMode(0);
-  //       setSortDirection('horizontal');
-  //       break;
-  //     case 'footwork':
-  //       setMinThreshold(0);
-  //       setMaxThreshold(170);
-  //       setSortMode(0); // Changed from 3 to 0 since dark mode was removed
-  //       setSortDirection('vertical');
-  //       break;
-  //     default:
-  //       break;
-  //   }
-  // }
-
-  // Preset selection based on audio features
-  // useEffect(() => {
-  //   if (audioFeatures.lowFreq > audioFeatures.midFreq && audioFeatures.lowFreq > audioFeatures.highFreq) {
-  //     setSortDirection('vertical');
-  //     setMinThreshold(30);
-  //     setMaxThreshold(170);
-  //     setSortMode(1);
-  //   }
-  //   else if (audioFeatures.midFreq > audioFeatures.lowFreq && audioFeatures.midFreq > audioFeatures.highFreq) {
-  //     setSortDirection('horizontal');
-  //     setMinThreshold(50);
-  //     setMaxThreshold(150);
-  //     setSortMode(0);
-  //   }
-  //   else if (audioFeatures.highFreq > audioFeatures.lowFreq && audioFeatures.highFreq > audioFeatures.midFreq) {
-  //     setSortDirection('vertical');
-  //     setMinThreshold(20);
-  //     setMaxThreshold(120);
-  //     setSortMode(1);
-  //   }
-  // }, [audioFeatures]);
-
-
-  // Threshold slider handlers
-  const handleThresholdChange = (type, value) => {
-    if (type === 'amount') {
-        setCombinedThreshold(value);
-    } else if (type === 'brightness') {
-        setBrightness(value);
-    }
-
-    // Recalculate minThreshold and maxThreshold based on updated values
-    const newBrightness = type === 'brightness' ? value : brightness;
-    const newCombinedThreshold = type === 'amount' ? value : combinedThreshold;
-
-    let minValue = newBrightness - (newCombinedThreshold * 0.5);
-    minValue = Math.max(0, Math.floor(minValue)); // Cap at 0
-
-    let maxValue = newBrightness + (newCombinedThreshold * (0.0029*newCombinedThreshold)); // Corrected calculation
-    maxValue = Math.min(255, Math.ceil(maxValue)); // Cap at 255
-
-    // Ensure minThreshold is not greater than maxThreshold
-    if (minValue > maxValue) {
-        [minValue, maxValue] = [maxValue, minValue];
-    }
-
-    setMinThreshold(minValue);
-    setMaxThreshold(maxValue);
-
-    // Trigger image processing with updated threshold values
-    if (selectedImage) {
-      const img = new Image();
-      img.src = selectedImage;
-      img.onload = () => {
-        debouncedProcessImage(img, minValue, maxValue, sortMode, angle); // Use updated values
-      };
-    }
-};
-
-  const handleMinThresholdChange = (value) => {
-    setMinThreshold(value);
-    if (selectedImage) {
-      const img = new Image();
-      img.src = selectedImage;
-      img.onload = () => {
-        debouncedProcessImage(img, value, maxThreshold, sortMode, angle);
-      };
-    }
-  };
-
-  const handleMaxThresholdChange = (value) => {
-    setMaxThreshold(value);
-    if (selectedImage) {
-      const img = new Image();
-      img.src = selectedImage;
-      img.onload = () => {
-        debouncedProcessImage(img, minThreshold, value, sortMode, angle);
-      };
-    }
-  };
-
-  //FEATURE EXTRACTION
-  // var signal = new Array(32).fill(0).map((element, index) => {
-  //   const remainder = index % 3;
-  //   if (remainder === 0) {
-  //     return 1;
-  //   } else if (remainder === 1) {
-  //     return 0;
-  //   }
-  //   return -1;
-  // });
-
-  // let meydaExtractionTest = Meyda.extract("zcr", signal);
-
-  // console.log("meydaExtractionTest", meydaExtractionTest)
-  // console.log("signal", signal)
-
   // Define the features to extract with their respective options
   const FEATURES = [
     // Meyda features
-    // { name: "spectralFlatness", average: true, min: true, max: true }, //Useless
+    // { name: "spectralFlatness", average: true, min: true, max: true }, // Useless
     { name: "spectralCentroid", average: true, min: true, max: true },
     { name: "energy", average: true, min: true, max: true },
-    { name: "spectralKurtosis", average: true, min: true, max: true }, //Doesnt work as intended
+    // { name: "rms", average: true, min: true, max: true }, // Energy but more unpredictable
+    // { name: "loudness", average: true, min: true, max: true }, // Confusing result that doesn't seem to work well with the way I have things set up
+    { name: "spectralKurtosis", average: true, min: true, max: true }, // Doesnt work as intended
     { name: "spectralSpread", average: true, min: true, max: true },
-    // { name: "rms", average: true, min: true, max: true }, //Useless
+    // { name: "rms", average: true, min: true, max: true }, // Useless
     { name: "zcr", average: true, min: true, max: true },
     // { name: "spectralFlux", average: true}, // Can't get it to work. Always gives error
     { name: "spectralRolloff", average: true, min: true, max: true },
     // { name: "powerSpectrum", average: true, min: true, max: true }, // Doesn't work, meant to be showing energy of frequencies. put in audio thats EQ'd to be between 4000hz - 20000hz and its saying it has high bass frequencies at the lowest frequencies (0Hz - 93Hz
-    // { name: "spectralCrest", average: true, min: true, max: true }, //Doesnt correlate - very similar for each song
+    // { name: "spectralCrest", average: true, min: true, max: true }, // Doesnt correlate - very similar for each song
     { name: "chroma", average: true, min: true, max: true },
     { name: "mfcc", average: true, min: true, max: true },
     // { name: "spectralSlope", average: true, min: true, max: true }, //Broken
-    // { name: "spectralSkewness", average: true, min: true, max: true }, //Unclear, doesn't correlate properly
-    // { name: "perceptualSpread", average: true, min: true, max: true }, //Same for each song
+    // { name: "spectralSkewness", average: true, min: true, max: true }, // Unclear, doesn't correlate properly
+    // { name: "perceptualSpread", average: true, min: true, max: true }, // Same for each song
   ];
 
-  // let file;
   let bufferSize = 512;
-  // let finalFeatures = {};
   const handleAudioChange = async (e, existingFile = null) => {
     let file;
     if (existingFile) {
@@ -529,17 +420,19 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
       }
 
       try {
-        setIsProcessing(true);
         const startTime = performance.now();
 
         const arrayBuffer = await file.arrayBuffer();
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)({
+          sampleRate: 48000 // Force 48kHz sample rate
+        });
         const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-
 
         let previousSignal = null;
         const features = {};
         const finalFeatures = {};
+        // Reset individualBufferValues for the new audio file
+        const newIndividualBufferValues = [];
 
         const reader = new FileReader();
         reader.addEventListener('load', () => {
@@ -575,26 +468,26 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
           FEATURES.forEach(feature => {
             try {
               let value;
-              if (feature.name === "spectralFlux") {
-                if (previousSignal) {
-                  // Get the spectrum for both current and previous signals
-                  const currentSpectrum = Meyda.extract("amplitudeSpectrum", buffer);
-                  const previousSpectrum = Meyda.extract("amplitudeSpectrum", previousSignal);
+              // if (feature.name === "spectralFlux") {
+              //   if (previousSignal) {
+              //     // Get the spectrum for both current and previous signals
+              //     const currentSpectrum = Meyda.extract("amplitudeSpectrum", buffer);
+              //     const previousSpectrum = Meyda.extract("amplitudeSpectrum", previousSignal);
                   
-                  // Calculate the difference between spectrums
-                  let flux = 0;
-                  for (let j = 0; j < currentSpectrum.length; j++) {
-                    const diff = currentSpectrum[j] - previousSpectrum[j];
-                    flux += (diff + Math.abs(diff)) / 2;
-                  }
-                  value = flux;
-                } else {
-                  value = 0;
-                }
-                previousSignal = buffer;
-              } else {
+              //     // Calculate the difference between spectrums
+              //     let flux = 0;
+              //     for (let j = 0; j < currentSpectrum.length; j++) {
+              //       const diff = currentSpectrum[j] - previousSpectrum[j];
+              //       flux += (diff + Math.abs(diff)) / 2;
+              //     }
+              //     value = flux;
+              //   } else {
+              //     value = 0;
+              //   }
+              //   previousSignal = buffer;
+              // } else {
                 value = Meyda.extract(feature.name, buffer);
-              }
+              // }
 
               // Store the value in bufferFeatures
               bufferFeatures[feature.name] = value;
@@ -620,7 +513,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
           });
 
           // Add the current buffer's features to the array
-          individualBufferValues.push(bufferFeatures);
+          newIndividualBufferValues.push(bufferFeatures);
         }
 
         // Handle any remaining samples by padding with zeros to reach bufferSize
@@ -655,7 +548,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
             }
           });
 
-          individualBufferValues.push(bufferFeatures);
+          newIndividualBufferValues.push(bufferFeatures);
         }
 
         // When computing final averages
@@ -667,30 +560,6 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
               !Number.isNaN(val)
             );
             
-            // if (validValues.length > 0) {
-            //   // Special handling for spectralKurtosis
-            //   if (feature.name === "spectralKurtosis") {
-            //     // Use absolute values for spectralKurtosis average
-            //     const absoluteValues = validValues.map(x => Math.abs(x));
-            //     const sum = absoluteValues.reduce((acc, val) => acc + val, 0);
-            //     finalFeatures[feature.name].average = sum / absoluteValues.length;
-            //   } else {
-            //     // Regular average calculation for other features
-            //     const skipCount = Math.floor(validValues.length / 20);
-            //     const trimmedValues = validValues.slice(skipCount, -skipCount);
-                
-            //     if (trimmedValues.length > 0) {
-            //       const sum = trimmedValues.reduce((acc, val) => acc + val, 0);
-            //       finalFeatures[feature.name].average = sum / trimmedValues.length;
-            //     } else {
-            //       console.warn(`No valid values remaining after trimming for ${feature.name}`);
-            //       finalFeatures[feature.name].average = 0;
-            //     }
-            //   }
-            // } else {
-            //   console.warn(`No valid values for ${feature.name} average calculation`);
-            //   finalFeatures[feature.name].average = 0;
-            // }
             if (validValues.length > 0) {
               // Calculate how many samples to skip at start and end (1/20th each)
               const skipCount = Math.floor(validValues.length / 20);
@@ -701,6 +570,9 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
               if (trimmedValues.length > 0) {
                 const sum = trimmedValues.reduce((acc, val) => acc + val, 0);
                 finalFeatures[feature.name].average = sum / trimmedValues.length;
+                // if (feature.name === "zcr") {
+                //   setAverageZCR(finalFeatures[feature.name].average);
+                // }
               } else {
                 console.warn(`No valid values remaining after trimming for ${feature.name}`);
                 finalFeatures[feature.name].average = 0;
@@ -717,19 +589,17 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
         console.log(`Audio feature extraction took ${elapsedTime.toFixed(2)} seconds.`); // Log elapsed time in seconds
 
         console.log("Final Features:", finalFeatures);
-        console.log("Individual Buffer Values:", individualBufferValues); // Log individual buffer values
+        console.log("Individual Buffer Values:", newIndividualBufferValues); // Log individual buffer values
         
         setAudioSamples(channelData);
         setAudioFeatures(finalFeatures); // Set audioFeatures state
-        setIndividualBufferValues(individualBufferValues);
+        setIndividualBufferValues(newIndividualBufferValues); // Set the new array
 
         console.log("Audio File Sample Rate:", audioBuffer.sampleRate);
         console.log("Audio Context Sample Rate:", audioContext.sampleRate);
 
       } catch (error) {
         console.error("Error processing audio file:", error);
-      } finally {
-        setIsProcessing(false);
       }
     }
   };
@@ -746,18 +616,20 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     {
         label: "AMOUNT",
         value: combinedThreshold,
-        setValue: (value) => handleThresholdChange('amount', value), // Updated
+        setValue: (value) => handleThresholdChange('amount', value),
     },
     {
-        label: "BRIGHTNESS",
-        value: brightness,
-        setValue: (value) => handleThresholdChange('brightness', value), // Updated
+        label: "MIDDLE POINT",
+        value: middlePoint,
+        setValue: (value) => handleThresholdChange('middlePoint', value),
+        // tooltip: "Sets the center point for the threshold range"
     },
     {
         label: "ANGLE",
         value: angle,
         setValue: setAngle,
         maxValue: 360,
+        // tooltip: "Automatically set based on audio hue, but can be manually adjusted"
     },
     // Add more sliders here as needed
   ];
@@ -800,6 +672,12 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     }
   };
 
+  useEffect(() => {
+    if (selectedImage) {
+      debouncedProcessImage(selectedImage, minThreshold, maxThreshold, sortMode, angle);
+    }
+  }, [minThreshold, maxThreshold, selectedImage, sortMode, angle, debouncedProcessImage]);
+
   return (
     <div className='upload-parent-parent'>
       <div className='upload-parent'>
@@ -811,11 +689,15 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
           setSelectedImage={setSelectedImage}
           setProcessedImage={setProcessedImage}
           canvasRef={canvasRef}
-          audioFeatures={audioFeatures} // Pass audioFeatures to Canvas
+          audioFeatures={audioFeatures}
           individualBufferValues={individualBufferValues}
           debouncedProcessImage={debouncedProcessImage}
           horizontalResolutionValue={horizontalResolutionValue}
           verticalResolutionValue={verticalResolutionValue}
+          setAngle={setAngle}
+          minThreshold={minThreshold}
+          maxThreshold={maxThreshold}
+          setSortMode={setSortMode}
         />
         {selectedImage && (
           <div className='selectors-container-parent'>

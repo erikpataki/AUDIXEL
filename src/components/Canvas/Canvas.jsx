@@ -2,11 +2,12 @@ import React, { useEffect, useRef, useState } from 'react';
 import p5 from 'p5';
 import "./Canvas.css";
 
-const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage, setProcessedImage, canvasRef, audioFeatures, individualBufferValues, debouncedProcessImage, horizontalResolutionValue, verticalResolutionValue, bufferSize }) => {
+const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage, setProcessedImage, canvasRef, audioFeatures, individualBufferValues, debouncedProcessImage, horizontalResolutionValue, verticalResolutionValue, bufferSize, setAngle, minThreshold, maxThreshold, setSortMode }) => {
   const p5ContainerRef = useRef(null);
   const p5InstanceRef = useRef(null);
-  const processingCompletedRef = useRef(false); // Add a ref to track processing
-  const [imageLoaded, setImageLoaded] = useState(false); // Add a new state
+  const processingCompletedRef = useRef(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const hasGeneratedBaseImageRef = useRef(false);
 
   // let paletteSelected1;
   // let paletteSelected2;
@@ -30,22 +31,20 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
     }
   }, [selectedImage, canvasRef]);
 
-  function getAudioRGBA(value) {
-    console.log("value:", value);
-    let hue = (1-value) * 240;
-    let saturation = 100;
-    let lightness = 50;
+  function getAudioRGBA(hue, saturation, lightness) {
+    hue = (1-hue) * 240;
+    saturation = saturation;
+    lightness = 50;
+    // console.log("saturation:", saturation)
     
     let color1 = `hsla(${hue}, ${saturation}%, ${lightness}%, 0.3)`;
-    // let color2 = `hsla(${(hue + 180) % 360}, ${saturation}%, ${lightness}%, 0.3)`;
     let color2;
-    if (value > 0.5) {
+    if (hue > 0.5) {
       color2 = `hsla(0, 0%, 0%, 0.3)`;
     } else {
       color2 = `hsla(0, 0%, 100%, 0.3)`;
     }
 
-    // console.log("color1:", color1, "color2:", color2);
     return { color1, color2 };
   }
 
@@ -53,9 +52,19 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
   let col2;
 
   useEffect(() => {
-    if (audioFeatures && Object.keys(audioFeatures).length > 0 && individualBufferValues && imageLoaded) { // Add imageLoaded to the dependency array
-      // console.log("Audio Features received:", audioFeatures);
-      // console.log("Individual Buffer Values received:", individualBufferValues);
+    if (
+      audioFeatures && 
+      Object.keys(audioFeatures).length > 0 && 
+      individualBufferValues && 
+      imageLoaded && 
+      (!hasGeneratedBaseImageRef.current || 
+       p5InstanceRef.current === null)
+    ) {
+      // Set the flag to true
+      hasGeneratedBaseImageRef.current = true;
+      
+      // Reset processing flag when new audio features are received
+      processingCompletedRef.current = false;
 
       // Remove the old p5 instance if it exists
       if (p5InstanceRef.current) {
@@ -148,16 +157,22 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
                 sizeMultipler = 1;
               }
               aggressiveness = Math.max(0, Math.min(1, aggressiveness));
+              let hueValue = aggressiveness;
+              let saturationValue = Math.min(100, (30 + (individualBufferValues[i].energy*1.15)));
+              // console.log("hue:", hue)
+              // saturationValue = 30
+              // console.log("saturation:", saturationValue)
 
               // console.log("aggressiveness:", aggressiveness)
-              col1 = getAudioRGBA(aggressiveness).color1;
-              col2 = getAudioRGBA(aggressiveness).color2;
+              const { color1, color2 } = getAudioRGBA(hueValue, saturationValue);
+              col1 = color1;
+              col2 = color2;
               // col1 = getAudioRGBA(1).color1;
               // col2 = getAudioRGBA(1).color2;
 
+              // Store the hue value instead of setting angle immediately
               if (individualBufferValues[i].energy > (audioFeatures.energy.average * 0.2) && aggressiveness !== 0) {
-
-                poly(p.random(p.width), p.random(p.height), (individualBufferValues[i].energy*0.9)*sizeMultipler, p, normalizedKurtosis);
+                poly(p.random(p.width), p.random(p.height), ((25 + Math.min(110, individualBufferValues[i].energy))*0.5)*sizeMultipler, p, normalizedKurtosis);
               }
             }
           }
@@ -165,10 +180,31 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
           const dataUrl = p.canvas.toDataURL();
           setSelectedImage(dataUrl);
 
-          // Trigger image processing with the new data URL
+          // Set angle based on spectralKurtosis average and sort mode based on ZCR average
           if (!processingCompletedRef.current) {
-            debouncedProcessImage(dataUrl, 40, 170, 0, 115);
-            processingCompletedRef.current = true; // Set the flag to true
+            // Set angle using spectralKurtosis
+            const newAngle = audioFeatures.spectralKurtosis.average * 10;
+            console.log('Setting new angle based on spectralKurtosis:', newAngle);
+            setAngle((newAngle + 360) % 360);
+            
+            // Set sort mode based on ZCR average
+            const averageZCR = audioFeatures.zcr.average;
+            console.log('Setting sort mode based on ZCR:', averageZCR);
+            let newSortMode;
+            if (averageZCR < 14) {
+              newSortMode = 4; // Lightness
+            } else if (averageZCR > 14 && averageZCR <= 18) {
+              newSortMode = 0; // Brightness
+            } else if (averageZCR > 18 && averageZCR <= 28) {
+              newSortMode = 3; // Saturation
+            } else {
+              newSortMode = 2; // Hue
+            }
+            setSortMode(newSortMode);
+
+            // Process image with new angle and sort mode
+            debouncedProcessImage(dataUrl, minThreshold, maxThreshold, newSortMode, newAngle);
+            processingCompletedRef.current = true;
           }
         };
 
@@ -261,7 +297,7 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
         p5InstanceRef.current = null;
       }
     };
-  }, [audioFeatures, setSelectedImage, setProcessedImage, individualBufferValues, debouncedProcessImage, canvasRef, imageLoaded, horizontalResolutionValue, verticalResolutionValue]);
+  }, [audioFeatures, individualBufferValues, imageLoaded, horizontalResolutionValue, verticalResolutionValue]);
 
   return (
     <div className="image-upload">
