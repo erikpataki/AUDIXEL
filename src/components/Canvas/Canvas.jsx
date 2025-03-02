@@ -157,6 +157,7 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
                 sizeMultipler = 1;
               }
               aggressiveness = Math.max(0, Math.min(1, aggressiveness));
+              // console.log("aggressiveness:", aggressiveness)
               let hueValue = aggressiveness;
               let saturationValue = Math.min(100, (30 + (individualBufferValues[i].energy*1.15)));
               // console.log("hue:", hue)
@@ -172,7 +173,10 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
 
               // Store the hue value instead of setting angle immediately
               if (individualBufferValues[i].energy > (audioFeatures.energy.average * 0.2) && aggressiveness !== 0) {
-                poly(p.random(p.width), p.random(p.height), ((25 + Math.min(110, individualBufferValues[i].energy))*0.5)*sizeMultipler, p, normalizedKurtosis);
+                poly(p.random(p.width), p.random(p.height), //location
+                ((25 + Math.min(110, individualBufferValues[i].energy))*0.5)*sizeMultipler, //size
+                p, //p5 instance
+                aggressiveness); //aggressiveness
               }
             }
           }
@@ -208,7 +212,7 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
           }
         };
 
-        function poly(x, y, r, p, spectralKurtosis) {
+        function poly(x, y, r, p, aggressiveness) {
           // Function to draw a polygon
           p.noStroke();
           let gradientFill = p.drawingContext.createLinearGradient(
@@ -224,11 +228,12 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
           p.translate(x, y)
           p.rotate(p.random(360))
           // verticesNums sets how many points the shape has
-          let verticesNums = p.int(Math.max(3, Math.min(10, Math.round(spectralKurtosis*10))))
+          let verticesNums = p.int(Math.max(3, Math.min(10, Math.round(aggressiveness*10))))
+          // console.log("verticesNums:", verticesNums)
           // depth sets how close the bits that go into the shape are to the center
           // let depth = p.random(0.1, 0.5)
-          // console.log("spectralKurtosis:", spectralKurtosis/2);
-          let depth = Math.max(0.1, Math.min(0.5, spectralKurtosis/2))
+          // console.log("aggressiveness/2:", aggressiveness/2);
+          let depth = Math.max(0.1, Math.min(0.75, aggressiveness/1.34))
           p.beginShape();
           for (let i = 0; i < 360; i += 1) {
             let radius = r + (r * depth * p.sin(i * verticesNums));

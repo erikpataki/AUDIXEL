@@ -617,19 +617,20 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
         label: "AMOUNT",
         value: combinedThreshold,
         setValue: (value) => handleThresholdChange('amount', value),
+        tooltip: "Sets the amount of pixel sorting applied. Changes lower and upper threshold at the same time. Higher values will sort more pixels, resulting in a more intense image. Lower values will sort fewer pixels, resulting in a less abstract image."
     },
     {
         label: "MIDDLE POINT",
         value: middlePoint,
         setValue: (value) => handleThresholdChange('middlePoint', value),
-        // tooltip: "Sets the center point for the threshold range"
+        tooltip: "Sets the center point for the threshold range"
     },
     {
         label: "ANGLE",
         value: angle,
         setValue: setAngle,
         maxValue: 360,
-        // tooltip: "Automatically set based on audio hue, but can be manually adjusted"
+        tooltip: "The angle that the pixels are sorted in. Automatically set based on hue initially, but can be manually changed"
     },
     // Add more sliders here as needed
   ];
@@ -639,13 +640,14 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
         label: "LOWER THRESHOLD",
         value: minThreshold,
         setValue: handleMinThresholdChange,
+        tooltip: "Sets the lower threshold for the pixel sorting. The lower you go, the more pixels will be sorted because it reduced the lower bound."
     },
     {
         label: "UPPER THRESHOLD",
         value: maxThreshold,
         setValue: handleMaxThresholdChange,
+        tooltip: "Sets the upper threshold for the pixel sorting. The higher you go, the more pixels will be sorted because it increased the upper bound."
     },
-    // Add more sliders here as needed
   ];
 
   const sortModeSelector = {
@@ -659,9 +661,10 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
         { value: 3, label: 'Saturation' },
         { value: 4, label: 'Lightness' }
     ],
+    tooltip: "Sets the method by which the pixels are sorted."
   };
 
-  // Then create a new function to handle reprocessing
+  // Function to handle reprocessing
   const reprocessAudio = () => {
     if (uploadedFile) {
       setHorizontalResolutionValue(pendingHorizontalResolution);
