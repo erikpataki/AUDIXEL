@@ -43,6 +43,7 @@ function Dropdowns({
                             value={slider.value}
                             setValue={slider.setValue}
                             maxValue={slider.maxValue}
+                            tooltip={slider.tooltip}
                         />
                     ))}
                     {selectors.map((selector, index) => (
@@ -52,6 +53,7 @@ function Dropdowns({
                             value={selector.value}
                             onChange={selector.setValue}
                             options={selector.options}
+                            tooltip={selector.tooltip}
                         />
                     ))}
                 </div>

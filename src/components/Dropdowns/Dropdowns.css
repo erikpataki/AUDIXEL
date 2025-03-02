@@ -5,12 +5,11 @@
     border-radius: 0.9375rem;
     background: #FFFFFA;
     padding: 0.6rem;
-    overflow: hidden;
+    overflow: visible;
     transition: height 0.3s ease;
     margin-bottom: 0.9rem;
     user-select: none;
 }
-
 
 .drop-down-header {
     display: flex;
@@ -43,4 +42,8 @@
 
 .drop-down-content > * {
     margin-top: 15px;
+}
+
+.drop-down-content {
+    overflow: visible;
 }

@@ -87,3 +87,42 @@ input[type="range"] {
     /*  slider progress trick  */
     box-shadow: -407px 0 0 400px #0D1F22;
   }
+
+.label-tooltip-container {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 200px;
+    background-color: #333;
+    color: #fff;
+    padding: 8px 10px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    z-index: 1000;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    margin-top: 5px;
+    transition: opacity 0.1s ease;
+    opacity: 0;
+    pointer-events: none;
+    visibility: hidden;
+}
+
+.tooltip.tooltip-visible {
+    opacity: 0.9;
+    visibility: visible;
+}
+
+.tooltip:after {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 10px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent transparent #333 transparent;
+}

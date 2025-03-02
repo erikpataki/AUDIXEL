@@ -188,12 +188,12 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
           if (!processingCompletedRef.current) {
             // Set angle using spectralKurtosis
             const newAngle = audioFeatures.spectralKurtosis.average * 10;
-            console.log('Setting new angle based on spectralKurtosis:', newAngle);
+            // console.log('Setting new angle based on spectralKurtosis:', newAngle);
             setAngle((newAngle + 360) % 360);
             
             // Set sort mode based on ZCR average
             const averageZCR = audioFeatures.zcr.average;
-            console.log('Setting sort mode based on ZCR:', averageZCR);
+            // console.log('Setting sort mode based on ZCR:', averageZCR);
             let newSortMode;
             if (averageZCR < 14) {
               newSortMode = 4; // Lightness

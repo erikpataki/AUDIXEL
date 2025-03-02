@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './Slider.css';
 
-const Slider = ({ label, value, setValue, maxValue }) => {
+const Slider = ({ label, value, setValue, maxValue, tooltip }) => {
     const max = maxValue ? maxValue : 255;
     const [localValue, setLocalValue] = useState(value);
     const debounceTimeoutRef = useRef(null);
+    const [showTooltip, setShowTooltip] = useState(false);
+    const tooltipTimeoutRef = useRef(null);
     
     // Update local value when prop value changes
     useEffect(() => {
@@ -26,9 +28,44 @@ const Slider = ({ label, value, setValue, maxValue }) => {
         }, 300); // 300ms debounce
     };
     
+    const handleMouseEnter = () => {
+        tooltipTimeoutRef.current = setTimeout(() => {
+            setShowTooltip(true);
+        }, 500); // 0.5s delay before showing tooltip
+    };
+    
+    const handleMouseLeave = () => {
+        if (tooltipTimeoutRef.current) {
+            clearTimeout(tooltipTimeoutRef.current);
+        }
+        setShowTooltip(false);
+    };
+    
+    // Clean up timeouts when component unmounts
+    useEffect(() => {
+        return () => {
+            if (tooltipTimeoutRef.current) {
+                clearTimeout(tooltipTimeoutRef.current);
+            }
+        };
+    }, []);
+    
     return (
         <div className="slider-parent">
-            <label className="slider-label">{label}</label>
+            <div className="label-tooltip-container">
+                <label 
+                    className="slider-label"
+                    onMouseEnter={handleMouseEnter}
+                    onMouseLeave={handleMouseLeave}
+                >
+                    {label}
+                </label>
+                {tooltip && (
+                    <div className={`tooltip ${showTooltip ? 'tooltip-visible' : ''}`}>
+                        {tooltip}
+                    </div>
+                )}
+            </div>
             <div className="threshold-control">
                 <input
                     type="range"
