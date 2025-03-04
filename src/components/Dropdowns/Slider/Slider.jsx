@@ -28,10 +28,16 @@ const Slider = ({ label, value, setValue, maxValue, tooltip }) => {
         }, 300); // 300ms debounce
     };
     
-    const handleMouseEnter = () => {
+    const handleMouseEnter = (e) => {
         tooltipTimeoutRef.current = setTimeout(() => {
+            const rect = e.target.getBoundingClientRect();
+            const tooltip = e.target.parentElement.querySelector('.tooltip');
+            if (tooltip) {
+                tooltip.style.top = `${rect.bottom + 5}px`;
+                tooltip.style.left = `${rect.left}px`;
+            }
             setShowTooltip(true);
-        }, 500); // 0.5s delay before showing tooltip
+        }, 500);
     };
     
     const handleMouseLeave = () => {

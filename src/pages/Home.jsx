@@ -378,11 +378,10 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     // { name: "loudness", average: true, min: true, max: true }, // Confusing result that doesn't seem to work well with the way I have things set up
     { name: "spectralKurtosis", average: true, min: true, max: true }, // Doesnt work as intended
     { name: "spectralSpread", average: true, min: true, max: true },
-    // { name: "rms", average: true, min: true, max: true }, // Useless
     { name: "zcr", average: true, min: true, max: true },
     // { name: "spectralFlux", average: true}, // Can't get it to work. Always gives error
     { name: "spectralRolloff", average: true, min: true, max: true },
-    // { name: "powerSpectrum", average: true, min: true, max: true }, // Doesn't work, meant to be showing energy of frequencies. put in audio thats EQ'd to be between 4000hz - 20000hz and its saying it has high bass frequencies at the lowest frequencies (0Hz - 93Hz
+    // { name: "powerSpectrum", average: true, min: true, max: true }, // Doesn't work, meant to be showing energy of frequencies. put in audio thats EQ'd to be between 4000hz - 20000hz and its saying it has high bass frequencies at the lowest frequencies (0Hz - 93Hz)
     // { name: "spectralCrest", average: true, min: true, max: true }, // Doesnt correlate - very similar for each song
     { name: "chroma", average: true, min: true, max: true },
     { name: "mfcc", average: true, min: true, max: true },

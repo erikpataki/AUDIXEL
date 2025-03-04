@@ -94,8 +94,8 @@ input[type="range"] {
 }
 
 .tooltip {
-    position: absolute;
-    top: 100%;
+    position: fixed;
+    top: auto;
     left: 0;
     width: 200px;
     background-color: #333;
