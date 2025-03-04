@@ -141,7 +141,7 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
               // console.log("zcr:", individualBufferValues[i].zcr)
 
 
-              let normalizedKurtosis = (individualBufferValues[i].spectralKurtosis - audioFeatures.spectralKurtosis.min) / kurtosisRange;
+              // let normalizedKurtosis = (individualBufferValues[i].spectralKurtosis - audioFeatures.spectralKurtosis.min) / kurtosisRange;
               // let normalizedKurtosis = (individualBufferValues[i].spectralKurtosis - audioFeatures.spectralKurtosis.min)
 
               // console.log("normalizedKurtosis:", normalizedKurtosis)
@@ -150,11 +150,11 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
               // Calculate aggressiveness using normalized kurtosis
               // let aggressiveness = (normalizedKurtosis);
               let aggressiveness = ((individualBufferValues[i].zcr - 10)/30);
-              let sizeMultipler;
+              let sizeMultiplier;
               if (aggressiveness > 1) {
-                sizeMultipler = aggressiveness;
+                sizeMultiplier = aggressiveness;
               } else {
-                sizeMultipler = 1;
+                sizeMultiplier = 1;
               }
               aggressiveness = Math.max(0, Math.min(1, aggressiveness));
               // console.log("aggressiveness:", aggressiveness)
@@ -174,7 +174,7 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
               // Store the hue value instead of setting angle immediately
               if (individualBufferValues[i].energy > (audioFeatures.energy.average * 0.2) && aggressiveness !== 0) {
                 poly(p.random(p.width), p.random(p.height), //location
-                ((25 + Math.min(110, individualBufferValues[i].energy))*0.5)*sizeMultipler, //size
+                ((35 + Math.min(110, individualBufferValues[i].energy))*0.5)*sizeMultiplier, //size
                 p, //p5 instance
                 aggressiveness); //aggressiveness
               }

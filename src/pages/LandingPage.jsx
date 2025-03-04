@@ -13,6 +13,7 @@ const LandingPage = ({ setSelectedImage, setProcessedImage, setInitialAudioFile 
       reader.onload = function (event) {
         setSelectedImage(event.target.result);
         setProcessedImage(null);
+        setInitialAudioFile(null);
         navigate('/home');
       };
 

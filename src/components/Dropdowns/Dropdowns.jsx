@@ -26,7 +26,9 @@ function Dropdowns({
     }, [isCollapsed]);
 
     return (
-        <div className="drop-down" ref={dropDownRef}>
+        <div className="drop-down" ref={dropDownRef}
+        //  style={{display: hasDropdown === false ? "flex" : ""}}
+         >
             <div className="drop-down-header" onClick={toggleCollapse}>
                 <h3 className="drop-down-name">{dropdownName}</h3>
                 {hasDropdown !== false &&

@@ -77,7 +77,7 @@ const Slider = ({ label, value, setValue, maxValue, tooltip }) => {
                     type="range"
                     min="0"
                     max={max}
-                    value={localValue}
+                    value={Math.round(localValue)}
                     onChange={(e) => handleChange(parseInt(e.target.value))}
                     className='slider-range'
                 />
@@ -85,7 +85,7 @@ const Slider = ({ label, value, setValue, maxValue, tooltip }) => {
                     type="number"
                     min="0"
                     max={max}
-                    value={localValue}
+                    value={Math.round(localValue)}
                     onChange={(e) => {
                         const newValue = Math.min(max, Math.max(0, parseInt(e.target.value) || 0));
                         handleChange(newValue);

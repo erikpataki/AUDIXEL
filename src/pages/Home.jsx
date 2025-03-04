@@ -6,7 +6,7 @@ import Meyda from "meyda";
 import Canvas from '../components/Canvas/Canvas';
 import * as realtimeBpm from 'realtime-bpm-analyzer';
 
-const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedImage, initialAudioFile }) => {
+const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedImage, initialAudioFile, setInitialAudioFile }) => {
   const [minThreshold, setMinThreshold] = useState(40);
   const [maxThreshold, setMaxThreshold] = useState(170);
   const [sortMode, setSortMode] = useState(0); // 0 = brightness, 1 = darkness, 2 = hue, 3 = saturation, 4 = lightness
@@ -19,8 +19,8 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
   const [angle, setAngle] = useState(115);
   const canvasRef = useRef(null);
   const [individualBufferValues, setIndividualBufferValues] = useState([]);
-  const [horizontalResolutionValue, setHorizontalResolutionValue] = useState(2000);
-  const [verticalResolutionValue, setVerticalResolutionValue] = useState(2000);
+  const [horizontalResolutionValue, setHorizontalResolutionValue] = useState(2400);
+  const [verticalResolutionValue, setVerticalResolutionValue] = useState(2400);
   const [uploadedFile, setUploadedFile] = useState(null);
   const [onsets, setOnsets] = useState([]);
   const [bpm, setBpm] = useState(null);
@@ -610,6 +610,14 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     }
   }, [initialAudioFile]);
 
+  useEffect(() => {
+    return () => {
+      setSelectedImage(null);
+      setProcessedImage(null);
+      setInitialAudioFile(null);
+    };
+  }, []);
+
   // Define sliders as an array of objects
   const settingsSliders = [
     {
@@ -705,7 +713,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
           <div className='selectors-container-parent'>
             <div className='selectors-container'>
               <div className='title-bar'>
-                <h3 className='main-title' onClick={() => { setSelectedImage(null); setProcessedImage(null); }}>AUDIXEL</h3>
+                <h3 className='main-title'>AUDIXEL</h3>
                 <label className="switch">
                     <input
                       type="checkbox"
@@ -757,7 +765,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
               />
               <input
                 type="number"
-                min="1000"
+                min="2400"
                 max={4000}
                 value={pendingHorizontalResolution}
                 onChange={(e) => {
@@ -766,7 +774,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
               />              
               <input
                 type="number"
-                min="1000"
+                min="2400"
                 max={4000}
                 value={pendingVerticalResolution}
                 onChange={(e) => {
