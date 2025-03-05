@@ -188,3 +188,14 @@
 input[type="range"] {
     width: auto;
 }
+
+.audio-upload-block.home-page-upload-block {
+    margin-bottom: 0.9rem;
+}
+
+.upload-text.home-page-upload-text {
+    width: 100%;
+    height: 6rem;
+    font-size: 0.9rem;
+    background-color: #0D1F22;
+}

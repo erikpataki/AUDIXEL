@@ -797,28 +797,37 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
                 selectors={sortModeSelectors}
                 hasDropdown={true}
               />
-               {/* style={{marginTop: "auto"}} */}
-              <div className='download-button' onClick={handleProcessAudioAgain}>                
-                <Dropdowns dropdownName={"PROCESS AUDIO AGAIN"} hasDropdown={false} />
+              <div className="audio-upload-block home-page-upload-block" style={{marginTop: "auto"}}>
+                <label htmlFor="sound-file" className='file-input-label'>
+                  <div className="upload-text home-page-upload-text">
+                    <div className='image-upload-text-main-parent'>
+                      <p className='image-upload-text'>SELECT OR DRAG NEW AUDIO FILE</p>
+                      <p className='image-upload-text'>(.wav, .mp3, .ogg)</p>
+                    </div>
+                  </div>
+                </label>
               </div>
-              {processedImage && (
-                <div className='download-button' onClick={downloadImage}>                
-                  <Dropdowns dropdownName={"DOWNLOAD IMAGE"} hasDropdown={false} />
-                </div>
-              )}
-
               <input 
                 id="sound-file" 
                 accept="audio/*" 
                 type="file" 
                 onChange={handleAudioChange}
                 value=""
+                style={{ display: 'none' }}
                 ref={(element) => {
                   if (element) {
                     element.value = '';
                   }
                 }}
               />
+              <div className='download-button' onClick={handleProcessAudioAgain}>                
+                <Dropdowns dropdownName={"PROCESS AUDIO AGAIN"} hasDropdown={false} />
+              </div>
+              {/* {processedImage && ( */}
+                <div className='download-button' onClick={downloadImage}>                
+                  <Dropdowns dropdownName={"DOWNLOAD IMAGE"} hasDropdown={false} />
+                </div>
+              {/* )} */}
             </div>
           </div>
         )}
