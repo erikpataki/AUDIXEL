@@ -636,6 +636,25 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     }
   };
 
+  const handleImageChange = (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+
+      reader.onload = function (event) {
+        setSelectedImage(event.target.result);
+        setProcessedImage(null);
+        setInitialAudioFile({
+          file: null,
+          name: file.name,
+          isImage: true
+        });
+      };
+
+      reader.readAsDataURL(file);
+    }
+  };
+
   useEffect(() => {
     if (initialAudioFile && !uploadedFile) {
       console.log("Processing initial file from landing page:", initialAudioFile);
@@ -701,6 +720,9 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
       
       if (file.type.startsWith('audio/')) {
         handleAudioChange(null, file);
+      }
+      if (file.type.startsWith('image/')) {
+        handleImageChange(null, file);
       }
     }
   };
@@ -806,6 +828,26 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
             setSortMode={setSortMode}
             ref={canvasComponentRef}
           />
+          <div className='download-button upload-own-image-button' style={{ textAlign: 'left' }}>
+            <div className='upload-own-image-button-tab'>
+              <h4 className='upload-own-image-button-tab-icon'>˄</h4>
+            </div>
+            <label htmlFor="image-file-input">
+              <Dropdowns dropdownName={"UPLOAD OWN IMAGE"} hasDropdown={false} />
+              <div className='upload-own-image-button-plus-icon-parent'>
+                <svg width="30" height="30" viewBox="0 0 50 50" className='upload-own-image-button-plus-icon'>
+                  <line x1="5" y1="25" x2="45" y2="25" stroke="black" stroke-width="2"/>
+                  <line x1="25" y1="5" x2="25" y2="45" stroke="black" stroke-width="2"/>
+                </svg>
+              </div>
+            </label>
+          </div>
+          <input id="image-file-input"
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            style={{ display: 'none' }}>
+          </input>
           {isSettingsChanging && (
             <div className="canvas-spinner-container">
               <SpinnerOverlay isVisible={true} />
@@ -885,11 +927,9 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
               <div className='download-button' onClick={handleProcessAudioAgain}>                
                 <Dropdowns dropdownName={"PROCESS AUDIO AGAIN"} hasDropdown={false} />
               </div>
-              {/* {processedImage && ( */}
-                <div className='download-button' onClick={downloadImage}>                
-                  <Dropdowns dropdownName={"DOWNLOAD IMAGE"} hasDropdown={false} />
-                </div>
-              {/* )} */}
+              <div className='download-button' onClick={downloadImage}>                
+                <Dropdowns dropdownName={"DOWNLOAD IMAGE"} hasDropdown={false} />
+              </div>
             </div>
           </div>
         )}
