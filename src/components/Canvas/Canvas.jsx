@@ -381,8 +381,8 @@ const Canvas = forwardRef(({ selectedImage, processedImage, showProcessed, setSe
           }}>
             <canvas 
               style={{
-                maxWidth: '100%',
-                maxHeight: '100%',
+                width: '100%',
+                height: '100%',
                 objectFit: 'contain',
                 imageRendering: 'pixelated',
               }}

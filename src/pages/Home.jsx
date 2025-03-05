@@ -32,8 +32,20 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [processingMessage, setProcessingMessage] = useState('');
   const [isSettingsChanging, setIsSettingsChanging] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const canvasComponentRef = useRef(null);
   const [fileName, setFileName] = useState('');
+
+  useEffect(() => {
+    if (selectedImage && !fileName && initialAudioFile) {
+      // If we have a selected image from landing page
+      if (initialAudioFile.isImage) {
+        setFileName(initialAudioFile.name || 'Uploaded Image');
+      } else if (initialAudioFile.file) {
+        setFileName(initialAudioFile.name || 'Uploaded Audio');
+      }
+    }
+  }, [selectedImage, fileName, initialAudioFile]);
 
   const getScaleMultiplier = (scaleValue) => scaleValue > 0 ? scaleValue + 1 : 1;
 
@@ -626,9 +638,14 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
 
   useEffect(() => {
     if (initialAudioFile && !uploadedFile) {
-      console.log("Processing initial audio file from landing page:", initialAudioFile);
+      console.log("Processing initial file from landing page:", initialAudioFile);
       setFileName(initialAudioFile.name || 'Unknown File');
-      handleAudioChange(null, initialAudioFile.file);
+      
+      // Only process actual audio files, not images
+      if (initialAudioFile.file && !initialAudioFile.isImage) {
+        handleAudioChange(null, initialAudioFile.file);
+      }
+      
       setInitialAudioFile(null);
     }
   }, [initialAudioFile]);
@@ -661,6 +678,32 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     setHorizontalResolutionValue(BASE_RESOLUTION * multiplier);
     setVerticalResolutionValue(BASE_RESOLUTION * multiplier);
   }, [scale]);
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      
+      if (file.type.startsWith('audio/')) {
+        handleAudioChange(null, file);
+      }
+    }
+  };
 
   const settingsSliders = [
     {
@@ -784,7 +827,22 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
                   </label>
               </div>
               <div className='chosen-file'>
-                <p>Chosen File: {fileName}</p>
+                {uploadedFile ? (
+                  uploadedFile.type.toLowerCase().startsWith('audio') ? (
+                    <p>CHOSEN AUDIO: {uploadedFile.name}</p>
+                  ) : (
+                    <p>CHOSEN IMAGE: {uploadedFile.name || fileName}</p>
+                  )
+                ) : fileName ? (
+                  initialAudioFile && initialAudioFile.isImage ? 
+                    <p>CHOSEN IMAGE: {fileName}</p> 
+                    : 
+                    <p>CHOSEN AUDIO: {fileName}</p>
+                ) : selectedImage ? (
+                  <p>CHOSEN IMAGE</p>
+                ) : (
+                  <p>No file chosen</p>
+                )}
               </div>
               <Dropdowns 
                 dropdownName="SETTINGS"
@@ -797,7 +855,11 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
                 selectors={sortModeSelectors}
                 hasDropdown={true}
               />
-              <div className="audio-upload-block home-page-upload-block" style={{marginTop: "auto"}}>
+              <div className={`audio-upload-block home-page-upload-block ${isDragging ? 'dragging' : ''}`} 
+                style={{marginTop: "auto"}}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}>
                 <label htmlFor="sound-file" className='file-input-label'>
                   <div className="upload-text home-page-upload-text">
                     <div className='image-upload-text-main-parent'>
