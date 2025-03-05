@@ -46,7 +46,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
       }
       debounceTimeoutRef.current = setTimeout(() => {
         func.apply(null, args);
-        setIsSettingsChanging(false);
+        // setIsSettingsChanging will be set to false in the processImage function when processing is complete
       }, delay);
     };
   };
@@ -306,9 +306,14 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     rotatedBackCtx.drawImage(canvas, 0, 0);
     
     const rotatedBackDataURL = rotatedBackCanvas.toDataURL();
+    
+    // Set the processed image with a callback to ensure spinner disappears only after image is set
     setProcessedImage(rotatedBackDataURL);
     
-    setIsSettingsChanging(false);
+    // Add a small delay before removing the spinner to ensure the image has time to render
+    setTimeout(() => {
+      setIsSettingsChanging(false);
+    }, 100);
   };
 
   const downloadImage = () => {
