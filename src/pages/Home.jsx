@@ -797,11 +797,12 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
                 selectors={sortModeSelectors}
                 hasDropdown={true}
               />
+               {/* style={{marginTop: "auto"}} */}
               <div className='download-button' onClick={handleProcessAudioAgain}>                
                 <Dropdowns dropdownName={"PROCESS AUDIO AGAIN"} hasDropdown={false} />
               </div>
               {processedImage && (
-                <div className='download-button' onClick={downloadImage} >                
+                <div className='download-button' onClick={downloadImage}>                
                   <Dropdowns dropdownName={"DOWNLOAD IMAGE"} hasDropdown={false} />
                 </div>
               )}

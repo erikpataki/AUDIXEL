@@ -1,103 +1,3 @@
-* {
-    font-family: Inter;
-}
-
-.upload-parent-parent {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    width: 100%;
-}
-
-.upload-parent {
-    display: flex;
-    width: 100%;
-    height: 100vh;
-}
-
-.image-upload {
-    flex: 0 0 75%;
-    position: relative;
-    padding: 40px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.image-upload-no-image {
-    flex: 0 0 100%;
-}
-
-.file-input-label {
-    /* width: 100%;
-    height: 100%; */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.upload-block {
-    width: 100%;
-    height: 100%;
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.upload-text {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    transition: border-color 0.3s ease;
-    overflow: hidden;
-    width: 34.4375rem;
-    height: 20.125rem;
-    flex-shrink: 0;
-    border-radius: 2rem;
-    border: 3px solid #FFFFFA;
-    font-size: 18px;
-    color: #FFFFFA;
-    display: flex;
-    font-size: 1.5rem;
-    font-style: normal;
-    font-weight: 400;
-    line-height: normal;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    position: relative;
-}
-
-.upload-text:hover {
-    border-color: #888;
-}
-
-.image-upload-text-main-parent {
-    text-align: center;
-    justify-content: center;
-    align-items: center;
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-}
-
-.small-image-upload-text {
-    margin-top: 10rem;
-    position: absolute;
-    bottom: 10px;
-    width: 100%;
-    text-align: center;
-    font-size: small;
-    cursor: pointer;
-}
-
-.small-image-upload-text:hover {
-    text-decoration: underline;
-}
-
 .preview-image {
     max-width: 100%;
     max-height: 100%;
@@ -149,9 +49,12 @@
     width: 100%;
     text-align: left;
     text-decoration: underline;
-    font-size: 40px;
+    font-size: 48px;
     margin-bottom: 0;
     cursor: pointer;
+    letter-spacing: 0.07em;
+    font-weight: 600;
+    text-underline-offset: 0.17em;
 }
 
 /* .toggle-switch {

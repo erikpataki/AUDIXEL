@@ -5,7 +5,7 @@ const LoadingOverlay = ({ progress, isProcessing, message }) => {
   return (
     <div className="loading-overlay">
       <div className="loading-content">
-        <div className="loading-spinner"></div>
+        {/* <div className="loading-spinner"></div> */}
         <div className="loading-message">
           {message || 'Processing...'}
         </div>
