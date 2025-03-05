@@ -24,6 +24,7 @@
     color: #FFFFFA;
     background-color: #0D1F22;
     text-align: center; /* Added to center the text */
+    font-size: 0.75rem;
 }
 
 .label-tooltip-container {

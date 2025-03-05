@@ -4,10 +4,10 @@
 
 .upload-parent-parent {
     display: flex;
-    justify-content: center; 
+    justify-content: center;
     align-items: center;
-    height: 100%; 
-    /* overflow: hidden; */
+    height: 100vh;
+    width: 100%;
 }
 
 .upload-parent {
@@ -203,11 +203,41 @@
     width: 100%;
 }
 
+.canvas-wrapper {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.canvas-wrapper > * {
+  position: relative;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.canvas-spinner-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  pointer-events: none; /* Allow clicks to pass through when not in use */
+}
+
+.canvas-spinner-container .spinner-overlay {
+  position: absolute; /* Keep positioned within the container */
+  pointer-events: auto; /* Re-enable pointer events for the actual spinner */
+}
+
 .sound-upload canvas {
     width: 100%;
     height: 100px;
-    background-color: #000;
-    border-radius: 10px;
+    object-fit: contain;
     margin-top: 10px;
 }
 

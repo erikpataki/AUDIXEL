@@ -6,6 +6,9 @@
     image-rendering: pixelated;
     object-fit: contain;
     aspect-ratio: auto 1000/561;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 
 .preview-image-blur {
@@ -15,6 +18,18 @@
     position: absolute;
     z-index: 1;
     object-fit: contain;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.canvas-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .p5Canvas {

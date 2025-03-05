@@ -1,13 +1,25 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import p5 from 'p5';
 import "./Canvas.css";
 
-const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage, setProcessedImage, canvasRef, audioFeatures, individualBufferValues, debouncedProcessImage, horizontalResolutionValue, verticalResolutionValue, bufferSize, setAngle, minThreshold, maxThreshold, setSortMode }) => {
+const Canvas = forwardRef(({ selectedImage, processedImage, showProcessed, setSelectedImage, setProcessedImage, canvasRef, audioFeatures, individualBufferValues, debouncedProcessImage, horizontalResolutionValue, verticalResolutionValue, scale, bufferSize, setAngle, minThreshold, maxThreshold, setSortMode }, ref) => {
   const p5ContainerRef = useRef(null);
   const p5InstanceRef = useRef(null);
   const processingCompletedRef = useRef(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const hasGeneratedBaseImageRef = useRef(false);
+  
+  // Add a state to store generated shapes for reuse when scale changes
+  const [shapeData, setShapeData] = useState([]);
+  // Flag to track if we need to regenerate shapes or just rescale
+  const [shouldRegenerateShapes, setShouldRegenerateShapes] = useState(true);
+  // Previous audio features reference to detect changes
+  const previousAudioFeaturesRef = useRef(null);
+
+  // Expose the setShouldRegenerateShapes method through the ref
+  useImperativeHandle(ref, () => ({
+    setShouldRegenerateShapes
+  }));
 
   // let paletteSelected1;
   // let paletteSelected2;
@@ -23,13 +35,20 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
       img.onload = () => {
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx.drawImage(img, 0, 0);
+        
+        // Get scale multiplier consistently
+        const getScaleMultiplier = (scaleValue) => scaleValue > 0 ? scaleValue + 1 : 1;
+        const scaleMultiplier = getScaleMultiplier(scale);
+        
+        // Apply scale factor to canvas dimensions
+        canvas.width = img.width * scaleMultiplier;
+        canvas.height = img.height * scaleMultiplier;
+        
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         setImageLoaded(true); // Set the state to true when image is loaded
       };
     }
-  }, [selectedImage, canvasRef]);
+  }, [selectedImage, canvasRef, scale]);
 
   function getAudioRGBA(hue, saturation, lightness) {
     hue = (1-hue) * 240;
@@ -66,6 +85,16 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
       // Reset processing flag when new audio features are received
       processingCompletedRef.current = false;
 
+      // Determine if we need to regenerate shapes based on audio features change
+      // If the audioFeatures object is different from what we had before, regenerate shapes
+      const audioFeaturesChanged = !previousAudioFeaturesRef.current || 
+        JSON.stringify(previousAudioFeaturesRef.current) !== JSON.stringify(audioFeatures);
+      
+      if (audioFeaturesChanged) {
+        setShouldRegenerateShapes(true);
+        previousAudioFeaturesRef.current = { ...audioFeatures };
+      }
+
       // Remove the old p5 instance if it exists
       if (p5InstanceRef.current) {
         p5InstanceRef.current.remove();
@@ -90,95 +119,115 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
         canvasHeight = canvasWidth / aspectRatio;
       }
 
+      // Calculate scale multiplier consistently
+      const getScaleMultiplier = (scaleValue) => scaleValue > 0 ? scaleValue + 1 : 1;
+      const scaleMultiplier = getScaleMultiplier(scale);
+
       const sketch = (p) => {
         p.setup = () => {
           const container = p5ContainerRef.current;
+          // Use the horizontalResolutionValue and verticalResolutionValue directly
+          // These already have the scale factor applied in Home.jsx
           const canvas = p.createCanvas(horizontalResolutionValue, verticalResolutionValue);
           canvas.parent(container);
           p.angleMode(p.DEGREES);
-          // paletteSelected1 = p.random(palettes);
-          // paletteSelected2 = p.random(palettes);
-          // console.log("p5 setup called");
           p.noLoop();
         };
 
         p.draw = () => {
           p.background(0); // Set background to black
-          // Loop to draw multiple shapes
+          
+          // If we need to regenerate shapes, process audio data and create new shapes
+          if (shouldRegenerateShapes) {
+            const newShapeData = [];
+            let kurtosisRange = audioFeatures.spectralKurtosis.max - audioFeatures.spectralKurtosis.min;
 
-          // Calculate mean and standard deviation of kurtosis values
-          // let kurtosisValues = individualBufferValues.map(buffer => buffer.spectralKurtosis).filter(value => !isNaN(value));
-          // console.log("kurtosisValues:", kurtosisValues)
-          // let mean = kurtosisValues.reduce((a, b) => a + b, 0) / kurtosisValues.length;
-          // console.log("mean:", mean)
-          // let stdDev = Math.sqrt(
-          //   kurtosisValues.map(x => Math.pow(x - mean, 2))
-          //               .reduce((a, b) => a + b, 0) / kurtosisValues.length
-          // );
-          // console.log("stdDev:", stdDev)
+            for (let i = 0; i < individualBufferValues.length; i++) {
+              if (individualBufferValues[i].spectralKurtosis && individualBufferValues[i].spectralKurtosis !== 0 && individualBufferValues[i].energy > 1) {
+                // Original calculation for aggressiveness-based size
+                let aggressiveness = ((individualBufferValues[i].zcr - 10)/30);
+                let sizeMultiplier;
+                if (aggressiveness > 1) {
+                  sizeMultiplier = aggressiveness;
+                } else {
+                  sizeMultiplier = 1;
+                }
+                aggressiveness = Math.max(0, Math.min(1, aggressiveness));
+                
+                let hueValue = aggressiveness;
+                let saturationValue = Math.min(100, (30 + (individualBufferValues[i].energy*1.15)));
 
-          // Filter out outliers (values more than 2 standard deviations from mean)
-          // let filteredKurtosis = kurtosisValues.filter(x => 
-          //   Math.abs(x - mean) <= 0.3 * stdDev
-          // );
-          // console.log("filteredKurtosis:", filteredKurtosis)
+                const { color1, color2 } = getAudioRGBA(hueValue, saturationValue);
+                col1 = color1;
+                col2 = color2;
 
-          // Get min and max from filtered values
-          // let filteredMin = Math.min(...filteredKurtosis);
-          // let filteredMax = Math.max(...filteredKurtosis);
-          // let filteredRange = filteredMax - filteredMin;
-          // console.log("filteredRange:", filteredRange)
-          let kurtosisRange = audioFeatures.spectralKurtosis.max - audioFeatures.spectralKurtosis.min;
-          // console.log("kurtosisRange:", kurtosisRange)
-
-          for (let i = 0; i < individualBufferValues.length; i++) {
-            if (individualBufferValues[i].spectralKurtosis && individualBufferValues[i].spectralKurtosis !== 0 && individualBufferValues[i].energy > 1) {
-              // Normalize spectral kurtosis to 0-1 range
-              // let kurtosisRange = audioFeatures.spectralKurtosis.max*0.4 - audioFeatures.spectralKurtosis.min;
-              // let normalizedKurtosis = (individualBufferValues[i].spectralKurtosis
-              //    - audioFeatures.spectralKurtosis.min
-              //   ) / kurtosisRange;
-              // console.log("zcr:", individualBufferValues[i].zcr)
-
-
-              // let normalizedKurtosis = (individualBufferValues[i].spectralKurtosis - audioFeatures.spectralKurtosis.min) / kurtosisRange;
-              // let normalizedKurtosis = (individualBufferValues[i].spectralKurtosis - audioFeatures.spectralKurtosis.min)
-
-              // console.log("normalizedKurtosis:", normalizedKurtosis)
-              // console.log(Math.max(0, Math.min(1, (individualBufferValues[i].energy / 0.9*audioFeatures.energy.average))))
-              
-              // Calculate aggressiveness using normalized kurtosis
-              // let aggressiveness = (normalizedKurtosis);
-              let aggressiveness = ((individualBufferValues[i].zcr - 10)/30);
-              let sizeMultiplier;
-              if (aggressiveness > 1) {
-                sizeMultiplier = aggressiveness;
-              } else {
-                sizeMultiplier = 1;
-              }
-              aggressiveness = Math.max(0, Math.min(1, aggressiveness));
-              // console.log("aggressiveness:", aggressiveness)
-              let hueValue = aggressiveness;
-              let saturationValue = Math.min(100, (30 + (individualBufferValues[i].energy*1.15)));
-              // console.log("hue:", hue)
-              // saturationValue = 30
-              // console.log("saturation:", saturationValue)
-
-              // console.log("aggressiveness:", aggressiveness)
-              const { color1, color2 } = getAudioRGBA(hueValue, saturationValue);
-              col1 = color1;
-              col2 = color2;
-              // col1 = getAudioRGBA(1).color1;
-              // col2 = getAudioRGBA(1).color2;
-
-              // Store the hue value instead of setting angle immediately
-              if (individualBufferValues[i].energy > (audioFeatures.energy.average * 0.2) && aggressiveness !== 0) {
-                poly(p.random(p.width), p.random(p.height), //location
-                ((35 + Math.min(110, individualBufferValues[i].energy))*0.5)*sizeMultiplier, //size
-                p, //p5 instance
-                aggressiveness); //aggressiveness
+                // Store the hue value instead of setting angle immediately
+                if (individualBufferValues[i].energy > (audioFeatures.energy.average * 0.2) && aggressiveness !== 0) {
+                  // Calculate base size with original formula
+                  const baseSize = (35 + Math.min(110, individualBufferValues[i].energy)) * 0.5;
+                  
+                  // Apply the aggressiveness-based size multiplier from the original code
+                  const sizedShape = baseSize * sizeMultiplier;
+                  
+                  // Generate random position once and store it
+                  const x = p.random(p.width);
+                  const y = p.random(p.height);
+                  
+                  // Store the positions as relative percentages of the canvas size
+                  // This ensures they scale properly when the canvas size changes
+                  const xPercent = x / p.width;
+                  const yPercent = y / p.height;
+                  
+                  const rotation = p.random(360);
+                  
+                  // Get number of vertices based on aggressiveness
+                  const verticesNums = p.int(Math.max(3, Math.min(10, Math.round(aggressiveness*10))));
+                  const depth = Math.max(0.1, Math.min(0.75, aggressiveness/1.34));
+                  
+                  // Store all shape properties
+                  newShapeData.push({
+                    xPercent,
+                    yPercent,
+                    baseSize: sizedShape, // Store the base size (before scale multiplier)
+                    color1,
+                    color2,
+                    aggressiveness,
+                    rotation,
+                    verticesNums,
+                    depth
+                  });
+                  
+                  // Draw the shape with the scale multiplier applied
+                  const scaledSize = sizedShape * scaleMultiplier;
+                  drawPoly(x, y, scaledSize, p, rotation, verticesNums, depth, color1, color2);
+                }
               }
             }
+            
+            // Save the shape data for future use
+            setShapeData(newShapeData);
+            setShouldRegenerateShapes(false);
+          } else {
+            // Reuse existing shape data, just redraw with new scale
+            shapeData.forEach(shape => {
+              // Calculate actual pixel positions using percentages
+              // This ensures shapes are distributed across the entire canvas
+              const x = shape.xPercent * p.width;
+              const y = shape.yPercent * p.height;
+              
+              const scaledSize = shape.baseSize * scaleMultiplier;
+              drawPoly(
+                x, 
+                y, 
+                scaledSize, 
+                p, 
+                shape.rotation,
+                shape.verticesNums,
+                shape.depth,
+                shape.color1,
+                shape.color2
+              );
+            });
           }
 
           const dataUrl = p.canvas.toDataURL();
@@ -188,12 +237,10 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
           if (!processingCompletedRef.current) {
             // Set angle using spectralKurtosis
             const newAngle = audioFeatures.spectralKurtosis.average * 10;
-            // console.log('Setting new angle based on spectralKurtosis:', newAngle);
             setAngle((newAngle + 360) % 360);
             
             // Set sort mode based on ZCR average
             const averageZCR = audioFeatures.zcr.average;
-            // console.log('Setting sort mode based on ZCR:', averageZCR);
             let newSortMode;
             if (averageZCR < 14) {
               newSortMode = 4; // Lightness
@@ -212,7 +259,8 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
           }
         };
 
-        function poly(x, y, r, p, aggressiveness) {
+        // Updated poly function to extract drawing logic
+        function drawPoly(x, y, r, p, rotation, verticesNums, depth, color1, color2) {
           // Function to draw a polygon
           p.noStroke();
           let gradientFill = p.drawingContext.createLinearGradient(
@@ -221,28 +269,31 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
             0,
             r
           );
-          gradientFill.addColorStop(0, p.color(col1));
-          gradientFill.addColorStop(1, p.color(col2));
+          gradientFill.addColorStop(0, p.color(color1));
+          gradientFill.addColorStop(1, p.color(color2));
           p.drawingContext.fillStyle = gradientFill;
           p.push();
-          p.translate(x, y)
-          p.rotate(p.random(360))
-          // verticesNums sets how many points the shape has
-          let verticesNums = p.int(Math.max(3, Math.min(10, Math.round(aggressiveness*10))))
-          // console.log("verticesNums:", verticesNums)
-          // depth sets how close the bits that go into the shape are to the center
-          // let depth = p.random(0.1, 0.5)
-          // console.log("aggressiveness/2:", aggressiveness/2);
-          let depth = Math.max(0.1, Math.min(0.75, aggressiveness/1.34))
+          p.translate(x, y);
+          p.rotate(rotation);
+          
           p.beginShape();
           for (let i = 0; i < 360; i += 1) {
             let radius = r + (r * depth * p.sin(i * verticesNums));
             let ex = radius * p.sin(i);
             let ey = radius * p.cos(i);
-            p.vertex(ex, ey)
+            p.vertex(ex, ey);
           }
-          p.endShape(p.CLOSE)
+          p.endShape(p.CLOSE);
           p.pop();
+        }
+
+        // Original poly function for backward compatibility
+        function poly(x, y, r, p, aggressiveness) {
+          const verticesNums = p.int(Math.max(3, Math.min(10, Math.round(aggressiveness*10))));
+          const depth = Math.max(0.1, Math.min(0.75, aggressiveness/1.34));
+          const rotation = p.random(360);
+          
+          drawPoly(x, y, r, p, rotation, verticesNums, depth, col1, col2);
         }
 
         function distortedCircle(x, y, r, p) {
@@ -302,7 +353,7 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
         p5InstanceRef.current = null;
       }
     };
-  }, [audioFeatures, individualBufferValues, imageLoaded, horizontalResolutionValue, verticalResolutionValue]);
+  }, [audioFeatures, individualBufferValues, imageLoaded, horizontalResolutionValue, verticalResolutionValue, scale, shapeData, shouldRegenerateShapes]);
 
   return (
     <div className="image-upload">
@@ -341,7 +392,7 @@ const Canvas = ({ selectedImage, processedImage, showProcessed, setSelectedImage
       <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
     </div>
   );
-};
+});
 
 // Define palettes outside the component
 const palettes = [

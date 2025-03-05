@@ -2,38 +2,51 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import "./Home.css";
 import Dropdowns from '../components/Dropdowns/Dropdowns';
 import Meyda from "meyda";
-// import Slider from '../components/Dropdowns/Slider/Slider';
 import Canvas from '../components/Canvas/Canvas';
-import * as realtimeBpm from 'realtime-bpm-analyzer';
+import LoadingOverlay from '../components/LoadingOverlay/LoadingOverlay';
+import SpinnerOverlay from '../components/SpinnerOverlay/SpinnerOverlay';
 
 const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedImage, initialAudioFile, setInitialAudioFile }) => {
   const [minThreshold, setMinThreshold] = useState(40);
-  const [maxThreshold, setMaxThreshold] = useState(170);
-  const [sortMode, setSortMode] = useState(0); // 0 = brightness, 1 = darkness, 2 = hue, 3 = saturation, 4 = lightness
+  const [maxThreshold, setMaxThreshold] = useState(220);
   const [showProcessed, setShowProcessed] = useState(true);
   const [combinedThreshold, setCombinedThreshold] = useState(150);
   const debounceTimeoutRef = useRef(null);
-  const [audioSamples, setAudioSamples] = useState([]);
   const [audioFeatures, setAudioFeatures] = useState({});
   const [middlePoint, setMiddlePoint] = useState(128);
   const [angle, setAngle] = useState(115);
+  const [sortMode, setSortMode] = useState(0);
+  const [anglePreview, setAnglePreview] = useState(null);
+  const [sortModePreview, setSortModePreview] = useState(null);
   const canvasRef = useRef(null);
   const [individualBufferValues, setIndividualBufferValues] = useState([]);
-  const [horizontalResolutionValue, setHorizontalResolutionValue] = useState(2400);
-  const [verticalResolutionValue, setVerticalResolutionValue] = useState(2400);
+  const [audioProcessingState, setAudioProcessingState] = useState('idle');
+  const [pendingProcessedImage, setPendingProcessedImage] = useState(null);
+  const hasTriggeredImageProcessingRef = useRef(false);
+  const BASE_RESOLUTION = 2400;
+  const [horizontalResolutionValue, setHorizontalResolutionValue] = useState(BASE_RESOLUTION);
+  const [verticalResolutionValue, setVerticalResolutionValue] = useState(BASE_RESOLUTION);
   const [uploadedFile, setUploadedFile] = useState(null);
-  const [onsets, setOnsets] = useState([]);
-  const [bpm, setBpm] = useState(null);
-  const [pendingHorizontalResolution, setPendingHorizontalResolution] = useState(horizontalResolutionValue);
-  const [pendingVerticalResolution, setPendingVerticalResolution] = useState(verticalResolutionValue);
+  const [scale, setScale] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [processingMessage, setProcessingMessage] = useState('');
+  const [isSettingsChanging, setIsSettingsChanging] = useState(false);
+  const canvasComponentRef = useRef(null);
+  const [fileName, setFileName] = useState('');
+
+  const getScaleMultiplier = (scaleValue) => scaleValue > 0 ? scaleValue + 1 : 1;
 
   const debounce = (func, delay) => {
-    return (...args) => {
+    return function (...args) {
+      setIsSettingsChanging(true);
+      
       if (debounceTimeoutRef.current) {
         clearTimeout(debounceTimeoutRef.current);
       }
       debounceTimeoutRef.current = setTimeout(() => {
-        func(...args);
+        func.apply(null, args);
+        setIsSettingsChanging(false);
       }, delay);
     };
   };
@@ -49,17 +62,15 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
       setMiddlePoint(value);
     }
 
-    // Recalculate minThreshold and maxThreshold based on updated values
     const newMiddlePoint = type === 'middlePoint' ? value : middlePoint;
     const newCombinedThreshold = type === 'amount' ? value : combinedThreshold;
 
     let minValue = newMiddlePoint - (newCombinedThreshold * 0.5);
-    minValue = Math.max(0, Math.floor(minValue)); // Cap at 0
+    minValue = Math.max(0, Math.floor(minValue)); 
 
-    let maxValue = newMiddlePoint + (newCombinedThreshold * (0.0029*newCombinedThreshold)); // Corrected calculation
-    maxValue = Math.min(255, Math.ceil(maxValue)); // Cap at 255
+    let maxValue = newMiddlePoint + (newCombinedThreshold * (0.0029*newCombinedThreshold)); 
+    maxValue = Math.min(255, Math.ceil(maxValue)); 
 
-    // Ensure minThreshold is not greater than maxThreshold
     if (minValue > maxValue) {
       [minValue, maxValue] = [maxValue, minValue];
     }
@@ -77,12 +88,18 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
   };
 
   const processImage = async (dataUrl, minThreshold, maxThreshold, sortMode, angle) => {
+    setIsSettingsChanging(true);
+    
     const canvas = canvasRef.current;
     if (!canvas) {
       console.error("Canvas ref is not available.");
+      setIsSettingsChanging(false);
       return;
     }
+    
     const ctx = canvas.getContext('2d');
+
+    const scaleMultiplier = getScaleMultiplier(scale);
 
     const image = new Image();
     image.src = dataUrl;
@@ -90,49 +107,39 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
       image.onload = resolve;
     });
 
-    // Calculate radians from angle
     const radians = (angle * Math.PI) / 180;
 
-    // Calculate new canvas dimensions based on rotation
     const sin = Math.abs(Math.sin(radians));
     const cos = Math.abs(Math.cos(radians));
     const newWidth = Math.ceil(image.width * cos + image.height * sin);
     const newHeight = Math.ceil(image.width * sin + image.height * cos);
 
-    canvas.width = newWidth;
-    canvas.height = newHeight;
+    canvas.width = newWidth * scaleMultiplier;
+    canvas.height = newHeight * scaleMultiplier;
     
-    // Clear any existing transformations on the main context
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     
-    // Create a temporary canvas for processing
     const tempCanvas = document.createElement('canvas');
     const tempCtx = tempCanvas.getContext('2d');
-    tempCanvas.width = newWidth;
-    tempCanvas.height = newHeight;
+    tempCanvas.width = newWidth * scaleMultiplier;
+    tempCanvas.height = newHeight * scaleMultiplier;
     
-    // Clear the temporary canvas
     tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
     
-    // Save the temporary context state
     tempCtx.save();
     
-    // Rotate around center point and draw image
-    tempCtx.translate(newWidth / 2, newHeight / 2);
+    tempCtx.translate(newWidth * scaleMultiplier / 2, newHeight * scaleMultiplier / 2);
     tempCtx.rotate(radians);
     tempCtx.translate(-image.width / 2, -image.height / 2);
     tempCtx.drawImage(image, 0, 0);
     
-    // Get image data from the temporary canvas
-    const imageData = tempCtx.getImageData(0, 0, newWidth, newHeight);
-    // const data = new Uint8ClampedArray(imageData.data);
+    const imageData = tempCtx.getImageData(0, 0, newWidth * scaleMultiplier, newHeight * scaleMultiplier);
+    const data = new Uint8ClampedArray(imageData.data);
 
-    // Create a worker blob to process image data in a separate thread for better performance. Means interface won't freeze while processing
     const workerBlob = new Blob([`
       self.onmessage = function(e) {
         const { data, width, height, minThreshold, maxThreshold, sortMode } = e.data;
         
-        // Function to convert RGBA to HSL
         const rgbaToHsl = (r, g, b) => {
           r /= 255;
           g /= 255;
@@ -142,7 +149,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
           let h, s, l = (max + min) / 2;
 
           if (max === min) {
-            h = s = 0; // achromatic
+            h = s = 0; 
           } else {
             const d = max - min;
             s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
@@ -156,56 +163,49 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
           return [h * 360, s * 100, l * 100];
         };
 
-        // Function to process a chunk of image data
         const processChunk = (data, width, height) => {
           const pixels = new Uint8ClampedArray(data);
           
-          // Function to check if a pixel meets the threshold
           const meetsThreshold = (i) => {
             const r = pixels[i];
             const g = pixels[i + 1];
             const b = pixels[i + 2];
             const a = pixels[i + 3];
-            if (a === 0) return false; // Exclude transparent pixels
+            if (a === 0) return false; 
             const value = (r + g + b) / 3;
             return value >= minThreshold && value <= maxThreshold;
           };
 
-          // Function to get the sort value of a pixel
           const getSortValue = (i) => {
             const r = pixels[i];
             const g = pixels[i + 1];
             const b = pixels[i + 2];
             const [h, s, l] = rgbaToHsl(r, g, b);
             switch (sortMode) {
-              case 0: return r + g + b; // Brightness
-              case 1: return -(r + g + b); // Darkness
-              case 2: return h; // Hue
-              case 3: return s; // Saturation
-              case 4: return l; // Lightness
-              default: return r + g + b; // Default to brightness
+              case 0: return r + g + b; 
+              case 1: return -(r + g + b); 
+              case 2: return h; 
+              case 3: return s; 
+              case 4: return l; 
+              default: return r + g + b; 
             }
           };
 
-          // Loop through each row of pixels
           for (let y = 0; y < height; y++) {
             let startX = 0;
             let isInSortRange = false;
             let pixelsToSort = [];
 
-            // Loop through each pixel in the row
             for (let x = 0; x < width; x++) {
               const i = (y * width + x) * 4;
               const shouldSort = meetsThreshold(i);
 
-              // Start collecting pixels to sort
               if (shouldSort && !isInSortRange) {
                 startX = x;
                 isInSortRange = true;
                 pixelsToSort = [];
               }
 
-              // Collect pixels to sort
               if (isInSortRange) {
                 pixelsToSort.push({
                   r: pixels[i],
@@ -216,7 +216,6 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
                 });
               }
 
-              // Sort and replace pixels when the range ends
               if ((!shouldSort || x === width - 1) && isInSortRange) {
                 if (pixelsToSort.length > 0) {
                   pixelsToSort.sort((a, b) => a.sortValue - b.sortValue);
@@ -233,7 +232,6 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
               }
             }
 
-            // Handle the case where the entire row is within the threshold
             if (isInSortRange && pixelsToSort.length > 0) {
               pixelsToSort.sort((a, b) => a.sortValue - b.sortValue);
 
@@ -249,7 +247,6 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
           return pixels;
         };
 
-        // Process the image data and send it back to the main thread
         const processed = processChunk(data, width, height);
         self.postMessage(processed);
       };
@@ -259,26 +256,25 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     const workerCount = navigator.hardwareConcurrency || 4;
     const workers = [];
 
-    // Always perform horizontal sorting
-    const chunkHeight = Math.ceil(newHeight / workerCount);
+    const chunkHeight = Math.ceil(newHeight * scaleMultiplier / workerCount);
     
     for (let i = 0; i < workerCount; i++) {
       const worker = new Worker(workerUrl);
       const startY = i * chunkHeight;
-      const endY = Math.min(startY + chunkHeight, newHeight);
+      const endY = Math.min(startY + chunkHeight, newHeight * scaleMultiplier);
       
-      const chunk = imageData.data.slice(startY * newWidth * 4, endY * newWidth * 4);
+      const chunk = imageData.data.slice(startY * newWidth * scaleMultiplier * 4, endY * newWidth * scaleMultiplier * 4);
       
       workers.push(new Promise(resolve => {
         worker.onmessage = (e) => {
-          imageData.data.set(e.data, startY * newWidth * 4);
+          imageData.data.set(e.data, startY * newWidth * scaleMultiplier * 4);
           worker.terminate();
           resolve();
         };
         
         worker.postMessage({
           data: chunk,
-          width: newWidth,
+          width: newWidth * scaleMultiplier,
           height: endY - startY,
           minThreshold,
           maxThreshold,
@@ -292,35 +288,29 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     
     tempCtx.putImageData(imageData, 0, 0);
     
-    // Restore the temporary canvas context to remove transformations
     tempCtx.restore();
     
-    // Clear the main canvas and draw the processed image
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(tempCanvas, 0, 0);
     
-    // Rotate the processed image back to original orientation
     const rotatedBackCanvas = document.createElement('canvas');
     const rotatedBackCtx = rotatedBackCanvas.getContext('2d');
     
-    // Set rotated back canvas size to original image dimensions
-    rotatedBackCanvas.width = image.width;
-    rotatedBackCanvas.height = image.height;
+    rotatedBackCanvas.width = image.width * scaleMultiplier;
+    rotatedBackCanvas.height = image.height * scaleMultiplier;
     
-    // Translate and rotate back
     rotatedBackCtx.translate(rotatedBackCanvas.width / 2, rotatedBackCanvas.height / 2);
     rotatedBackCtx.rotate(-radians);
-    rotatedBackCtx.translate(-newWidth / 2, -newHeight / 2);
+    rotatedBackCtx.translate(-newWidth * scaleMultiplier / 2, -newHeight * scaleMultiplier / 2);
     
-    // Draw the processed image onto the rotated back canvas
     rotatedBackCtx.drawImage(canvas, 0, 0);
     
-    // Update the processed image with the rotated back image
     const rotatedBackDataURL = rotatedBackCanvas.toDataURL();
     setProcessedImage(rotatedBackDataURL);
+    
+    setIsSettingsChanging(false);
   };
 
-  // Download processed image
   const downloadImage = () => {
     const canvas = canvasRef.current;
     if (!canvas) {
@@ -331,28 +321,21 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     const img = new Image();
     img.src = selectedImage;
     img.onload = () => {
-      // Create a temporary canvas for the final rotated image
       const finalCanvas = document.createElement('canvas');
       const finalCtx = finalCanvas.getContext('2d');
 
-      // Set final canvas size to original image dimensions
-      finalCanvas.width = img.width;
-      finalCanvas.height = img.height;
+      finalCanvas.width = horizontalResolutionValue;
+      finalCanvas.height = verticalResolutionValue;
 
-      // Calculate radians from angle
       const radians = (angle * Math.PI) / 180;
 
-      // Translate and rotate back to original orientation
       finalCtx.translate(finalCanvas.width / 2, finalCanvas.height / 2);
       finalCtx.rotate(-radians);
 
-      // Translate back to the top-left corner for drawing
       finalCtx.translate(-canvas.width / 2, -canvas.height / 2);
 
-      // Draw the processed image onto the final canvas
       finalCtx.drawImage(canvas, 0, 0);
 
-      // Use toBlob on the final canvas
       finalCanvas.toBlob((blob) => {
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
@@ -362,51 +345,64 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
         link.download = downloadFilename;
         link.click();
 
-        // Clean up the object URL after download
         URL.revokeObjectURL(link.href);
       }, 'image/png');
     };
   };
 
-  // Define the features to extract with their respective options
   const FEATURES = [
-    // Meyda features
-    // { name: "spectralFlatness", average: true, min: true, max: true }, // Useless
     { name: "spectralCentroid", average: true, min: true, max: true },
     { name: "energy", average: true, min: true, max: true },
-    // { name: "rms", average: true, min: true, max: true }, // Energy but more unpredictable
-    // { name: "loudness", average: true, min: true, max: true }, // Confusing result that doesn't seem to work well with the way I have things set up
-    { name: "spectralKurtosis", average: true, min: true, max: true }, // Doesnt work as intended
+    { name: "spectralKurtosis", average: true, min: true, max: true }, 
     { name: "spectralSpread", average: true, min: true, max: true },
     { name: "zcr", average: true, min: true, max: true },
-    // { name: "spectralFlux", average: true}, // Can't get it to work. Always gives error
     { name: "spectralRolloff", average: true, min: true, max: true },
-    // { name: "powerSpectrum", average: true, min: true, max: true }, // Doesn't work, meant to be showing energy of frequencies. put in audio thats EQ'd to be between 4000hz - 20000hz and its saying it has high bass frequencies at the lowest frequencies (0Hz - 93Hz)
-    // { name: "spectralCrest", average: true, min: true, max: true }, // Doesnt correlate - very similar for each song
     { name: "chroma", average: true, min: true, max: true },
     { name: "mfcc", average: true, min: true, max: true },
-    // { name: "spectralSlope", average: true, min: true, max: true }, //Broken
-    // { name: "spectralSkewness", average: true, min: true, max: true }, // Unclear, doesn't correlate properly
-    // { name: "perceptualSpread", average: true, min: true, max: true }, // Same for each song
   ];
 
   let bufferSize = 512;
-  const handleAudioChange = async (e, existingFile = null) => {
-    let file;
+
+  const arraysEqual = (a, b) => {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      if (a[i] !== b[i]) return false;
+    }
+    return true;
+  };
+
+  const handleAudioChange = async (event, existingFile = null) => {
+    setAudioProcessingState('idle');
+    setIsLoading(true);
+    setLoadingProgress(0);
+    setProcessingMessage('Preparing audio for processing...');
+    setAudioFeatures(null);
+    setProcessedImage(null);
+    setPendingProcessedImage(null);
+    setAnglePreview(null);
+    setSortModePreview(null);
+    // setShowProcessed(true);
+    setIndividualBufferValues([]);
+    hasTriggeredImageProcessingRef.current = false;
+
+    if (canvasComponentRef.current && canvasComponentRef.current.setShouldRegenerateShapes) {
+      canvasComponentRef.current.setShouldRegenerateShapes(true);
+    }
+
+    let fileToProcess;
+    
     if (existingFile) {
-      // Handle file object coming from landing page
-      file = existingFile.file || existingFile;
-      setUploadedFile(file); // Set the uploaded file state
-    } else {
-      e.preventDefault();
-      file = e.target.files[0];
-      setUploadedFile(file);
+      fileToProcess = existingFile;
+    } else if (event && event.target && event.target.files && event.target.files[0]) {
+      fileToProcess = event.target.files[0];
+      setFileName(fileToProcess.name || 'Unknown File');
     }
     
-    console.log("sound-file", file);
-    
-    if (file) {
-      // Create a default image if no image is selected
+    if (fileToProcess) {
+      setUploadedFile(fileToProcess);
+      
+      console.log("Processing audio file:", fileToProcess);
+      
       if (!selectedImage) {
         const canvas = document.createElement('canvas');
         canvas.width = 1000;
@@ -420,193 +416,215 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
 
       try {
         const startTime = performance.now();
-
-        const arrayBuffer = await file.arrayBuffer();
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)({
-          sampleRate: 48000 // Force 48kHz sample rate
-        });
-        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-
-        let previousSignal = null;
-        const features = {};
-        const finalFeatures = {};
-        // Reset individualBufferValues for the new audio file
-        const newIndividualBufferValues = [];
+        await new Promise(resolve => setTimeout(() => {
+          setProcessingMessage('Reading audio file...');
+          resolve();
+        }, 500));
 
         const reader = new FileReader();
-        reader.addEventListener('load', () => {
-          // The file is uploaded, now we decode it
-          audioContext.decodeAudioData(reader.result, audioBuffer => {
-            // The result is passed to the analyzer
-            realtimeBpm.analyzeFullBuffer(audioBuffer).then(topCandidates => {
-              // Do something with the BPM
-              console.log('topCandidates', topCandidates);
-            });
-          });
-        });
-        reader.readAsArrayBuffer(file);
         
-        // Initialize arrays for each feature
-        FEATURES.forEach(feature => {
-          if (feature.average) {
-            features[feature.name] = [];
-          }
-          if (feature.min || feature.max) {
-            finalFeatures[feature.name] = {};
-          }
-        });
-
-        // Get the audio data
-        const channelData = audioBuffer.getChannelData(0);
-        const totalBuffers = Math.floor(channelData.length / bufferSize);
-
-        for (let i = 0; i < totalBuffers; i++) {
-          const buffer = channelData.slice(i * bufferSize, (i + 1) * bufferSize);
-          const bufferFeatures = {};
-
-          FEATURES.forEach(feature => {
-            try {
-              let value;
-              // if (feature.name === "spectralFlux") {
-              //   if (previousSignal) {
-              //     // Get the spectrum for both current and previous signals
-              //     const currentSpectrum = Meyda.extract("amplitudeSpectrum", buffer);
-              //     const previousSpectrum = Meyda.extract("amplitudeSpectrum", previousSignal);
-                  
-              //     // Calculate the difference between spectrums
-              //     let flux = 0;
-              //     for (let j = 0; j < currentSpectrum.length; j++) {
-              //       const diff = currentSpectrum[j] - previousSpectrum[j];
-              //       flux += (diff + Math.abs(diff)) / 2;
-              //     }
-              //     value = flux;
-              //   } else {
-              //     value = 0;
-              //   }
-              //   previousSignal = buffer;
-              // } else {
-                value = Meyda.extract(feature.name, buffer);
-              // }
-
-              // Store the value in bufferFeatures
-              bufferFeatures[feature.name] = value;
-
-              // Update running calculations for the feature
-              if (feature.average) {
-                features[feature.name].push(value);
-              }
-
-              // Update min/max if needed
-              if (feature.min || feature.max) {
-                if (feature.min && (!finalFeatures[feature.name].min || value < finalFeatures[feature.name].min)) {
-                  finalFeatures[feature.name].min = value;
-                }
-                if (feature.max && (!finalFeatures[feature.name].max || value > finalFeatures[feature.name].max)) {
-                  finalFeatures[feature.name].max = value;
-                }
-              }
-
-            } catch (error) {
-              console.error(`Error processing ${feature.name}:`, error);
-            }
-          });
-
-          // Add the current buffer's features to the array
-          newIndividualBufferValues.push(bufferFeatures);
-        }
-
-        // Handle any remaining samples by padding with zeros to reach bufferSize
-        if (channelData.length % bufferSize > 0) {
-          const remainingSamples = channelData.length % bufferSize;
-          const buffer = new Float32Array(bufferSize);
-          buffer.set(channelData.subarray(channelData.length - remainingSamples));
-          const bufferFeatures = {};
-
-          FEATURES.forEach(feature => {
-            const value = Meyda.extract(feature.name, buffer);
-            bufferFeatures[feature.name] = value;
-
-            if (feature.average) {
-              // Weight the value according to the proportion of valid samples
-              const validProportion = remainingSamples / bufferSize;
-              features[feature.name].push(value * validProportion);
-            } else {
-              features[feature.name] += value * (remainingSamples / bufferSize);
-            }
-
-            // Update min for remaining samples:
-            if (feature.min && value < finalFeatures[feature.name].min) {
-              finalFeatures[feature.name].min = value;
-              // console.log(`Buffer ${totalBuffers}: new min for ${feature.name} = ${value}`);
-            }
-
-            // Update max for remaining samples:
-            if (feature.max && value > finalFeatures[feature.name].max) {
-              finalFeatures[feature.name].max = value;
-              // console.log(`Buffer ${totalBuffers}: new max for ${feature.name} = ${value}`);
-            }
-          });
-
-          newIndividualBufferValues.push(bufferFeatures);
-        }
-
-        // When computing final averages
-        FEATURES.forEach(feature => {
-          if (feature.average) {
-            const validValues = features[feature.name].filter(val => 
-              val !== null && 
-              val !== undefined && 
-              !Number.isNaN(val)
-            );
+        reader.onload = async (e) => {
+          try {
+            await new Promise(resolve => setTimeout(() => {
+              setProcessingMessage('Decoding audio data...');
+              setLoadingProgress(10);
+              resolve();
+            }, 500));
             
-            if (validValues.length > 0) {
-              // Calculate how many samples to skip at start and end (1/20th each)
-              const skipCount = Math.floor(validValues.length / 20);
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)({
+              sampleRate: 48000 
+            });
+            
+            const audioBuffer = await audioContext.decodeAudioData(e.target.result);
+
+            await new Promise(resolve => setTimeout(() => {
+              setProcessingMessage('Initializing audio feature extraction...');
+              setLoadingProgress(20);
+              resolve();
+            }, 500));
+
+            let previousSignal = null;
+            const features = {};
+            const finalFeatures = {};
+            const newIndividualBufferValues = [];
+            
+            FEATURES.forEach(feature => {
+              features[feature.name] = [];
+            });
+            
+            await new Promise(resolve => setTimeout(() => {
+              setProcessingMessage('Extracting audio features...');
+              setLoadingProgress(25);
+              resolve();
+            }, 400));
+            
+            const totalBuffers = Math.ceil(audioBuffer.length / bufferSize);
+            let processedBuffers = 0;
+            
+            const BATCH_SIZE = Math.max(20, Math.floor(totalBuffers / 50)); // Process in batches of 20 or 2% of total, whichever is larger
+            
+            for (let i = 0; i < audioBuffer.length; i += bufferSize * BATCH_SIZE) {
+              const batchEnd = Math.min(i + bufferSize * BATCH_SIZE, audioBuffer.length);
               
-              // Get the middle 90% of values (skip first and last 5%)
-              const trimmedValues = validValues.slice(skipCount, -skipCount);
-              
-              if (trimmedValues.length > 0) {
-                const sum = trimmedValues.reduce((acc, val) => acc + val, 0);
-                finalFeatures[feature.name].average = sum / trimmedValues.length;
-                // if (feature.name === "zcr") {
-                //   setAverageZCR(finalFeatures[feature.name].average);
-                // }
-              } else {
-                console.warn(`No valid values remaining after trimming for ${feature.name}`);
-                finalFeatures[feature.name].average = 0;
+              for (let j = i; j < batchEnd; j += bufferSize) {
+                const sampleBuffer = audioContext.createBuffer(
+                  audioBuffer.numberOfChannels,
+                  bufferSize,
+                  audioBuffer.sampleRate
+                );
+                
+                for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
+                  const channelData = audioBuffer.getChannelData(channel);
+                  const sampleChannelData = sampleBuffer.getChannelData(channel);
+                  
+                  for (let k = 0; k < bufferSize && j + k < audioBuffer.length; k++) {
+                    sampleChannelData[k] = channelData[j + k];
+                  }
+                }
+                
+                const signal = new Float32Array(bufferSize);
+                const channelData = sampleBuffer.getChannelData(0);
+                for (let k = 0; k < bufferSize; k++) {
+                  signal[k] = channelData[k];
+                }
+                
+                if (previousSignal && arraysEqual(signal, previousSignal)) {
+                  processedBuffers++;
+                  continue;
+                }
+                previousSignal = signal.slice();
+                
+                const chunkFeatures = Meyda.extract(FEATURES.map(feature => feature.name), signal);
+                
+                newIndividualBufferValues.push(chunkFeatures);
+                
+                for (const feature in chunkFeatures) {
+                  if (features[feature]) {
+                    features[feature].push(chunkFeatures[feature]);
+                  }
+                }
+                
+                processedBuffers++;
               }
-            } else {
-              console.warn(`No valid values for ${feature.name} average calculation`);
-              finalFeatures[feature.name].average = 0;
+              
+              const progress = Math.floor((processedBuffers / totalBuffers) * 55) + 25; // Audio processing is 25-80% of total
+              const percentComplete = Math.floor((processedBuffers / totalBuffers) * 100);
+              
+              await new Promise(resolve => setTimeout(() => {
+                setProcessingMessage(`Extracting audio features...`);
+                setLoadingProgress(progress);
+                resolve();
+              }, 0));
             }
+            
+            setIndividualBufferValues(newIndividualBufferValues);
+            console.log("newIndividualBufferValues:", newIndividualBufferValues);
+            
+            await new Promise(resolve => setTimeout(() => {
+              setProcessingMessage('Analyzing audio features...');
+              setLoadingProgress(80);
+              resolve();
+            }, 500));
+            
+            for (const feature in features) {
+              let sum = 0;
+              let min = Infinity;
+              let max = -Infinity;
+              
+              const values = features[feature].filter(val => 
+                !isNaN(val) && val !== null && val !== undefined
+              );
+              
+              if (values.length > 0) {
+                for (const value of values) {
+                  if (typeof value === 'number') {
+                    sum += value;
+                    min = Math.min(min, value);
+                    max = Math.max(max, value);
+                  } else if (Array.isArray(value) && value.length > 0) {
+                    const avgValue = value.reduce((a, b) => a + b, 0) / value.length;
+                    sum += avgValue;
+                    min = Math.min(min, ...value);
+                    max = Math.max(max, ...value);
+                  }
+                }
+                
+                const average = sum / values.length;
+                
+                finalFeatures[feature] = {
+                  min,
+                  max,
+                  average
+                };
+              } else {
+                finalFeatures[feature] = {
+                  min: 0,
+                  max: 0,
+                  average: 0
+                };
+              }
+            }
+            
+            // console.log("Energy stats:", finalFeatures.energy);
+            // console.log("ZCR stats:", finalFeatures.zcr);
+            // console.log("spectralKurtosis stats:", finalFeatures.spectralKurtosis);
+            console.log("finalFeatures:", finalFeatures);
+            
+            setAudioFeatures(finalFeatures);
+            
+            await new Promise(resolve => setTimeout(() => {
+              setProcessingMessage('Processing image...');
+              setLoadingProgress(85);
+              resolve();
+            }, 500));
+            
+            let currentProgress = 85;
+            const progressInterval = setInterval(() => {
+              currentProgress += 1;
+              if (currentProgress <= 98) {
+                setLoadingProgress(currentProgress);
+              }
+            }, 100);
+            
+            setTimeout(() => {
+              clearInterval(progressInterval);
+              setLoadingProgress(100);
+              setProcessingMessage('Complete!');
+              
+              setTimeout(() => {
+                setIsLoading(false);
+              }, 500);
+              
+              const endTime = performance.now();
+              console.log(`Audio processing took ${endTime - startTime}ms`);
+            }, 1500);
+            
+          } catch (error) {
+            console.error("Error processing audio data:", error);
+            setIsLoading(false);
           }
-        });
-
-        const endTime = performance.now(); // End timer
-        const elapsedTime = (endTime - startTime) / 1000; // Convert to seconds
-        console.log(`Audio feature extraction took ${elapsedTime.toFixed(2)} seconds.`); // Log elapsed time in seconds
-
-        console.log("Final Features:", finalFeatures);
-        console.log("Individual Buffer Values:", newIndividualBufferValues); // Log individual buffer values
+        };
         
-        setAudioSamples(channelData);
-        setAudioFeatures(finalFeatures); // Set audioFeatures state
-        setIndividualBufferValues(newIndividualBufferValues); // Set the new array
-
-        console.log("Audio File Sample Rate:", audioBuffer.sampleRate);
-        console.log("Audio Context Sample Rate:", audioContext.sampleRate);
-
+        reader.onerror = (error) => {
+          console.error("Error reading file:", error);
+          setIsLoading(false);
+        };
+        
+        reader.readAsArrayBuffer(fileToProcess);
+        
       } catch (error) {
         console.error("Error processing audio file:", error);
+        setIsLoading(false);
       }
     }
   };
 
-  // Add useEffect to handle initial audio file
   useEffect(() => {
-    if (initialAudioFile) {
-      handleAudioChange(null, initialAudioFile);
+    if (initialAudioFile && !uploadedFile) {
+      console.log("Processing initial audio file from landing page:", initialAudioFile);
+      setFileName(initialAudioFile.name || 'Unknown File');
+      handleAudioChange(null, initialAudioFile.file);
+      setInitialAudioFile(null);
     }
   }, [initialAudioFile]);
 
@@ -618,7 +636,27 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     };
   }, []);
 
-  // Define sliders as an array of objects
+  const handleProcessAudioAgain = () => {
+    if (uploadedFile) {
+      if (canvasComponentRef.current && canvasComponentRef.current.setShouldRegenerateShapes) {
+        canvasComponentRef.current.setShouldRegenerateShapes(true);
+      }
+      
+      const multiplier = getScaleMultiplier(scale);
+      setHorizontalResolutionValue(BASE_RESOLUTION * multiplier);
+      setVerticalResolutionValue(BASE_RESOLUTION * multiplier);
+      handleAudioChange(null, uploadedFile);
+    } else {
+      console.warn("No audio file has been uploaded yet");
+    }
+  };
+
+  useEffect(() => {
+    const multiplier = getScaleMultiplier(scale);
+    setHorizontalResolutionValue(BASE_RESOLUTION * multiplier);
+    setVerticalResolutionValue(BASE_RESOLUTION * multiplier);
+  }, [scale]);
+
   const settingsSliders = [
     {
         label: "AMOUNT",
@@ -639,7 +677,6 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
         maxValue: 360,
         tooltip: "The angle that the pixels are sorted in. Automatically set based on hue initially, but can be manually changed"
     },
-    // Add more sliders here as needed
   ];
 
   const advancedSettingsSliders = [
@@ -657,30 +694,33 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     },
   ];
 
-  const sortModeSelector = {
-    label: "SORT MODE",
-    value: sortMode,
-    setValue: setSortMode,
-    options: [
-        { value: 0, label: 'Brightness' },
-        { value: 1, label: 'Darkness' },
-        { value: 2, label: 'Hue' },
-        { value: 3, label: 'Saturation' },
-        { value: 4, label: 'Lightness' }
-    ],
-    tooltip: "Sets the method by which the pixels are sorted."
-  };
-
-  // Function to handle reprocessing
-  const reprocessAudio = () => {
-    if (uploadedFile) {
-      setHorizontalResolutionValue(pendingHorizontalResolution);
-      setVerticalResolutionValue(pendingVerticalResolution);
-      handleAudioChange(null, uploadedFile);
-    } else {
-      console.warn("No audio file has been uploaded yet");
+  const sortModeSelectors = [ 
+    {
+      label: "SORT MODE",
+      value: sortMode,
+      setValue: setSortMode,
+      options: [
+          { value: 0, label: 'Brightness' },
+          { value: 1, label: 'Darkness' },
+          { value: 2, label: 'Hue' },
+          { value: 3, label: 'Saturation' },
+          { value: 4, label: 'Lightness' }
+      ],
+      tooltip: "Sets the method by which the pixels are sorted."
+    },
+    {
+      label: "SCALE",
+      value: scale,
+      setValue: setScale,
+      options: [
+        { value: 0, label: '1X (2400x2400)' },
+        { value: 1, label: '2X (4800x4800)' },
+        { value: 2, label: '3X (7200x7200)' },
+        // { value: 3, label: '4X (9600x9600)' },
+      ],
+      tooltip: "Sets the scale for the image. This will result in more detailed pixel sorting and a larger image. Larger scales will result in much longer processing times and potentially break the app on slower machines."
     }
-  };
+  ];
 
   useEffect(() => {
     if (selectedImage) {
@@ -690,25 +730,40 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
 
   return (
     <div className='upload-parent-parent'>
-      <div className='upload-parent'>
-        <Canvas
-          bufferSize={bufferSize}
-          selectedImage={selectedImage}
-          processedImage={processedImage}
-          showProcessed={showProcessed}
-          setSelectedImage={setSelectedImage}
-          setProcessedImage={setProcessedImage}
-          canvasRef={canvasRef}
-          audioFeatures={audioFeatures}
-          individualBufferValues={individualBufferValues}
-          debouncedProcessImage={debouncedProcessImage}
-          horizontalResolutionValue={horizontalResolutionValue}
-          verticalResolutionValue={verticalResolutionValue}
-          setAngle={setAngle}
-          minThreshold={minThreshold}
-          maxThreshold={maxThreshold}
-          setSortMode={setSortMode}
+      {isLoading && (
+        <LoadingOverlay 
+          progress={loadingProgress} 
+          message={processingMessage} 
         />
+      )}
+      <div className='upload-parent'>
+        <div className="canvas-wrapper">
+          <Canvas 
+            bufferSize={bufferSize}
+            selectedImage={selectedImage}
+            processedImage={processedImage}
+            showProcessed={showProcessed}
+            setSelectedImage={setSelectedImage}
+            setProcessedImage={setProcessedImage}
+            canvasRef={canvasRef}
+            audioFeatures={audioFeatures}
+            individualBufferValues={individualBufferValues}
+            debouncedProcessImage={debouncedProcessImage}
+            horizontalResolutionValue={horizontalResolutionValue}
+            verticalResolutionValue={verticalResolutionValue}
+            scale={scale}
+            setAngle={setAngle}
+            minThreshold={minThreshold}
+            maxThreshold={maxThreshold}
+            setSortMode={setSortMode}
+            ref={canvasComponentRef}
+          />
+          {isSettingsChanging && (
+            <div className="canvas-spinner-container">
+              <SpinnerOverlay isVisible={true} />
+            </div>
+          )}
+        </div>
         {selectedImage && (
           <div className='selectors-container-parent'>
             <div className='selectors-container'>
@@ -723,6 +778,9 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
                     />
                   </label>
               </div>
+              <div className='chosen-file'>
+                <p>Chosen File: {fileName}</p>
+              </div>
               <Dropdowns 
                 dropdownName="SETTINGS"
                 sliders={settingsSliders}
@@ -731,10 +789,10 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
               <Dropdowns 
                 dropdownName="ADVANCED SETTINGS"
                 sliders={advancedSettingsSliders}
-                selectors={[sortModeSelector]}
+                selectors={sortModeSelectors}
                 hasDropdown={true}
               />
-              <div className='download-button' onClick={reprocessAudio}>                
+              <div className='download-button' onClick={handleProcessAudioAgain}>                
                 <Dropdowns dropdownName={"PROCESS AUDIO AGAIN"} hasDropdown={false} />
               </div>
               {processedImage && (
@@ -751,34 +809,8 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
                 value=""
                 ref={(element) => {
                   if (element) {
-                    // Create a new DataTransfer object
-                    const dataTransfer = new DataTransfer();
-                    
-                    // If we have an uploaded file, add it to the DataTransfer object
-                    if (uploadedFile) {
-                      dataTransfer.items.add(uploadedFile);
-                      // Set the files property of the input element
-                      element.files = dataTransfer.files;
-                    }
+                    element.value = '';
                   }
-                }}
-              />
-              <input
-                type="number"
-                min="2400"
-                max={4000}
-                value={pendingHorizontalResolution}
-                onChange={(e) => {
-                  setPendingHorizontalResolution(e.target.value);
-                }}
-              />              
-              <input
-                type="number"
-                min="2400"
-                max={4000}
-                value={pendingVerticalResolution}
-                onChange={(e) => {
-                  setPendingVerticalResolution(e.target.value);
                 }}
               />
             </div>
@@ -786,11 +818,6 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
         )}
       </div>
       <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
-      {bpm && (
-        <div className="bpm-display">
-          Detected BPM: {bpm}
-        </div>
-      )}
     </div>
   );
 };
