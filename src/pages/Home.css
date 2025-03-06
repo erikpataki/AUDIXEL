@@ -31,7 +31,7 @@
     width: 100%;
     height: 100%;
     border-left: 0.1875rem solid #FFFFFA;
-    padding: 20px;
+    padding: 1.25rem;
     box-sizing: border-box; /* Ensure padding is included in width */
     display: flex;
     flex-direction: column; /* Added to make the container column flex */
@@ -41,20 +41,24 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
-    height: 64px;
+    margin-bottom: 1.5rem;
+    height: 4rem;
 }
 
 .main-title {
     width: 100%;
     text-align: left;
     text-decoration: underline;
-    font-size: 48px;
+    font-size: 3rem;
     margin-bottom: 0;
     cursor: pointer;
     letter-spacing: 0.07em;
     font-weight: 600;
     text-underline-offset: 0.17em;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 /* .toggle-switch {
@@ -75,11 +79,15 @@
     margin-left: auto;
 }
 
+.chosen-file {
+    margin-bottom: 0.9rem;
+}
+
 .spinner {
-    width: 20px;
-    height: 20px;
-    border: 2px solid #f3f3f3;
-    border-top: 2px solid #558B6E;
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 0.125rem solid #f3f3f3;
+    border-top: 0.125rem solid #558B6E;
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
@@ -91,7 +99,7 @@
 
 .progress-container {
     width: 100%;
-    margin: 10px 0;
+    margin: 0.75rem 0;
 }
 
 .progress-bar {
@@ -266,7 +274,12 @@ input[type="range"] {
     width: 20rem;
     transition: all 0.3s ease;
     z-index: 3;
-    transform: scale(0.8);
+    scale: 0.8;
+}
+
+.upload-own-image-button.hidden {
+  transform: translateY(100%);
+  transition: transform 0.3s ease-in-out;
 }
 
 .upload-own-image-button .drop-down {
@@ -278,7 +291,7 @@ input[type="range"] {
     height: 1.1rem;
     background-color: #FFFFFA;
     margin-left: auto;
-    margin-right: 1rem;
+    margin-right: 1.1rem;
     border-radius: 50% 50% 0 0;
     color: #0D1F22;
     text-align: center;
@@ -290,7 +303,7 @@ input[type="range"] {
 }
 
 .upload-own-image-button-tab-icon {
-    transform: scaleY(-1);
+    transform: scaleY(-0.9);
     font-weight: 700;
     margin: 0;
     height: 100%;
@@ -300,6 +313,14 @@ input[type="range"] {
     align-items: center;
     cursor: pointer;
     user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+.upload-own-image-button-tab-icon.hidden {
+    transform: scaleY(0.9);
+    transition: transform 0.3s ease-in-out;
 }
 
 .upload-own-image-button-plus-icon-parent {
@@ -316,4 +337,5 @@ input[type="range"] {
 .upload-own-image-button-plus-icon {
     /* margin-left: auto; */
     margin-right: 0.5rem;
+    scale: 0.8;
 }

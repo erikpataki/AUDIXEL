@@ -16,12 +16,12 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
   const [middlePoint, setMiddlePoint] = useState(128);
   const [angle, setAngle] = useState(115);
   const [sortMode, setSortMode] = useState(0);
-  const [anglePreview, setAnglePreview] = useState(null);
-  const [sortModePreview, setSortModePreview] = useState(null);
+  // const [anglePreview, setAnglePreview] = useState(null);
+  // const [sortModePreview, setSortModePreview] = useState(null);
   const canvasRef = useRef(null);
   const [individualBufferValues, setIndividualBufferValues] = useState([]);
-  const [audioProcessingState, setAudioProcessingState] = useState('idle');
-  const [pendingProcessedImage, setPendingProcessedImage] = useState(null);
+  // const [audioProcessingState, setAudioProcessingState] = useState('idle');
+  // const [pendingProcessedImage, setPendingProcessedImage] = useState(null);
   const hasTriggeredImageProcessingRef = useRef(false);
   const BASE_RESOLUTION = 2400;
   const [horizontalResolutionValue, setHorizontalResolutionValue] = useState(BASE_RESOLUTION);
@@ -35,6 +35,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
   const [isDragging, setIsDragging] = useState(false);
   const canvasComponentRef = useRef(null);
   const [fileName, setFileName] = useState('');
+  const [isUploadImageHidden, setIsUploadImageHidden] = useState(false);
 
   useEffect(() => {
     if (selectedImage && !fileName && initialAudioFile) {
@@ -367,6 +368,10 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     };
   };
 
+  const toggleUploadImageHide = () => {
+    setIsUploadImageHidden(!isUploadImageHidden);
+  };
+
   const FEATURES = [
     { name: "spectralCentroid", average: true, min: true, max: true },
     { name: "energy", average: true, min: true, max: true },
@@ -389,15 +394,15 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
   };
 
   const handleAudioChange = async (event, existingFile = null) => {
-    setAudioProcessingState('idle');
+    // setAudioProcessingState('idle');
     setIsLoading(true);
     setLoadingProgress(0);
     setProcessingMessage('Preparing audio for processing...');
     setAudioFeatures(null);
     setProcessedImage(null);
-    setPendingProcessedImage(null);
-    setAnglePreview(null);
-    setSortModePreview(null);
+    // setPendingProcessedImage(null);
+    // setAnglePreview(null);
+    // setSortModePreview(null);
     // setShowProcessed(true);
     setIndividualBufferValues([]);
     hasTriggeredImageProcessingRef.current = false;
@@ -828,9 +833,9 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
             setSortMode={setSortMode}
             ref={canvasComponentRef}
           />
-          <div className='download-button upload-own-image-button' style={{ textAlign: 'left' }}>
-            <div className='upload-own-image-button-tab'>
-              <h4 className='upload-own-image-button-tab-icon'>˄</h4>
+          <div className={`download-button upload-own-image-button ${isUploadImageHidden ? 'hidden' : ''}`} style={{ textAlign: 'left' }}>
+            <div className='upload-own-image-button-tab' onClick={toggleUploadImageHide}>
+              <h4 className={`upload-own-image-button-tab-icon ${isUploadImageHidden ? 'hidden' : ''}`}>˄</h4>
             </div>
             <label htmlFor="image-file-input">
               <Dropdowns dropdownName={"UPLOAD OWN IMAGE"} hasDropdown={false} />
