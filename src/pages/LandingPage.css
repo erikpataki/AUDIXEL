@@ -11,6 +11,7 @@
     align-items: center;
     transition: all 0.3s ease;
     border: 3px solid transparent; */
+    border-radius: 1.2rem;
 }
 
 .upload-block {
@@ -26,6 +27,8 @@
     /* background-color: rgba(0, 0, 0, 0.05); */
     border: 3px dashed #FFFFFA;
     border-radius: 1.2rem;
+    box-shadow: 0 0 40px #FFFFFA;
+    transition: all 0.3s ease;
 }
 
 * {

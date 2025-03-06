@@ -250,6 +250,7 @@ input[type="range"] {
     background-color: rgba(0, 0, 0, 0.1);
     border: 3px dashed #FFFFFA;
     border-radius: 1.2rem;
+    box-shadow: 0 0 12px #FFFFFA;
 }
 
 .upload-text.home-page-upload-text {
