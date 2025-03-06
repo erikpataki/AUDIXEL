@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } f
 import p5 from 'p5';
 import "./Canvas.css";
 
-const Canvas = forwardRef(({ selectedImage, processedImage, showProcessed, setSelectedImage, setProcessedImage, canvasRef, audioFeatures, individualBufferValues, debouncedProcessImage, horizontalResolutionValue, verticalResolutionValue, scale, bufferSize, setAngle, minThreshold, maxThreshold, setSortMode }, ref) => {
+const Canvas = forwardRef(({ selectedImage, processedImage, showProcessed, setSelectedImage, setProcessedImage, canvasRef, audioFeatures, individualBufferValues, debouncedProcessImage, horizontalResolutionValue, verticalResolutionValue, scale, bufferSize, setAngle, minThreshold, maxThreshold, handleThresholdChange, setSortMode }, ref) => {
   const p5ContainerRef = useRef(null);
   const p5InstanceRef = useRef(null);
   const processingCompletedRef = useRef(false);
@@ -241,6 +241,10 @@ const Canvas = forwardRef(({ selectedImage, processedImage, showProcessed, setSe
             
             // Set sort mode based on ZCR average
             const averageZCR = audioFeatures.zcr.average;
+
+            let averageAggressiveness = ((audioFeatures.zcr.average - 10)/30);
+            handleThresholdChange('amount', (130 + (averageAggressiveness * 60)));
+
             let newSortMode;
             if (averageZCR < 14) {
               newSortMode = 4; // Lightness

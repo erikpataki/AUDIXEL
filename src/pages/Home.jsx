@@ -830,6 +830,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
             setAngle={setAngle}
             minThreshold={minThreshold}
             maxThreshold={maxThreshold}
+            handleThresholdChange={handleThresholdChange}
             setSortMode={setSortMode}
             ref={canvasComponentRef}
           />
