@@ -36,6 +36,8 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
   const canvasComponentRef = useRef(null);
   const [fileName, setFileName] = useState('');
   const [isUploadImageHidden, setIsUploadImageHidden] = useState(false);
+  const [isFilenameLong, setIsFilenameLong] = useState(false);
+  const filenameRef = useRef(null);
 
   useEffect(() => {
     if (selectedImage && !fileName && initialAudioFile) {
@@ -803,6 +805,29 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     }
   }, [minThreshold, maxThreshold, selectedImage, sortMode, angle, debouncedProcessImage]);
 
+  const checkFilenameOverflow = useCallback(() => {
+    if (filenameRef.current) {
+      const element = filenameRef.current;
+      const isOverflowing = element.scrollWidth > element.clientWidth;
+      
+      // Store the scroll width as a CSS variable to use in the animation
+      if (isOverflowing) {
+        // Set a CSS variable with the actual scroll width needed
+        element.style.setProperty('--scroll-width', `${element.scrollWidth}px`);
+      } else {
+        element.style.setProperty('--scroll-width', '100%');
+      }
+      
+      setIsFilenameLong(isOverflowing);
+    }
+  }, []);
+
+  useEffect(() => {
+    checkFilenameOverflow();
+    window.addEventListener('resize', checkFilenameOverflow);
+    return () => window.removeEventListener('resize', checkFilenameOverflow);
+  }, [fileName, uploadedFile, checkFilenameOverflow]);
+
   return (
     <div className='upload-parent-parent'>
       {isLoading && (
@@ -877,15 +902,15 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
               <div className='chosen-file'>
                 {uploadedFile ? (
                   uploadedFile.type.toLowerCase().startsWith('audio') ? (
-                    <p>CHOSEN AUDIO: {uploadedFile.name}</p>
+                    <p ref={filenameRef}>CHOSEN AUDIO: {uploadedFile.name}</p>
                   ) : (
-                    <p>CHOSEN IMAGE: {uploadedFile.name || fileName}</p>
+                    <p ref={filenameRef}>CHOSEN IMAGE: {uploadedFile.name || fileName}</p>
                   )
                 ) : fileName ? (
                   initialAudioFile && initialAudioFile.isImage ? 
-                    <p>CHOSEN IMAGE: {fileName}</p> 
+                    <p ref={filenameRef}>CHOSEN IMAGE: {fileName}</p> 
                     : 
-                    <p>CHOSEN AUDIO: {fileName}</p>
+                    <p ref={filenameRef}>CHOSEN AUDIO: {fileName}</p>
                 ) : selectedImage ? (
                   <p>CHOSEN IMAGE</p>
                 ) : (

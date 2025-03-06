@@ -35,6 +35,8 @@
     box-sizing: border-box; /* Ensure padding is included in width */
     display: flex;
     flex-direction: column; /* Added to make the container column flex */
+    overflow-x: hidden; /* Prevent horizontal expansion */
+    max-width: 100%; /* Ensure it doesn't grow beyond its designated width */
 }
 
 .title-bar {
@@ -80,6 +82,52 @@
 
 .chosen-file {
     margin-bottom: 0.9rem;
+    font-weight: 600;
+    font-size: 1.1rem;
+    position: relative;
+    height: 1.7rem; /* Fixed height to prevent layout shifts */
+    width: 100%; /* Ensure it takes full width of parent */
+    max-width: 100%;
+    overflow: hidden; /* Hide overflow in all states */
+    box-sizing: border-box;
+}
+
+.chosen-file p {
+    margin: 0;
+    padding: 0;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    width: 100%;
+    display: inline-block;
+    position: absolute;
+    left: 0;
+    top: 0;
+    max-width: 100%;
+    transition: all 0.3s;
+    animation: none;
+}
+
+/* Simpler hover effect: just show the scrolling behavior immediately */
+.chosen-file:hover p {
+    text-overflow: clip;
+    /* Play animation only once per hover */
+    animation: marquee 3s linear forwards;
+}
+
+@keyframes marquee {
+    0%, 10% {
+        /* Stay at beginning for a moment */
+        transform: translateX(0);
+    }
+    85%, 100% {
+        /* Move to the end and stay there */
+        transform: translateX(calc(0px - (var(--scroll-width, 0) - 100%)));
+    }
+}
+
+/* Clean up any leftover styles */
+.chosen-file-inner {
+    display: none;
 }
 
 .spinner {
