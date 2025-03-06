@@ -5,6 +5,7 @@ import Meyda from "meyda";
 import Canvas from '../components/Canvas/Canvas';
 import LoadingOverlay from '../components/LoadingOverlay/LoadingOverlay';
 import SpinnerOverlay from '../components/SpinnerOverlay/SpinnerOverlay';
+import Modal from '../components/Modal/Modal';
 
 const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedImage, initialAudioFile, setInitialAudioFile }) => {
   const [minThreshold, setMinThreshold] = useState(40);
@@ -38,6 +39,9 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
   const [isUploadImageHidden, setIsUploadImageHidden] = useState(false);
   const [isFilenameLong, setIsFilenameLong] = useState(false);
   const filenameRef = useRef(null);
+  const [showShortAudioModal, setShowShortAudioModal] = useState(false);
+  const [showLongAudioModal, setShowLongAudioModal] = useState(false);
+  const [pendingAudioFile, setPendingAudioFile] = useState(null);
 
   useEffect(() => {
     if (selectedImage && !fileName && initialAudioFile) {
@@ -395,251 +399,335 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     return true;
   };
 
+  const checkAudioDuration = (file) => {
+    return new Promise((resolve) => {
+      const audio = new Audio();
+      const objectUrl = URL.createObjectURL(file);
+      
+      audio.addEventListener('loadedmetadata', () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve(audio.duration);
+      });
+      
+      audio.src = objectUrl;
+    });
+  };
+
   const handleAudioChange = async (event, existingFile = null) => {
+    let fileToProcess;
+    let isAlreadyApproved = false;
+    
+    if (existingFile) {
+      fileToProcess = existingFile;
+      // Check if this file was previously approved as a short audio file
+      if (initialAudioFile && initialAudioFile.shortAudioApproved) {
+        isAlreadyApproved = true;
+      }
+      // Check if this file was previously approved as a long audio file
+      if (initialAudioFile && initialAudioFile.longAudioApproved) {
+        isAlreadyApproved = true;
+      }
+    } else if (event && event.target && event.target.files && event.target.files[0]) {
+      fileToProcess = event.target.files[0];
+    }
+    
+    if (fileToProcess) {
+      // Skip duration check if already approved
+      if (isAlreadyApproved) {
+        processAudioFile(fileToProcess, event);
+        return;
+      }
+      
+      // Check audio duration
+      try {
+        const duration = await checkAudioDuration(fileToProcess);
+        
+        if (duration < 120) { // Less than 2 minutes (120 seconds)
+          setPendingAudioFile({
+            file: fileToProcess,
+            event: event
+          });
+          setShowShortAudioModal(true);
+          return;
+        } else if (duration > 600) { // More than 10 minutes (600 seconds)
+          setPendingAudioFile({
+            file: fileToProcess,
+            event: event
+          });
+          setShowLongAudioModal(true);
+          return;
+        }
+        
+        // If duration is fine, continue with processing
+        processAudioFile(fileToProcess, event);
+      } catch (error) {
+        console.error("Error checking audio duration:", error);
+        // Fall back to processing without the check
+        processAudioFile(fileToProcess, event);
+      }
+    }
+  };
+
+  const processAudioFile = (fileToProcess, event = null) => {
     // setAudioProcessingState('idle');
     setIsLoading(true);
     setLoadingProgress(0);
     setProcessingMessage('Preparing audio for processing...');
-    setAudioFeatures(null);
-    setProcessedImage(null);
-    // setPendingProcessedImage(null);
-    // setAnglePreview(null);
-    // setSortModePreview(null);
-    // setShowProcessed(true);
-    setIndividualBufferValues([]);
-    hasTriggeredImageProcessingRef.current = false;
-
-    if (canvasComponentRef.current && canvasComponentRef.current.setShouldRegenerateShapes) {
-      canvasComponentRef.current.setShouldRegenerateShapes(true);
+    // ...existing code from handleAudioChange...
+    setFileName(fileToProcess.name || 'Unknown File');
+    setUploadedFile(fileToProcess);
+    
+    console.log("Processing audio file:", fileToProcess);
+    
+    if (!selectedImage) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 1000;
+      canvas.height = 1000;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = 'black';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const defaultImage = canvas.toDataURL();
+      setSelectedImage(defaultImage);
     }
 
-    let fileToProcess;
-    
-    if (existingFile) {
-      fileToProcess = existingFile;
-    } else if (event && event.target && event.target.files && event.target.files[0]) {
-      fileToProcess = event.target.files[0];
-      setFileName(fileToProcess.name || 'Unknown File');
-    }
-    
-    if (fileToProcess) {
-      setUploadedFile(fileToProcess);
+    try {
+      const startTime = performance.now();
+      // ...rest of your existing audio processing code...
+      const reader = new FileReader();
       
-      console.log("Processing audio file:", fileToProcess);
-      
-      if (!selectedImage) {
-        const canvas = document.createElement('canvas');
-        canvas.width = 1000;
-        canvas.height = 1000;
-        const ctx = canvas.getContext('2d');
-        ctx.fillStyle = 'black';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        const defaultImage = canvas.toDataURL();
-        setSelectedImage(defaultImage);
-      }
+      reader.onload = async (e) => {
+        // ...existing code from reader.onload...
+        try {
+          await new Promise(resolve => setTimeout(() => {
+            setProcessingMessage('Decoding audio data...');
+            setLoadingProgress(10);
+            resolve();
+          }, 500));
+          
+          const audioContext = new (window.AudioContext || window.webkitAudioContext)({
+            sampleRate: 48000 
+          });
+          
+          const audioBuffer = await audioContext.decodeAudioData(e.target.result);
 
-      try {
-        const startTime = performance.now();
-        await new Promise(resolve => setTimeout(() => {
-          setProcessingMessage('Reading audio file...');
-          resolve();
-        }, 500));
+          await new Promise(resolve => setTimeout(() => {
+            setProcessingMessage('Initializing audio feature extraction...');
+            setLoadingProgress(20);
+            resolve();
+          }, 500));
 
-        const reader = new FileReader();
-        
-        reader.onload = async (e) => {
-          try {
-            await new Promise(resolve => setTimeout(() => {
-              setProcessingMessage('Decoding audio data...');
-              setLoadingProgress(10);
-              resolve();
-            }, 500));
+          let previousSignal = null;
+          const features = {};
+          const finalFeatures = {};
+          const newIndividualBufferValues = [];
+          
+          FEATURES.forEach(feature => {
+            features[feature.name] = [];
+          });
+          
+          await new Promise(resolve => setTimeout(() => {
+            setProcessingMessage('Extracting audio features...');
+            setLoadingProgress(25);
+            resolve();
+          }, 400));
+          
+          const totalBuffers = Math.ceil(audioBuffer.length / bufferSize);
+          let processedBuffers = 0;
+          
+          const BATCH_SIZE = Math.max(20, Math.floor(totalBuffers / 50)); // Process in batches of 20 or 2% of total, whichever is larger
+          
+          for (let i = 0; i < audioBuffer.length; i += bufferSize * BATCH_SIZE) {
+            const batchEnd = Math.min(i + bufferSize * BATCH_SIZE, audioBuffer.length);
             
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)({
-              sampleRate: 48000 
-            });
-            
-            const audioBuffer = await audioContext.decodeAudioData(e.target.result);
-
-            await new Promise(resolve => setTimeout(() => {
-              setProcessingMessage('Initializing audio feature extraction...');
-              setLoadingProgress(20);
-              resolve();
-            }, 500));
-
-            let previousSignal = null;
-            const features = {};
-            const finalFeatures = {};
-            const newIndividualBufferValues = [];
-            
-            FEATURES.forEach(feature => {
-              features[feature.name] = [];
-            });
-            
-            await new Promise(resolve => setTimeout(() => {
-              setProcessingMessage('Extracting audio features...');
-              setLoadingProgress(25);
-              resolve();
-            }, 400));
-            
-            const totalBuffers = Math.ceil(audioBuffer.length / bufferSize);
-            let processedBuffers = 0;
-            
-            const BATCH_SIZE = Math.max(20, Math.floor(totalBuffers / 50)); // Process in batches of 20 or 2% of total, whichever is larger
-            
-            for (let i = 0; i < audioBuffer.length; i += bufferSize * BATCH_SIZE) {
-              const batchEnd = Math.min(i + bufferSize * BATCH_SIZE, audioBuffer.length);
-              
-              for (let j = i; j < batchEnd; j += bufferSize) {
-                const sampleBuffer = audioContext.createBuffer(
-                  audioBuffer.numberOfChannels,
-                  bufferSize,
-                  audioBuffer.sampleRate
-                );
-                
-                for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
-                  const channelData = audioBuffer.getChannelData(channel);
-                  const sampleChannelData = sampleBuffer.getChannelData(channel);
-                  
-                  for (let k = 0; k < bufferSize && j + k < audioBuffer.length; k++) {
-                    sampleChannelData[k] = channelData[j + k];
-                  }
-                }
-                
-                const signal = new Float32Array(bufferSize);
-                const channelData = sampleBuffer.getChannelData(0);
-                for (let k = 0; k < bufferSize; k++) {
-                  signal[k] = channelData[k];
-                }
-                
-                if (previousSignal && arraysEqual(signal, previousSignal)) {
-                  processedBuffers++;
-                  continue;
-                }
-                previousSignal = signal.slice();
-                
-                const chunkFeatures = Meyda.extract(FEATURES.map(feature => feature.name), signal);
-                
-                newIndividualBufferValues.push(chunkFeatures);
-                
-                for (const feature in chunkFeatures) {
-                  if (features[feature]) {
-                    features[feature].push(chunkFeatures[feature]);
-                  }
-                }
-                
-                processedBuffers++;
-              }
-              
-              const progress = Math.floor((processedBuffers / totalBuffers) * 55) + 25; // Audio processing is 25-80% of total
-              const percentComplete = Math.floor((processedBuffers / totalBuffers) * 100);
-              
-              await new Promise(resolve => setTimeout(() => {
-                setProcessingMessage(`Extracting audio features...`);
-                setLoadingProgress(progress);
-                resolve();
-              }, 0));
-            }
-            
-            setIndividualBufferValues(newIndividualBufferValues);
-            console.log("newIndividualBufferValues:", newIndividualBufferValues);
-            
-            await new Promise(resolve => setTimeout(() => {
-              setProcessingMessage('Analyzing audio features...');
-              setLoadingProgress(80);
-              resolve();
-            }, 500));
-            
-            for (const feature in features) {
-              let sum = 0;
-              let min = Infinity;
-              let max = -Infinity;
-              
-              const values = features[feature].filter(val => 
-                !isNaN(val) && val !== null && val !== undefined
+            for (let j = i; j < batchEnd; j += bufferSize) {
+              const sampleBuffer = audioContext.createBuffer(
+                audioBuffer.numberOfChannels,
+                bufferSize,
+                audioBuffer.sampleRate
               );
               
-              if (values.length > 0) {
-                for (const value of values) {
-                  if (typeof value === 'number') {
-                    sum += value;
-                    min = Math.min(min, value);
-                    max = Math.max(max, value);
-                  } else if (Array.isArray(value) && value.length > 0) {
-                    const avgValue = value.reduce((a, b) => a + b, 0) / value.length;
-                    sum += avgValue;
-                    min = Math.min(min, ...value);
-                    max = Math.max(max, ...value);
-                  }
+              for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
+                const channelData = audioBuffer.getChannelData(channel);
+                const sampleChannelData = sampleBuffer.getChannelData(channel);
+                
+                for (let k = 0; k < bufferSize && j + k < audioBuffer.length; k++) {
+                  sampleChannelData[k] = channelData[j + k];
                 }
-                
-                const average = sum / values.length;
-                
-                finalFeatures[feature] = {
-                  min,
-                  max,
-                  average
-                };
-              } else {
-                finalFeatures[feature] = {
-                  min: 0,
-                  max: 0,
-                  average: 0
-                };
               }
+              
+              const signal = new Float32Array(bufferSize);
+              const channelData = sampleBuffer.getChannelData(0);
+              for (let k = 0; k < bufferSize; k++) {
+                signal[k] = channelData[k];
+              }
+              
+              if (previousSignal && arraysEqual(signal, previousSignal)) {
+                processedBuffers++;
+                continue;
+              }
+              previousSignal = signal.slice();
+              
+              const chunkFeatures = Meyda.extract(FEATURES.map(feature => feature.name), signal);
+              
+              newIndividualBufferValues.push(chunkFeatures);
+              
+              for (const feature in chunkFeatures) {
+                if (features[feature]) {
+                  features[feature].push(chunkFeatures[feature]);
+                }
+              }
+              
+              processedBuffers++;
             }
             
-            // console.log("Energy stats:", finalFeatures.energy);
-            // console.log("ZCR stats:", finalFeatures.zcr);
-            // console.log("spectralKurtosis stats:", finalFeatures.spectralKurtosis);
-            console.log("finalFeatures:", finalFeatures);
-            
-            setAudioFeatures(finalFeatures);
+            const progress = Math.floor((processedBuffers / totalBuffers) * 55) + 25; // Audio processing is 25-80% of total
+            const percentComplete = Math.floor((processedBuffers / totalBuffers) * 100);
             
             await new Promise(resolve => setTimeout(() => {
-              setProcessingMessage('Processing image...');
-              setLoadingProgress(85);
+              setProcessingMessage(`Extracting audio features...`);
+              setLoadingProgress(progress);
               resolve();
-            }, 500));
+            }, 0));
+          }
+          
+          setIndividualBufferValues(newIndividualBufferValues);
+          console.log("newIndividualBufferValues:", newIndividualBufferValues);
+          
+          await new Promise(resolve => setTimeout(() => {
+            setProcessingMessage('Analyzing audio features...');
+            setLoadingProgress(80);
+            resolve();
+          }, 500));
+          
+          for (const feature in features) {
+            let sum = 0;
+            let min = Infinity;
+            let max = -Infinity;
             
-            let currentProgress = 85;
-            const progressInterval = setInterval(() => {
-              currentProgress += 1;
-              if (currentProgress <= 98) {
-                setLoadingProgress(currentProgress);
+            const values = features[feature].filter(val => 
+              !isNaN(val) && val !== null && val !== undefined
+            );
+            
+            if (values.length > 0) {
+              for (const value of values) {
+                if (typeof value === 'number') {
+                  sum += value;
+                  min = Math.min(min, value);
+                  max = Math.max(max, value);
+                } else if (Array.isArray(value) && value.length > 0) {
+                  const avgValue = value.reduce((a, b) => a + b, 0) / value.length;
+                  sum += avgValue;
+                  min = Math.min(min, ...value);
+                  max = Math.max(max, ...value);
+                }
               }
-            }, 100);
+              
+              const average = sum / values.length;
+              
+              finalFeatures[feature] = {
+                min,
+                max,
+                average
+              };
+            } else {
+              finalFeatures[feature] = {
+                min: 0,
+                max: 0,
+                average: 0
+              };
+            }
+          }
+          
+          // console.log("Energy stats:", finalFeatures.energy);
+          // console.log("ZCR stats:", finalFeatures.zcr);
+          // console.log("spectralKurtosis stats:", finalFeatures.spectralKurtosis);
+          console.log("finalFeatures:", finalFeatures);
+          
+          setAudioFeatures(finalFeatures);
+          
+          await new Promise(resolve => setTimeout(() => {
+            setProcessingMessage('Processing image...');
+            setLoadingProgress(85);
+            resolve();
+          }, 500));
+          
+          let currentProgress = 85;
+          const progressInterval = setInterval(() => {
+            currentProgress += 1;
+            if (currentProgress <= 98) {
+              setLoadingProgress(currentProgress);
+            }
+          }, 100);
+          
+          setTimeout(() => {
+            clearInterval(progressInterval);
+            setLoadingProgress(100);
+            setProcessingMessage('Complete!');
             
             setTimeout(() => {
-              clearInterval(progressInterval);
-              setLoadingProgress(100);
-              setProcessingMessage('Complete!');
-              
-              setTimeout(() => {
-                setIsLoading(false);
-              }, 500);
-              
-              const endTime = performance.now();
-              console.log(`Audio processing took ${endTime - startTime}ms`);
-            }, 1500);
+              setIsLoading(false);
+            }, 500);
             
-          } catch (error) {
-            console.error("Error processing audio data:", error);
-            setIsLoading(false);
-          }
-        };
-        
-        reader.onerror = (error) => {
-          console.error("Error reading file:", error);
+            const endTime = performance.now();
+            console.log(`Audio processing took ${endTime - startTime}ms`);
+          }, 1500);
+          
+        } catch (error) {
+          console.error("Error processing audio data:", error);
           setIsLoading(false);
-        };
-        
-        reader.readAsArrayBuffer(fileToProcess);
-        
-      } catch (error) {
-        console.error("Error processing audio file:", error);
+        }
+      };
+      
+      reader.onerror = (error) => {
+        console.error("Error reading file:", error);
         setIsLoading(false);
-      }
+      };
+      
+      reader.readAsArrayBuffer(fileToProcess);
+      
+    } catch (error) {
+      console.error("Error processing audio file:", error);
+      setIsLoading(false);
+    }
+  };
+
+  const handleConfirmShortAudio = () => {
+    if (pendingAudioFile) {
+      processAudioFile(pendingAudioFile.file, pendingAudioFile.event);
+    }
+    setShowShortAudioModal(false);
+    setPendingAudioFile(null);
+  };
+
+  const handleCancelShortAudio = () => {
+    setShowShortAudioModal(false);
+    setPendingAudioFile(null);
+    
+    // Reset file input if it's from a file input element
+    if (pendingAudioFile && pendingAudioFile.event && 
+        pendingAudioFile.event.target && 
+        pendingAudioFile.event.target.value) {
+      pendingAudioFile.event.target.value = '';
+    }
+  };
+
+  const handleConfirmLongAudio = () => {
+    if (pendingAudioFile) {
+      processAudioFile(pendingAudioFile.file, pendingAudioFile.event);
+    }
+    setShowLongAudioModal(false);
+    setPendingAudioFile(null);
+  };
+
+  const handleCancelLongAudio = () => {
+    setShowLongAudioModal(false);
+    setPendingAudioFile(null);
+    
+    // Reset file input if it's from a file input element
+    if (pendingAudioFile && pendingAudioFile.event && 
+        pendingAudioFile.event.target && 
+        pendingAudioFile.event.target.value) {
+      pendingAudioFile.event.target.value = '';
     }
   };
 
@@ -966,6 +1054,20 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
         )}
       </div>
       <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
+      <Modal
+        isOpen={showShortAudioModal}
+        onClose={handleCancelShortAudio}
+        onConfirm={handleConfirmShortAudio}
+        title="Short Audio File"
+        message="The audio file you've selected is less than 2 minutes long. Short audio files may not produce effective results. Would you like to continue anyway?"
+      />
+      <Modal
+        isOpen={showLongAudioModal}
+        onClose={handleCancelLongAudio}
+        onConfirm={handleConfirmLongAudio}
+        title="Long Audio File"
+        message="The audio file you've selected is over 10 minutes long. Processing might take longer. Would you like to continue anyway?"
+      />
     </div>
   );
 };
