@@ -10,7 +10,7 @@ const LandingPage = ({ setSelectedImage, setProcessedImage, setInitialAudioFile 
   const [isDragging, setIsDragging] = useState(false);
   const [showShortAudioModal, setShowShortAudioModal] = useState(false);
   const [showLongAudioModal, setShowLongAudioModal] = useState(false);
-  const [showTutorialModal, setShowTutorialModal] = useState(false);
+  const [showTutorialModal, setShowTutorialModal] = useState(true);
   const [pendingAudioFile, setPendingAudioFile] = useState(null);
 
   // Check if we should show the tutorial on component mount
