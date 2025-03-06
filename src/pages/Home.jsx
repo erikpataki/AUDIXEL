@@ -6,6 +6,8 @@ import Canvas from '../components/Canvas/Canvas';
 import LoadingOverlay from '../components/LoadingOverlay/LoadingOverlay';
 import SpinnerOverlay from '../components/SpinnerOverlay/SpinnerOverlay';
 import Modal from '../components/Modal/Modal';
+import InfoButton from '../components/InfoButton/InfoButton';
+import { getTutorialMessage } from '../utils/tutorialContent';
 
 const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedImage, initialAudioFile, setInitialAudioFile }) => {
   const [minThreshold, setMinThreshold] = useState(40);
@@ -41,6 +43,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
   const filenameRef = useRef(null);
   const [showShortAudioModal, setShowShortAudioModal] = useState(false);
   const [showLongAudioModal, setShowLongAudioModal] = useState(false);
+  const [showTutorialModal, setShowTutorialModal] = useState(false);
   const [pendingAudioFile, setPendingAudioFile] = useState(null);
 
   useEffect(() => {
@@ -916,8 +919,22 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     return () => window.removeEventListener('resize', checkFilenameOverflow);
   }, [fileName, uploadedFile, checkFilenameOverflow]);
 
+  const tutorialMessage = getTutorialMessage();
+
+  const handleCloseTutorial = () => {
+    setShowTutorialModal(false);
+  };
+
+  const handleOpenTutorial = () => {
+    setShowTutorialModal(true);
+  };
+
   return (
     <div className='upload-parent-parent'>
+      <InfoButton 
+        onClick={handleOpenTutorial} 
+        isVisible={!showTutorialModal && !showShortAudioModal && !showLongAudioModal && !isLoading}
+      />
       {isLoading && (
         <LoadingOverlay 
           progress={loadingProgress} 
@@ -1067,6 +1084,15 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
         onConfirm={handleConfirmLongAudio}
         title="Long Audio File"
         message="The audio file you've selected is over 10 minutes long. Processing might take longer. Would you like to continue anyway?"
+      />
+      <Modal
+        isOpen={showTutorialModal}
+        onClose={handleCloseTutorial}
+        title="AUDIXEL"
+        message={tutorialMessage}
+        modalType="tutorial"
+        hasButtons={false}
+        customClass="tutorial-modal"
       />
     </div>
   );
