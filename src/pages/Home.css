@@ -50,12 +50,13 @@
 .main-title {
     width: 100%;
     text-align: left;
-    text-decoration: underline;
+    /* text-decoration: underline; */
     font-size: 3rem;
     margin-bottom: 0;
     letter-spacing: 0.07em;
     font-weight: 600;
     text-underline-offset: 0.17em;
+    filter: drop-shadow(0 0 20px #0D1F22);
     user-select: none;
     -webkit-user-select: none;
     -moz-user-select: none;
@@ -78,6 +79,7 @@
 
 .switch {
     margin-left: auto;
+    filter: drop-shadow(0 0 20px #0d1f2250);
 }
 
 .chosen-file {

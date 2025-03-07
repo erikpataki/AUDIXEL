@@ -13,7 +13,8 @@
 
 .modal-content {
   background-color: #0D1F22;
-  border: 3px solid #558B6E;
+  /* border: 3px solid #558B6E; */
+  border: 3px solid #FFFFFA;
   border-radius: 1.2rem;
   padding: 2rem;
   width: 80%;
@@ -84,7 +85,7 @@
 .tutorial-message h2 {
   margin-top: 1.5rem;
   margin-bottom: 0.75rem;
-  color: #558B6E;
+  /* color: #558B6E; */
 }
 
 .modal-buttons {

@@ -6,12 +6,13 @@
     position: absolute;
     top: 0;
     width: 100%;
-    margin-top: 2rem;
+    margin-top: 14vh;
 }
 
 .main-title.landing-page-title-text {
-    text-align: center;
     font-size: 4rem;
+    filter: drop-shadow(0 0 65px #FFFFFA);
+    text-align: center;
 }
 
 .upload-block {
@@ -81,8 +82,6 @@
     align-items: center;
 }
 
-
-
 .upload-text {
     display: flex;
     justify-content: center;
@@ -106,6 +105,8 @@
     justify-content: center;
     align-items: center;
     position: relative;
+    background-color: #0D1F22;
+    filter: drop-shadow(0 0 65px #fffffa2a);
 }
 
 .upload-text:hover {
