@@ -26,7 +26,9 @@ function Dropdowns({
     }, [isCollapsed]);
 
     return (
-        <div className="drop-down" ref={dropDownRef}>
+        <div className="drop-down" ref={dropDownRef}
+        //  style={{display: hasDropdown === false ? "flex" : ""}}
+         >
             <div className="drop-down-header" onClick={toggleCollapse}>
                 <h3 className="drop-down-name">{dropdownName}</h3>
                 {hasDropdown !== false &&
@@ -43,6 +45,7 @@ function Dropdowns({
                             value={slider.value}
                             setValue={slider.setValue}
                             maxValue={slider.maxValue}
+                            tooltip={slider.tooltip}
                         />
                     ))}
                     {selectors.map((selector, index) => (
@@ -52,6 +55,7 @@ function Dropdowns({
                             value={selector.value}
                             onChange={selector.setValue}
                             options={selector.options}
+                            tooltip={selector.tooltip}
                         />
                     ))}
                 </div>

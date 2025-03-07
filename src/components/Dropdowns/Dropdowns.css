@@ -2,15 +2,14 @@
     width: 100%;
     height: auto;
     flex-shrink: 0;
-    border-radius: 0.9375rem;
+    border-radius: 1.2rem;
     background: #FFFFFA;
-    padding: 0.6rem;
-    overflow: hidden;
+    padding: 0.5rem 0.8rem 0.8rem 0.8rem;
+    overflow: visible;
     transition: height 0.3s ease;
     margin-bottom: 0.9rem;
     user-select: none;
 }
-
 
 .drop-down-header {
     display: flex;
@@ -27,6 +26,7 @@
     color: #0D1F22;
     font-size: 0.9rem;
     margin: 0;
+    width: 100%;
 }
 
 .dropdown-arrow {
@@ -42,5 +42,10 @@
 } */
 
 .drop-down-content > * {
-    margin-top: 15px;
+    margin-top: 7px;
+}
+
+.drop-down-content {
+    overflow: visible;
+    padding-bottom: 7px;
 }

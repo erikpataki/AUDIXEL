@@ -1,103 +1,3 @@
-* {
-    font-family: Inter;
-}
-
-.upload-parent-parent {
-    display: flex;
-    justify-content: center; 
-    align-items: center;
-    height: 100%; 
-    /* overflow: hidden; */
-}
-
-.upload-parent {
-    display: flex;
-    width: 100%;
-    height: 100vh;
-}
-
-.image-upload {
-    flex: 0 0 75%;
-    position: relative;
-    padding: 40px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.image-upload-no-image {
-    flex: 0 0 100%;
-}
-
-.file-input-label {
-    /* width: 100%;
-    height: 100%; */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.upload-block {
-    width: 100%;
-    height: 100%;
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.upload-text {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    transition: border-color 0.3s ease;
-    overflow: hidden;
-    width: 34.4375rem;
-    height: 20.125rem;
-    flex-shrink: 0;
-    border-radius: 2rem;
-    border: 3px solid #FFFFFA;
-    font-size: 18px;
-    color: #FFFFFA;
-    display: flex;
-    font-size: 1.5rem;
-    font-style: normal;
-    font-weight: 400;
-    line-height: normal;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    position: relative;
-}
-
-.upload-text:hover {
-    border-color: #888;
-}
-
-.image-upload-text-main-parent {
-    text-align: center;
-    justify-content: center;
-    align-items: center;
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-}
-
-.small-image-upload-text {
-    margin-top: 10rem;
-    position: absolute;
-    bottom: 10px;
-    width: 100%;
-    text-align: center;
-    font-size: small;
-    cursor: pointer;
-}
-
-.small-image-upload-text:hover {
-    text-decoration: underline;
-}
-
 .preview-image {
     max-width: 100%;
     max-height: 100%;
@@ -131,27 +31,36 @@
     width: 100%;
     height: 100%;
     border-left: 0.1875rem solid #FFFFFA;
-    padding: 20px;
+    padding: 1.25rem;
     box-sizing: border-box; /* Ensure padding is included in width */
     display: flex;
     flex-direction: column; /* Added to make the container column flex */
+    overflow-x: hidden; /* Prevent horizontal expansion */
+    max-width: 100%; /* Ensure it doesn't grow beyond its designated width */
 }
 
 .title-bar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
-    height: 64px;
+    margin-bottom: 1.5rem;
+    height: 4rem;
 }
 
 .main-title {
     width: 100%;
     text-align: left;
-    text-decoration: underline;
-    font-size: 40px;
+    /* text-decoration: underline; */
+    font-size: 3rem;
     margin-bottom: 0;
-    cursor: pointer;
+    letter-spacing: 0.07em;
+    font-weight: 600;
+    text-underline-offset: 0.17em;
+    filter: drop-shadow(0 0 20px #0D1F22);
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 /* .toggle-switch {
@@ -170,13 +79,64 @@
 
 .switch {
     margin-left: auto;
+    filter: drop-shadow(0 0 20px #0d1f2250);
+}
+
+.chosen-file {
+    margin-bottom: 0.9rem;
+    font-weight: 600;
+    font-size: 1.1rem;
+    position: relative;
+    height: 1.7rem; /* Fixed height to prevent layout shifts */
+    width: 100%; /* Ensure it takes full width of parent */
+    max-width: 100%;
+    overflow: hidden; /* Hide overflow in all states */
+    box-sizing: border-box;
+}
+
+.chosen-file p {
+    margin: 0;
+    padding: 0;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    width: 100%;
+    display: inline-block;
+    position: absolute;
+    left: 0;
+    top: 0;
+    max-width: 100%;
+    transition: all 0.3s;
+    animation: none;
+}
+
+/* Simpler hover effect: just show the scrolling behavior immediately */
+.chosen-file:hover p {
+    text-overflow: clip;
+    /* Play animation only once per hover */
+    animation: marquee 3s linear forwards;
+}
+
+@keyframes marquee {
+    0%, 10% {
+        /* Stay at beginning for a moment */
+        transform: translateX(0);
+    }
+    85%, 100% {
+        /* Move to the end and stay there */
+        transform: translateX(calc(0px - (var(--scroll-width, 0) - 100%)));
+    }
+}
+
+/* Clean up any leftover styles */
+.chosen-file-inner {
+    display: none;
 }
 
 .spinner {
-    width: 20px;
-    height: 20px;
-    border: 2px solid #f3f3f3;
-    border-top: 2px solid #558B6E;
+    width: 1.25rem;
+    height: 1.25rem;
+    border: 0.125rem solid #f3f3f3;
+    border-top: 0.125rem solid #558B6E;
     border-radius: 50%;
     animation: spin 1s linear infinite;
 }
@@ -188,7 +148,7 @@
 
 .progress-container {
     width: 100%;
-    margin: 10px 0;
+    margin: 0.75rem 0;
 }
 
 .progress-bar {
@@ -203,12 +163,85 @@
     width: 100%;
 }
 
+.upload-parent-parent {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    width: 100%;
+    overflow: hidden;
+}
+
+.upload-parent {
+    display: flex;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.canvas-wrapper {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: auto;
+  min-height: 100%;
+  justify-content: center;
+  align-items: center;
+  overflow: visible;
+  padding: 4rem;
+  box-sizing: border-box;
+  flex: 1;
+}
+
+.canvas-wrapper > * {
+  position: relative;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+}
+
+.canvas-spinner-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  pointer-events: none; /* Allow clicks to pass through when not in use */
+}
+
+.canvas-spinner-container .spinner-overlay {
+  position: absolute; /* Keep positioned within the container */
+  pointer-events: auto; /* Re-enable pointer events for the actual spinner */
+}
+
 .sound-upload canvas {
     width: 100%;
     height: 100px;
-    background-color: #000;
-    border-radius: 10px;
+    object-fit: contain;
     margin-top: 10px;
+}
+
+.image-upload {
+    flex: 1;
+    position: relative;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.upload-block {
+    /* width: 100%;
+    height: auto;
+    position: relative;
+    display: block;
+    margin: auto;
+    overflow: visible; */
 }
 
 .toggle-switch-input {
@@ -254,4 +287,105 @@
 
 input[type="range"] {
     width: auto;
+}
+
+.audio-upload-block.home-page-upload-block {
+    margin-bottom: 0.9rem;
+    transition: all 0.3s ease;
+    border: 3px solid transparent;
+    border-radius: 1.2rem;
+}
+
+.audio-upload-block.home-page-upload-block.dragging {
+    background-color: rgba(0, 0, 0, 0.1);
+    border: 3px dashed #FFFFFA;
+    border-radius: 1.2rem;
+    box-shadow: 0 0 12px #FFFFFA;
+}
+
+.upload-text.home-page-upload-text {
+    width: 100%;
+    height: 6rem;
+    font-size: 0.9rem;
+    background-color: #0D1F22;
+}
+
+.upload-text.home-page-upload-text:hover {
+    border-color: #0D1F22;
+}
+
+.download-button {
+    text-align: center;
+}
+
+.upload-own-image-button {
+    position: absolute;
+    bottom: 0.5rem;
+    width: 20rem;
+    transition: all 0.3s ease;
+    z-index: 3;
+    scale: 0.8;
+}
+
+.upload-own-image-button.hidden {
+  transform: translateY(100%);
+  transition: transform 0.3s ease-in-out;
+}
+
+.upload-own-image-button .drop-down {
+    margin-bottom: 0;
+    cursor: pointer;
+}
+.upload-own-image-button-tab {
+    width: 1rem;
+    height: 1.1rem;
+    background-color: #FFFFFA;
+    margin-left: auto;
+    margin-right: 1.1rem;
+    border-radius: 50% 50% 0 0;
+    color: #0D1F22;
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    padding-top: 0.1rem;
+    display: flex;
+}
+
+.upload-own-image-button-tab-icon {
+    transform: scaleY(-0.9);
+    font-weight: 700;
+    margin: 0;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+.upload-own-image-button-tab-icon.hidden {
+    transform: scaleY(0.9);
+    transition: transform 0.3s ease-in-out;
+}
+
+.upload-own-image-button-plus-icon-parent {
+    position: absolute;
+    width: 100%;
+    height: calc(100% - 1.1rem);
+    display: flex;
+    justify-content: end;
+    align-items: center;
+    transform: translateY(-100%);
+    cursor: pointer;
+}
+
+.upload-own-image-button-plus-icon {
+    /* margin-left: auto; */
+    margin-right: 0.5rem;
+    scale: 0.8;
 }

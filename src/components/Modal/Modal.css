@@ -1,0 +1,123 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background-color: #0D1F22;
+  /* border: 3px solid #558B6E; */
+  border: 3px solid #FFFFFA;
+  border-radius: 1.2rem;
+  padding: 2rem;
+  width: 80%;
+  max-width: 35rem;
+  color: #FFFFFA;
+  position: relative;
+}
+
+/* Tutorial modal styles */
+.modal-content.tutorial {
+  max-width: 70rem;
+  height: 72vh;
+  overflow-y: auto;
+  padding: 1rem 2rem 2rem;
+  overflow: hidden;
+}
+
+.modal-close-button {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  font-size: 1.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem;
+  background-color: #FFFFFA;
+  transition: background-color 0.2s ease;
+}
+
+.modal-close-button:hover {
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+.modal-title {
+  margin-top: 0;
+  font-size: 1.5rem;
+}
+
+.tutorial-title {
+  text-align: center;
+  font-size: 2.5rem;
+  letter-spacing: 0.07em;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.17em;
+  margin-bottom: 1.5rem;
+}
+
+.modal-message {
+  margin-bottom: 1rem;
+}
+
+.tutorial-message {
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.tutorial-message p {
+  margin-bottom: 1rem;
+}
+
+.tutorial-message h2 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  /* color: #558B6E; */
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.modal-button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.cancel-button {
+  background-color: #FFFFFA;
+  color: #0D1F22;
+}
+
+.confirm-button {
+  background-color: #558B6E;
+  color: #FFFFFA;
+}
+
+.cancel-button:hover {
+  background-color: #e0e0e0;
+}
+
+.confirm-button:hover {
+  background-color: #447960;
+}

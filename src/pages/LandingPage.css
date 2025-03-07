@@ -1,0 +1,137 @@
+.image-upload {
+    height: 100vh;
+}
+
+.title-bar.landing-page-title {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    margin-top: 14vh;
+}
+
+.main-title.landing-page-title-text {
+    font-size: 4rem;
+    filter: drop-shadow(0 0 65px #FFFFFA);
+    text-align: center;
+}
+
+.upload-block {
+    /* width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.3s ease;
+    border: 3px solid transparent; */
+    border-radius: 1.2rem;
+}
+
+.upload-block {
+    /* width: 100%;
+    height: 100%;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center; */
+}
+
+.upload-block.dragging {
+    /* background-color: rgba(0, 0, 0, 0.05); */
+    border: 3px dashed #FFFFFA;
+    border-radius: 1.2rem;
+    box-shadow: 0 0 40px #FFFFFA;
+    transition: all 0.3s ease;
+}
+
+* {
+    font-family: Inter;
+}
+
+.upload-parent-parent {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    width: 100%;
+}
+
+.upload-parent {
+    display: flex;
+    width: 100%;
+    height: 100vh;
+}
+
+.image-upload {
+    /* flex: 0 0 75%; */
+    position: relative;
+    /* padding: 40px; */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.image-upload-no-image {
+    flex: 0 0 100%;
+}
+
+.file-input-label {
+    /* width: 100%;
+    height: 100%; */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.upload-text {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: border-color 0.3s ease;
+    overflow: hidden;
+    width: 34.4375rem;
+    height: 20.125rem;
+    flex-shrink: 0;
+    border-radius: 1.2rem;
+    border: 3px solid #FFFFFA;
+    font-size: 18px;
+    color: #FFFFFA;
+    display: flex;
+    font-size: 1.5rem;
+    font-style: normal;
+    font-weight: 400;
+    line-height: normal;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    background-color: #0D1F22;
+    filter: drop-shadow(0 0 65px #fffffa2a);
+}
+
+.upload-text:hover {
+    border-color: #888;
+}
+
+.image-upload-text-main-parent {
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.small-image-upload-text {
+    margin-top: 10rem;
+    position: absolute;
+    bottom: 10px;
+    width: 100%;
+    text-align: center;
+    font-size: small;
+    cursor: pointer;
+}
+
+.small-image-upload-text:hover {
+    text-decoration: underline;
+}
