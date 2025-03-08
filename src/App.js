@@ -11,7 +11,7 @@ const App = () => {
   const [initialAudioFile, setInitialAudioFile] = useState(null);
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/AUDIXEL">
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<LandingPage setSelectedImage={setSelectedImage} setProcessedImage={setProcessedImage} setInitialAudioFile={setInitialAudioFile} />} />
