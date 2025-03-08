@@ -737,6 +737,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
   const handleImageChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
+      setUploadedFile(file); // Add this line to update uploadedFile state
       const reader = new FileReader();
 
       reader.onload = function (event) {

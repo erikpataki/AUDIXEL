@@ -12,6 +12,7 @@
     font-style: normal;
     font-weight: 600;
     line-height: normal;
+    border-bottom: 1px dashed #0d1f2265;
 }
 
 .threshold-control {
@@ -26,6 +27,7 @@
     background: none;
     border: none;
     color: #0D1F22;
+    user-select: none;
 }
 
 input::-webkit-outer-spin-button,
