@@ -11,6 +11,7 @@
     font-style: normal;
     font-weight: 600;
     line-height: normal;
+    border-bottom: 1px dashed #0d1f2265;
 }
 
 .selector-control {
