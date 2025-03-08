@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/AUDIXEL/static/css/main.75c61b14.css",
+    "main.js": "/AUDIXEL/static/js/main.2a1cc5a0.js",
+    "index.html": "/AUDIXEL/index.html",
+    "main.75c61b14.css.map": "/AUDIXEL/static/css/main.75c61b14.css.map",
+    "main.2a1cc5a0.js.map": "/AUDIXEL/static/js/main.2a1cc5a0.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.75c61b14.css",
+    "static/js/main.2a1cc5a0.js"
+  ]
+}
