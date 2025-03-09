@@ -345,33 +345,57 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
       return;
     }
 
+    // If we have a processed image, use that directly
+    if (processedImage && showProcessed) {
+      const processedImg = new Image();
+      processedImg.onload = () => {
+        const finalCanvas = document.createElement('canvas');
+        const finalCtx = finalCanvas.getContext('2d');
+        
+        // Use the processed image's dimensions
+        finalCanvas.width = processedImg.width;
+        finalCanvas.height = processedImg.height;
+        
+        // Draw the processed image without additional transformations
+        finalCtx.drawImage(processedImg, 0, 0);
+        
+        finalCanvas.toBlob((blob) => {
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          const downloadFilename = uploadedFile 
+            ? `${uploadedFile.name.replace(/\.[^/.]+$/, "")}-album-cover.png` 
+            : `AUDIXEL-album-cover.png`;
+          link.download = downloadFilename;
+          link.click();
+          URL.revokeObjectURL(link.href);
+        }, 'image/png');
+      };
+      processedImg.src = processedImage;
+      return;
+    }
+    
+    // If we're here, use the original image
     const img = new Image();
     img.src = selectedImage;
     img.onload = () => {
       const finalCanvas = document.createElement('canvas');
       const finalCtx = finalCanvas.getContext('2d');
-
-      finalCanvas.width = horizontalResolutionValue;
-      finalCanvas.height = verticalResolutionValue;
-
-      const radians = (angle * Math.PI) / 180;
-
-      finalCtx.translate(finalCanvas.width / 2, finalCanvas.height / 2);
-      finalCtx.rotate(-radians);
-
-      finalCtx.translate(-canvas.width / 2, -canvas.height / 2);
-
-      finalCtx.drawImage(canvas, 0, 0);
-
+      
+      // Use the original image dimensions
+      finalCanvas.width = img.width;
+      finalCanvas.height = img.height;
+      
+      // Draw the original image without transformations
+      finalCtx.drawImage(img, 0, 0);
+      
       finalCanvas.toBlob((blob) => {
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
         const downloadFilename = uploadedFile 
-        ? `${uploadedFile.name.replace(/\.[^/.]+$/, "")}-album-cover.png` 
-        : `AUDIXEL-album-cover.png`;
+          ? `${uploadedFile.name.replace(/\.[^/.]+$/, "")}-album-cover.png` 
+          : `AUDIXEL-album-cover.png`;
         link.download = downloadFilename;
         link.click();
-
         URL.revokeObjectURL(link.href);
       }, 'image/png');
     };
