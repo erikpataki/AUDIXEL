@@ -13,6 +13,7 @@
     font-size: 4rem;
     filter: drop-shadow(0 0 65px #FFFFFA);
     text-align: center;
+    font-family: 'Weird Words', Inter, sans-serif;
 }
 
 .upload-block {

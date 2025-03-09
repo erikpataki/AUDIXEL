@@ -246,7 +246,7 @@ const Canvas = forwardRef(({ selectedImage, processedImage, showProcessed, setSe
             handleThresholdChange('amount', (130 + (averageAggressiveness * 60)));
 
             let newSortMode;
-            if (averageZCR < 14) {
+            if (averageZCR <= 14) {
               newSortMode = 4; // Lightness
             } else if (averageZCR > 14 && averageZCR <= 18) {
               newSortMode = 0; // Brightness

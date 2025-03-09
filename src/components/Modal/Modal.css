@@ -28,7 +28,7 @@
   max-width: 70rem;
   height: 72vh;
   overflow-y: auto;
-  padding: 1rem 2rem 2rem;
+  padding: 2rem;
   overflow: hidden;
 }
 
@@ -64,9 +64,10 @@
   font-size: 2.5rem;
   letter-spacing: 0.07em;
   font-weight: 600;
-  text-decoration: underline;
+  /* text-decoration: underline; */
   text-underline-offset: 0.17em;
   margin-bottom: 1.5rem;
+  font-family: 'Weird Words', Inter, sans-serif;
 }
 
 .modal-message {
