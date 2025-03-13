@@ -11,9 +11,9 @@ import { getTutorialMessage } from '../utils/tutorialContent';
 
 const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedImage, initialAudioFile, setInitialAudioFile }) => {
   const [minThreshold, setMinThreshold] = useState(40);
-  const [maxThreshold, setMaxThreshold] = useState(220);
+  const [maxThreshold, setMaxThreshold] = useState(217);
   const [showProcessed, setShowProcessed] = useState(true);
-  const [combinedThreshold, setCombinedThreshold] = useState(150);
+  const [combinedThreshold, setCombinedThreshold] = useState(175);
   const debounceTimeoutRef = useRef(null);
   const [audioFeatures, setAudioFeatures] = useState({});
   const [middlePoint, setMiddlePoint] = useState(128);
@@ -1031,9 +1031,12 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
               </div>
               <div className='chosen-file'>
                 {uploadedFile ? (
-                  uploadedFile.type.toLowerCase().startsWith('audio') ? (
+                  // Add console log to help debug the file type
+                  console.log("File type:", uploadedFile.type) || 
+                  (uploadedFile.type && uploadedFile.type.toLowerCase().includes('audio')) ? (
                     <p ref={filenameRef}>CHOSEN AUDIO: {uploadedFile.name}</p>
                   ) : (
+                    // Default to image if not audio
                     <p ref={filenameRef}>CHOSEN IMAGE: {uploadedFile.name || fileName}</p>
                   )
                 ) : fileName ? (

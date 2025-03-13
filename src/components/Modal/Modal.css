@@ -29,7 +29,9 @@
   height: 72vh;
   overflow-y: auto;
   padding: 2rem;
-  overflow: hidden;
+  /* overflow: hidden; */
+  overflow-x: hidden;
+  overflow-y: scroll;
 }
 
 .modal-close-button {
