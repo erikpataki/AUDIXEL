@@ -1,70 +1,54 @@
-# Getting Started with Create React App
+# AUDIXEL: Audio-Reactive Album Cover Generator
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+An innovative web application that transforms music into visual art by analyzing audio characteristics and applying advanced pixel sorting techniques.
 
-## Available Scripts
+## Project Overview
 
-In the project directory, you can run:
+AUDIXEL bridges the gap between algorithmic art and music visualization by extracting meaningful audio features and mapping them to visual parameters. The result is album artwork that is fundamentally connected to the sonic properties of the music itself.
 
-### `npm start`
+## Features
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- **Audio Analysis**: Processes audio files using Meyda.js to extract features like Zero Crossing Rate (ZCR), Spectral Kurtosis, and Energy
+- **Shape Generation**: Creates abstract polygonal shapes based on audio characteristics
+- **Pixel Sorting**: Applies customizable sorting algorithms with parameters derived from audio features
+- **Multiple Sort Modes**: 
+  - Brightness (RGB sum)
+  - Darkness (negative RGB sum)
+  - Hue (HSL color wheel position)
+  - Saturation (color intensity)
+  - Lightness (perceived brightness)
+- **Parallel Processing**: Uses Web Workers for efficient image transformation
+- **High-Resolution Output**: Supports up to 7200×7200 pixel exports
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## Audio-Visual Mapping
 
-### `npm test`
+- **Sort Mode Selection**: Based on ZCR ranges
+  - ZCR ≤ 14 → Lightness sort
+  - 14 < ZCR ≤ 18 → Brightness sort
+  - 18 < ZCR ≤ 28 → Saturation sort
+  - ZCR > 28 → Hue sort
+- **Sorting Angle**: Derived from spectral kurtosis
+- **Threshold Values**: Calculated from ZCR aggressiveness
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
 
-### `npm run build`
+## Getting Started
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Prerequisites
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+- Node.js (v16.0 or higher recommended)
+- npm or yarn
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Installation
 
-### `npm run eject`
+```bash
+# Clone the repository
+git clone https://github.com/erikpataki/audixel.git
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+# Navigate to the project directory
+cd audixel
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+# Install dependencies
+npm install
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+# Start the development server
+npm start
