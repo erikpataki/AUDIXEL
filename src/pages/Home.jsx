@@ -45,6 +45,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
   const [showLongAudioModal, setShowLongAudioModal] = useState(false);
   const [showTutorialModal, setShowTutorialModal] = useState(false);
   const [pendingAudioFile, setPendingAudioFile] = useState(null);
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
 
   useEffect(() => {
     if (selectedImage && !fileName && initialAudioFile) {
@@ -56,6 +57,17 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
       }
     }
   }, [selectedImage, fileName, initialAudioFile]);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+      const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase());
+      setIsMobileDevice(isMobile);
+      console.log("Device detected as:", isMobile ? "mobile" : "desktop");
+    };
+    
+    checkMobile();
+  }, []);
 
   const getScaleMultiplier = (scaleValue) => scaleValue > 0 ? scaleValue + 1 : 1;
 
@@ -275,7 +287,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     `], { type: 'application/javascript' });
 
     const workerUrl = URL.createObjectURL(workerBlob);
-    const workerCount = navigator.hardwareConcurrency || 4;
+    const workerCount = isMobileDevice ? 1 : (navigator.hardwareConcurrency || 4);
     const workers = [];
 
     const chunkHeight = Math.ceil(newHeight * scaleMultiplier / workerCount);
