@@ -1,0 +1,10 @@
+/* Define the Weird Words font */
+@font-face {
+  font-family: 'Weird Words';
+  src: url('../fonts/WeirdWords.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap; /* This helps prevent invisible text during loading */
+}
+
+/* You can add additional variations like bold, italic, etc. if available */
