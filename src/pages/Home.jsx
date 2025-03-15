@@ -26,6 +26,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
   // const [audioProcessingState, setAudioProcessingState] = useState('idle');
   // const [pendingProcessedImage, setPendingProcessedImage] = useState(null);
   const hasTriggeredImageProcessingRef = useRef(false);
+  const [isMobileDevice, setIsMobileDevice] = useState(false);
   const BASE_RESOLUTION = 2400;
   const [horizontalResolutionValue, setHorizontalResolutionValue] = useState(BASE_RESOLUTION);
   const [verticalResolutionValue, setVerticalResolutionValue] = useState(BASE_RESOLUTION);
@@ -45,7 +46,6 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
   const [showLongAudioModal, setShowLongAudioModal] = useState(false);
   const [showTutorialModal, setShowTutorialModal] = useState(false);
   const [pendingAudioFile, setPendingAudioFile] = useState(null);
-  const [isMobileDevice, setIsMobileDevice] = useState(false);
 
   useEffect(() => {
     if (selectedImage && !fileName && initialAudioFile) {
@@ -172,7 +172,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
 
     const workerBlob = new Blob([`
       self.onmessage = function(e) {
-        const { data, width, height, minThreshold, maxThreshold, sortMode } = e.data;
+        const { data, width, height, minThreshold, maxThreshold, sortMode, isMobile } = e.data;
         
         const rgbaToHsl = (r, g, b) => {
           r /= 255;
@@ -225,57 +225,68 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
             }
           };
 
-          for (let y = 0; y < height; y++) {
-            let startX = 0;
-            let isInSortRange = false;
-            let pixelsToSort = [];
+          const ROW_BATCH_SIZE = isMobile ? 10 : height;
+          
+          for (let rowBatch = 0; rowBatch < height; rowBatch += ROW_BATCH_SIZE) {
+            const endRow = Math.min(rowBatch + ROW_BATCH_SIZE, height);
+            
+            for (let y = rowBatch; y < endRow; y++) {
+              let startX = 0;
+              let isInSortRange = false;
+              let pixelsToSort = [];
 
-            for (let x = 0; x < width; x++) {
-              const i = (y * width + x) * 4;
-              const shouldSort = meetsThreshold(i);
+              for (let x = 0; x < width; x++) {
+                const i = (y * width + x) * 4;
+                const shouldSort = meetsThreshold(i);
 
-              if (shouldSort && !isInSortRange) {
-                startX = x;
-                isInSortRange = true;
-                pixelsToSort = [];
-              }
-
-              if (isInSortRange) {
-                pixelsToSort.push({
-                  r: pixels[i],
-                  g: pixels[i + 1],
-                  b: pixels[i + 2],
-                  a: pixels[i + 3],
-                  sortValue: getSortValue(i)
-                });
-              }
-
-              if ((!shouldSort || x === width - 1) && isInSortRange) {
-                if (pixelsToSort.length > 0) {
-                  pixelsToSort.sort((a, b) => a.sortValue - b.sortValue);
-
-                  for (let j = 0; j < pixelsToSort.length; j++) {
-                    const targetI = (y * width + (startX + j)) * 4;
-                    pixels[targetI] = pixelsToSort[j].r;
-                    pixels[targetI + 1] = pixelsToSort[j].g;
-                    pixels[targetI + 2] = pixelsToSort[j].b;
-                    pixels[targetI + 3] = pixelsToSort[j].a;
-                  }
+                if (shouldSort && !isInSortRange) {
+                  startX = x;
+                  isInSortRange = true;
+                  pixelsToSort = [];
                 }
-                isInSortRange = false;
+
+                if (isInSortRange) {
+                  pixelsToSort.push({
+                    r: pixels[i],
+                    g: pixels[i + 1],
+                    b: pixels[i + 2],
+                    a: pixels[i + 3],
+                    sortValue: getSortValue(i)
+                  });
+                }
+
+                if ((!shouldSort || x === width - 1) && isInSortRange) {
+                  if (pixelsToSort.length > 0) {
+                    pixelsToSort.sort((a, b) => a.sortValue - b.sortValue);
+
+                    for (let j = 0; j < pixelsToSort.length; j++) {
+                      const targetI = (y * width + (startX + j)) * 4;
+                      pixels[targetI] = pixelsToSort[j].r;
+                      pixels[targetI + 1] = pixelsToSort[j].g;
+                      pixels[targetI + 2] = pixelsToSort[j].b;
+                      pixels[targetI + 3] = pixelsToSort[j].a;
+                    }
+                  }
+                  isInSortRange = false;
+                }
+              }
+
+              if (isInSortRange && pixelsToSort.length > 0) {
+                pixelsToSort.sort((a, b) => a.sortValue - b.sortValue);
+
+                for (let j = 0; j < pixelsToSort.length; j++) {
+                  const targetI = (y * width + (startX + j)) * 4;
+                  pixels[targetI] = pixelsToSort[j].r;
+                  pixels[targetI + 1] = pixelsToSort[j].g;
+                  pixels[targetI + 2] = pixelsToSort[j].b;
+                  pixels[targetI + 3] = pixelsToSort[j].a;
+                }
               }
             }
-
-            if (isInSortRange && pixelsToSort.length > 0) {
-              pixelsToSort.sort((a, b) => a.sortValue - b.sortValue);
-
-              for (let j = 0; j < pixelsToSort.length; j++) {
-                const targetI = (y * width + (startX + j)) * 4;
-                pixels[targetI] = pixelsToSort[j].r;
-                pixels[targetI + 1] = pixelsToSort[j].g;
-                pixels[targetI + 2] = pixelsToSort[j].b;
-                pixels[targetI + 3] = pixelsToSort[j].a;
-              }
+            
+            if (isMobile && rowBatch + ROW_BATCH_SIZE < height) {
+              const start = Date.now();
+              while (Date.now() - start < 1) { /* tiny pause */ }
             }
           }
           return pixels;
@@ -312,7 +323,8 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
           height: endY - startY,
           minThreshold,
           maxThreshold,
-          sortMode
+          sortMode,
+          isMobile: isMobileDevice
         });
       }));
     }
@@ -573,9 +585,17 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
           const totalBuffers = Math.ceil(audioBuffer.length / bufferSize);
           let processedBuffers = 0;
           
-          const BATCH_SIZE = Math.max(20, Math.floor(totalBuffers / 50)); // Process in batches of 20 or 2% of total, whichever is larger
+          const BATCH_SIZE = isMobileDevice ? 
+            Math.max(5, Math.floor(totalBuffers / 200)) : // Much smaller batches for mobile
+            Math.max(20, Math.floor(totalBuffers / 50)); // Regular size for desktop
+          
+          const PAUSE_INTERVAL = isMobileDevice ? 10 : 50;  // Pause every 10 batches on mobile
           
           for (let i = 0; i < audioBuffer.length; i += bufferSize * BATCH_SIZE) {
+            if (isMobileDevice && (i / (bufferSize * BATCH_SIZE)) % PAUSE_INTERVAL === 0 && i > 0) {
+              await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            
             const batchEnd = Math.min(i + bufferSize * BATCH_SIZE, audioBuffer.length);
             
             for (let j = i; j < batchEnd; j += bufferSize) {
@@ -619,14 +639,17 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
               processedBuffers++;
             }
             
-            const progress = Math.floor((processedBuffers / totalBuffers) * 55) + 25; // Audio processing is 25-80% of total
-            const percentComplete = Math.floor((processedBuffers / totalBuffers) * 100);
-            
-            await new Promise(resolve => setTimeout(() => {
-              setProcessingMessage(`Extracting audio features...`);
-              setLoadingProgress(progress);
-              resolve();
-            }, 0));
+            const updateUI = (!isMobileDevice || processedBuffers % 5 === 0);
+            if (updateUI) {
+              const progress = Math.floor((processedBuffers / totalBuffers) * 55) + 25; // Audio processing is 25-80% of total
+              const percentComplete = Math.floor((processedBuffers / totalBuffers) * 100);
+              
+              await new Promise(resolve => setTimeout(() => {
+                setProcessingMessage(`Extracting audio features...`);
+                setLoadingProgress(progress);
+                resolve();
+              }, 0));
+            }
           }
           
           setIndividualBufferValues(newIndividualBufferValues);
@@ -917,13 +940,18 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
       label: "SCALE",
       value: scale,
       setValue: setScale,
-      options: [
-        { value: 0, label: '1X (2400x2400)' },
-        { value: 1, label: '2X (4800x4800)' },
-        { value: 2, label: '3X (7200x7200)' },
-        // { value: 3, label: '4X (9600x9600)' },
-      ],
-      tooltip: "Sets the scale for the image. This will result in more detailed pixel sorting and a larger image. Larger scales will result in much longer processing times and potentially break the app on slower machines."
+      options: isMobileDevice ? 
+        [
+          { value: 0, label: '1X (2400x2400)' }
+        ] : 
+        [
+          { value: 0, label: '1X (2400x2400)' },
+          { value: 1, label: '2X (4800x4800)' },
+          { value: 2, label: '3X (7200x7200)' },
+        ],
+      tooltip: isMobileDevice ? 
+        "Scale is limited on mobile devices to prevent crashes." :
+        "Sets the scale for the image. This will result in more detailed pixel sorting and a larger image. Larger scales will result in much longer processing times."
     }
   ];
 
