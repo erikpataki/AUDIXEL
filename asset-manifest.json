@@ -1,13 +1,13 @@
 {
   "files": {
     "main.css": "/AUDIXEL/static/css/main.adfda0e2.css",
-    "main.js": "/AUDIXEL/static/js/main.d9efecd4.js",
+    "main.js": "/AUDIXEL/static/js/main.3434152d.js",
     "index.html": "/AUDIXEL/index.html",
     "main.adfda0e2.css.map": "/AUDIXEL/static/css/main.adfda0e2.css.map",
-    "main.d9efecd4.js.map": "/AUDIXEL/static/js/main.d9efecd4.js.map"
+    "main.3434152d.js.map": "/AUDIXEL/static/js/main.3434152d.js.map"
   },
   "entrypoints": [
     "static/css/main.adfda0e2.css",
-    "static/js/main.d9efecd4.js"
+    "static/js/main.3434152d.js"
   ]
 }
