@@ -1,0 +1,257 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title> components/Dropdowns/Slider/Slider.jsx</title>
+
+  <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="./build/entry.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+  <link href="https://fonts.googleapis.com/css?family=Roboto:100,400,700|Inconsolata,700" rel="stylesheet">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+  <link type="text/css" rel="stylesheet" href="https://jmblog.github.io/color-themes-for-google-code-prettify/themes/tomorrow-night.min.css">
+  <link type="text/css" rel="stylesheet" href="styles/app.min.css">
+  <link type="text/css" rel="stylesheet" href="styles/iframe.css">
+  <link type="text/css" rel="stylesheet" href="">
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+
+  
+</head>
+
+
+
+<body class="layout small-header">
+    <div id="stickyNavbarOverlay"></div>
+    
+
+<div class="top-nav">
+    <div class="inner">
+        <a id="hamburger" role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+        </a>
+        <div class="logo">
+            
+             
+                <a href="index.html">
+                    <h1 class="navbar-item">AUDIXEL Documentation</h1>
+                </a>
+            
+        </div>
+        <div class="menu">
+            
+            <div class="navigation">
+                <a
+                    href="index.html"
+                    class="link"
+                >
+                    Documentation
+                </a>
+                
+                
+                
+            </div>
+        </div>
+    </div>
+</div>
+    <div id="main">
+        <div
+            class="sidebar "
+            id="sidebarNav"
+        >
+            
+            <nav>
+                
+                    <h2><a href="index.html">Documentation</a></h2><div class="category"><h3>Global</h3><ul><li><a href="global.html#Dropdowns">Dropdowns</a></li><li><a href="global.html#Home">Home</a></li><li><a href="global.html#InfoButton">InfoButton</a></li><li><a href="global.html#LoadingOverlay">LoadingOverlay</a></li><li><a href="global.html#Modal">Modal</a></li><li><a href="global.html#Selector">Selector</a></li><li><a href="global.html#Slider">Slider</a></li><li><a href="global.html#SpinnerOverlay">SpinnerOverlay</a></li></ul></div>
+                
+            </nav>
+        </div>
+        <div class="core" id="main-content-wrapper">
+            <div class="content">
+                <header class="page-title">
+                    <p>Source</p>
+                    <h1>components/Dropdowns/Slider/Slider.jsx</h1>
+                </header>
+                
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * Slider Component
+ * 
+ * Interactive slider control with numeric input.
+ * Includes tooltips and debounced value updates.
+ * 
+ * @component
+ */
+import React, { useState, useEffect, useRef } from 'react';
+import './Slider.css';
+
+/**
+ * Renders a slider control with numeric input and tooltip
+ * 
+ * @param {Object} props - Component props
+ * @param {string} props.label - Label text for slider
+ * @param {number} props.value - Current value
+ * @param {Function} props.setValue - Handler for value changes
+ * @param {number} [props.maxValue] - Maximum allowed value (defaults to 255)
+ * @param {string} [props.tooltip] - Tooltip text explaining the control
+ * @returns {JSX.Element} Slider control
+ */
+const Slider = ({ label, value, setValue, maxValue, tooltip }) => {
+    // Use provided max or default to 255
+    const max = maxValue ? maxValue : 255;
+    
+    // Local state for immediate UI updates with debounced parent updates
+    const [localValue, setLocalValue] = useState(value);
+    const debounceTimeoutRef = useRef(null);
+    
+    // Tooltip visibility state
+    const [showTooltip, setShowTooltip] = useState(false);
+    const tooltipTimeoutRef = useRef(null);
+    
+    // Update local value when prop value changes
+    useEffect(() => {
+        setLocalValue(value);
+    }, [value]);
+    
+    /**
+     * Handle slider value changes with debouncing
+     * Updates local state immediately while debouncing parent state updates
+     * 
+     * @param {number} newValue - New slider value
+     */
+    const handleChange = (newValue) => {
+        setLocalValue(newValue); // Update local state immediately for UI responsiveness
+        
+        // Clear any existing timeout
+        if (debounceTimeoutRef.current) {
+            clearTimeout(debounceTimeoutRef.current);
+        }
+        
+        // Set a new timeout to update the parent state
+        debounceTimeoutRef.current = setTimeout(() => {
+            setValue(newValue); // This will trigger the parent component's state update
+        }, 300); // 300ms debounce
+    };
+    
+    /**
+     * Show tooltip after delay when mouse enters label
+     * 
+     * @param {React.MouseEvent} e - Mouse event
+     */
+    const handleMouseEnter = (e) => {
+        tooltipTimeoutRef.current = setTimeout(() => {
+            const rect = e.target.getBoundingClientRect();
+            const tooltip = e.target.parentElement.querySelector('.tooltip');
+            if (tooltip) {
+                tooltip.style.top = `${rect.bottom + 5}px`;
+                tooltip.style.left = `${rect.left}px`;
+            }
+            setShowTooltip(true);
+        }, 500);
+    };
+    
+    /**
+     * Hide tooltip when mouse leaves label
+     */
+    const handleMouseLeave = () => {
+        if (tooltipTimeoutRef.current) {
+            clearTimeout(tooltipTimeoutRef.current);
+        }
+        setShowTooltip(false);
+    };
+    
+    // Clean up timeouts when component unmounts
+    useEffect(() => {
+        return () => {
+            if (tooltipTimeoutRef.current) {
+                clearTimeout(tooltipTimeoutRef.current);
+            }
+        };
+    }, []);
+    
+    return (
+        &lt;div className="slider-parent">
+            &lt;div className="label-tooltip-container">
+                &lt;label 
+                    className="slider-label"
+                    onMouseEnter={handleMouseEnter}
+                    onMouseLeave={handleMouseLeave}
+                >
+                    {label}
+                &lt;/label>
+                {tooltip &amp;&amp; (
+                    &lt;div className={`tooltip ${showTooltip ? 'tooltip-visible' : ''}`}>
+                        {tooltip}
+                    &lt;/div>
+                )}
+            &lt;/div>
+            &lt;div className="threshold-control">
+                &lt;input
+                    type="range"
+                    min="0"
+                    max={max}
+                    value={Math.round(localValue)}
+                    onChange={(e) => handleChange(parseInt(e.target.value))}
+                    className='slider-range'
+                />
+                &lt;input
+                    type="number"
+                    min="0"
+                    max={max}
+                    value={Math.round(localValue)}
+                    onChange={(e) => {
+                        const newValue = Math.min(max, Math.max(0, parseInt(e.target.value) || 0));
+                        handleChange(newValue);
+                    }}
+                    className="slider-number"
+                />
+            &lt;/div>
+        &lt;/div>
+    );
+};
+
+export default Slider;</code></pre>
+        </article>
+    </section>
+
+
+
+
+            </div>
+            
+            <footer class="footer">
+                <div class="content has-text-centered">
+                    <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.4</a></p>
+                    <p class="sidebar-created-by">
+                        <a href="https://github.com/SoftwareBrothers/better-docs" target="_blank">BetterDocs theme</a> provided with <i class="fas fa-heart"></i> by
+                        <a href="http://softwarebrothers.co" target="_blank">SoftwareBrothers - JavaScript Development Agency</a>
+                    </p>
+                </div>
+            </footer>
+            
+        </div>
+        <div id="side-nav" class="side-nav">
+        </div>
+    </div>
+<script src="scripts/app.min.js"></script>
+<script>PR.prettyPrint();</script>
+<script src="scripts/linenumber.js"> </script>
+
+
+</body>
+</html>

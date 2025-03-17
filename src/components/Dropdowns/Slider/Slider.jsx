@@ -1,10 +1,34 @@
+/**
+ * Slider Component
+ * 
+ * Interactive slider control with numeric input.
+ * Includes tooltips and debounced value updates.
+ * 
+ * @component
+ */
 import React, { useState, useEffect, useRef } from 'react';
 import './Slider.css';
 
+/**
+ * Renders a slider control with numeric input and tooltip
+ * 
+ * @param {Object} props - Component props
+ * @param {string} props.label - Label text for slider
+ * @param {number} props.value - Current value
+ * @param {Function} props.setValue - Handler for value changes
+ * @param {number} [props.maxValue] - Maximum allowed value (defaults to 255)
+ * @param {string} [props.tooltip] - Tooltip text explaining the control
+ * @returns {JSX.Element} Slider control
+ */
 const Slider = ({ label, value, setValue, maxValue, tooltip }) => {
+    // Use provided max or default to 255
     const max = maxValue ? maxValue : 255;
+    
+    // Local state for immediate UI updates with debounced parent updates
     const [localValue, setLocalValue] = useState(value);
     const debounceTimeoutRef = useRef(null);
+    
+    // Tooltip visibility state
     const [showTooltip, setShowTooltip] = useState(false);
     const tooltipTimeoutRef = useRef(null);
     
@@ -13,7 +37,12 @@ const Slider = ({ label, value, setValue, maxValue, tooltip }) => {
         setLocalValue(value);
     }, [value]);
     
-    // Handle local changes with debouncing
+    /**
+     * Handle slider value changes with debouncing
+     * Updates local state immediately while debouncing parent state updates
+     * 
+     * @param {number} newValue - New slider value
+     */
     const handleChange = (newValue) => {
         setLocalValue(newValue); // Update local state immediately for UI responsiveness
         
@@ -28,6 +57,11 @@ const Slider = ({ label, value, setValue, maxValue, tooltip }) => {
         }, 300); // 300ms debounce
     };
     
+    /**
+     * Show tooltip after delay when mouse enters label
+     * 
+     * @param {React.MouseEvent} e - Mouse event
+     */
     const handleMouseEnter = (e) => {
         tooltipTimeoutRef.current = setTimeout(() => {
             const rect = e.target.getBoundingClientRect();
@@ -40,6 +74,9 @@ const Slider = ({ label, value, setValue, maxValue, tooltip }) => {
         }, 500);
     };
     
+    /**
+     * Hide tooltip when mouse leaves label
+     */
     const handleMouseLeave = () => {
         if (tooltipTimeoutRef.current) {
             clearTimeout(tooltipTimeoutRef.current);

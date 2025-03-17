@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title> Home</title>
+
+  <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="./build/entry.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+  <link href="https://fonts.googleapis.com/css?family=Roboto:100,400,700|Inconsolata,700" rel="stylesheet">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+  <link type="text/css" rel="stylesheet" href="https://jmblog.github.io/color-themes-for-google-code-prettify/themes/tomorrow-night.min.css">
+  <link type="text/css" rel="stylesheet" href="styles/app.min.css">
+  <link type="text/css" rel="stylesheet" href="styles/iframe.css">
+  <link type="text/css" rel="stylesheet" href="">
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+
+  
+</head>
+
+
+
+<body class="layout small-header">
+    <div id="stickyNavbarOverlay"></div>
+    
+
+<div class="top-nav">
+    <div class="inner">
+        <a id="hamburger" role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+        </a>
+        <div class="logo">
+            
+             
+                <a href="index.html">
+                    <h1 class="navbar-item">AUDIXEL Documentation</h1>
+                </a>
+            
+        </div>
+        <div class="menu">
+            
+            <div class="navigation">
+                <a
+                    href="index.html"
+                    class="link"
+                >
+                    Documentation
+                </a>
+                
+                
+                
+            </div>
+        </div>
+    </div>
+</div>
+    <div id="main">
+        <div
+            class="sidebar "
+            id="sidebarNav"
+        >
+            
+            <nav>
+                
+                    <h2><a href="index.html">Documentation</a></h2><div class="category"><h3>Global</h3><ul><li><a href="global.html#Dropdowns">Dropdowns</a></li><li><a href="global.html#Home">Home</a></li><li><a href="global.html#InfoButton">InfoButton</a></li><li><a href="global.html#LoadingOverlay">LoadingOverlay</a></li><li><a href="global.html#Modal">Modal</a></li><li><a href="global.html#Selector">Selector</a></li><li><a href="global.html#Slider">Slider</a></li><li><a href="global.html#SpinnerOverlay">SpinnerOverlay</a></li></ul></div>
+                
+            </nav>
+        </div>
+        <div class="core" id="main-content-wrapper">
+            <div class="content">
+                <header class="page-title">
+                    <p></p>
+                    <h1>Home</h1>
+                </header>
+                
+
+
+
+    
+
+
+    <h3> </h3>
+
+
+
+
+
+
+
+
+
+
+    
+
+
+
+
+    <section>
+        <article><h1 id="audixel%3A-audio-reactive-album-cover-generator">AUDIXEL: Audio-Reactive Album Cover Generator</h1>
+<p>An innovative web application that transforms music into visual art by analyzing audio characteristics and applying advanced pixel sorting techniques.</p>
+<h2 id="project-overview">Project Overview</h2>
+<p>AUDIXEL bridges the gap between algorithmic art and music visualization by extracting meaningful audio features and mapping them to visual parameters. The result is album artwork that is fundamentally connected to the sonic properties of the music itself.</p>
+<h2 id="features">Features</h2>
+<ul>
+<li><strong>Audio Analysis</strong>: Processes audio files using Meyda.js to extract features like Zero Crossing Rate (ZCR), Spectral Kurtosis, and Energy</li>
+<li><strong>Shape Generation</strong>: Creates abstract polygonal shapes based on audio characteristics</li>
+<li><strong>Pixel Sorting</strong>: Applies customizable sorting algorithms with parameters derived from audio features</li>
+<li><strong>Multiple Sort Modes</strong>:
+<ul>
+<li>Brightness (RGB sum)</li>
+<li>Darkness (negative RGB sum)</li>
+<li>Hue (HSL color wheel position)</li>
+<li>Saturation (color intensity)</li>
+<li>Lightness (perceived brightness)</li>
+</ul>
+</li>
+<li><strong>Parallel Processing</strong>: Uses Web Workers for efficient image transformation</li>
+<li><strong>High-Resolution Output</strong>: Supports up to 7200×7200 pixel exports</li>
+</ul>
+<h2 id="audio-visual-mapping">Audio-Visual Mapping</h2>
+<ul>
+<li><strong>Sort Mode Selection</strong>: Based on ZCR ranges
+<ul>
+<li>ZCR ≤ 14 → Lightness sort</li>
+<li>14 &lt; ZCR ≤ 18 → Brightness sort</li>
+<li>18 &lt; ZCR ≤ 28 → Saturation sort</li>
+<li>ZCR &gt; 28 → Hue sort</li>
+</ul>
+</li>
+<li><strong>Sorting Angle</strong>: Derived from spectral kurtosis</li>
+<li><strong>Threshold Values</strong>: Calculated from ZCR aggressiveness</li>
+</ul>
+<h2 id="getting-started">Getting Started</h2>
+<h3 id="prerequisites">Prerequisites</h3>
+<ul>
+<li>Node.js (v16.0 or higher recommended)</li>
+<li>npm or yarn</li>
+</ul>
+<h3 id="installation">Installation</h3>
+<pre class="prettyprint source lang-bash"><code># Clone the repository
+git clone https://github.com/erikpataki/audixel.git
+
+# Navigate to the project directory
+cd audixel
+
+# Install dependencies
+npm install
+
+# Start the development server
+npm start
+</code></pre>
+<h1 id="audio-processing-pipeline-pseudocode">Audio Processing Pipeline Pseudocode</h1>
+<h2 id="function%3A-processaudio(audiofile)">Function: <code>processAudio(audioFile)</code></h2>
+<ol>
+<li>Load and decode audio file</li>
+<li>Divide audio into 512-sample buffers</li>
+<li>Extract features using Meyda.js:
+<ul>
+<li>Zero Crossing Rate (ZCR)</li>
+<li>Spectral Kurtosis</li>
+<li>Energy</li>
+<li>Other spectral features</li>
+</ul>
+</li>
+<li>Calculate aggregate statistics (min, max, average)</li>
+<li>Store individual buffer values for shape generation</li>
+<li>Pass audio features to Canvas component</li>
+</ol>
+<hr>
+<h1 id="shape-generation">Shape Generation</h1>
+<h2 id="function%3A-generateshapes(individualbuffervalues%2C-audiofeatures)">Function: <code>generateShapes(individualBufferValues, audioFeatures)</code></h2>
+<ol>
+<li>Create canvas with p5.js</li>
+<li>For each audio buffer segment with sufficient energy:
+<ul>
+<li><strong>Calculate &quot;aggressiveness&quot; from ZCR:</strong><pre class="prettyprint source lang-math"><code>aggressiveness = \frac{zcr - 10}{30}
+</code></pre>
+</li>
+<li><strong>Set shape parameters:</strong>
+<ul>
+<li><strong>Vertices:</strong> <code>Math.min(10, Math.max(3, aggressiveness * 10))</code></li>
+<li><strong>Depth:</strong> <code>Math.min(0.75, Math.max(0.1, aggressiveness / 1.34))</code></li>
+<li><strong>Size:</strong> <code>(35 + Math.min(110, energy)) * 0.5</code></li>
+<li><strong>Color:</strong> HSL values based on aggressiveness and energy</li>
+</ul>
+</li>
+<li><strong>Draw distorted polygon with sinusoidal variation:</strong><pre class="prettyprint source lang-math"><code>radius = baseRadius + (baseRadius * depth * sin(angle * vertices))
+</code></pre>
+</li>
+</ul>
+</li>
+<li>Capture generated image as <code>dataURL</code></li>
+</ol>
+<hr>
+<h1 id="parameter-selection">Parameter Selection</h1>
+<h2 id="function%3A-selectpixelsortingparameters(audiofeatures)">Function: <code>selectPixelSortingParameters(audioFeatures)</code></h2>
+<ol>
+<li><strong>Set angle based on spectral kurtosis:</strong><pre class="prettyprint source lang-js"><code>angle = (spectralKurtosis.average * 10) % 360
+</code></pre>
+</li>
+<li><strong>Set sort mode based on ZCR:</strong><pre class="prettyprint source lang-js"><code>if (ZCR &lt;= 14) {
+    sortMode = &quot;Lightness&quot;;
+} else if (ZCR &lt;= 18) {
+    sortMode = &quot;Brightness&quot;;
+} else if (ZCR &lt;= 28) {
+    sortMode = &quot;Saturation&quot;;
+} else {
+    sortMode = &quot;Hue&quot;;
+}
+</code></pre>
+</li>
+</ol>
+<h1 id="pixel-sorting">Pixel Sorting</h1>
+<h2 id="sortpixels(image%2C-minthreshold%2C-maxthreshold%2C-sortmode%2C-angle)">sortPixels(image, minThreshold, maxThreshold, sortMode, angle)</h2>
+<ol>
+<li>
+<p><strong>Rotate image to specified angle</strong></p>
+</li>
+<li>
+<p><strong>Create Web Workers for parallel processing</strong></p>
+</li>
+<li>
+<p><strong>For each row in the image:</strong></p>
+<ul>
+<li>
+<p><strong>Find contiguous pixel sections</strong> where brightness is between thresholds</p>
+</li>
+<li>
+<p><strong>For each section, determine sort value based on mode:</strong></p>
+<ul>
+<li>
+<p>Brightness = r + g + b;</p>
+</li>
+<li>
+<p>Darkness = -(r + g + b);</p>
+</li>
+<li>
+<p>Hue = h; // from HSL</p>
+</li>
+<li>
+<p>Saturation = s; // from HSL</p>
+</li>
+<li>
+<p>Lightness = l; // from HSL</p>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Sort pixels by calculated value</strong></p>
+</li>
+<li>
+<p><strong>Replace original pixels with sorted pixels</strong></p>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Rotate image back to original orientation</strong></p>
+</li>
+<li>
+<p><strong>Return processed image as dataURL</strong></p>
+</li>
+</ol></article>
+    </section>
+
+
+
+
+
+
+            </div>
+            
+            <footer class="footer">
+                <div class="content has-text-centered">
+                    <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.4</a></p>
+                    <p class="sidebar-created-by">
+                        <a href="https://github.com/SoftwareBrothers/better-docs" target="_blank">BetterDocs theme</a> provided with <i class="fas fa-heart"></i> by
+                        <a href="http://softwarebrothers.co" target="_blank">SoftwareBrothers - JavaScript Development Agency</a>
+                    </p>
+                </div>
+            </footer>
+            
+        </div>
+        <div id="side-nav" class="side-nav">
+        </div>
+    </div>
+<script src="scripts/app.min.js"></script>
+<script>PR.prettyPrint();</script>
+<script src="scripts/linenumber.js"> </script>
+
+
+</body>
+</html>

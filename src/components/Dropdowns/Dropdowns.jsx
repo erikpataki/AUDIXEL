@@ -1,8 +1,26 @@
+/**
+ * Dropdowns Component
+ * 
+ * Collapsible control section for app settings.
+ * Contains sliders and selectors in an expandable panel.
+ * 
+ * @component
+ */
 import React, { useState, useRef, useEffect } from "react";
 import "./Dropdowns.css";
 import Slider from "./Slider/Slider";
 import Selector from "./Selector/Selector";
 
+/**
+ * Renders a collapsible section containing controls
+ * 
+ * @param {Object} props - Component props
+ * @param {string} props.dropdownName - Title text for the dropdown
+ * @param {boolean} props.hasDropdown - Whether section can be collapsed
+ * @param {Array} [props.sliders=[]] - Slider control configurations
+ * @param {Array} [props.selectors=[]] - Selector control configurations
+ * @returns {JSX.Element} Collapsible control section
+ */
 function Dropdowns({
     dropdownName,
     hasDropdown,
@@ -10,15 +28,20 @@ function Dropdowns({
     selectors = [], // Accept an array of selector objects
 }) 
 { 
+    // Track collapsed state
     const [isCollapsed, setIsCollapsed] = useState(true);
     const dropDownRef = useRef(null);
 
+    /**
+     * Toggle the collapsed state of the dropdown
+     */
     const toggleCollapse = () => {
         {hasDropdown !== false &&
             setIsCollapsed(!isCollapsed);
         }
     };
 
+    // Animate dropdown height changes
     useEffect(() => {
         if (dropDownRef.current) {
             dropDownRef.current.style.height = isCollapsed ? "38px" : `${dropDownRef.current.scrollHeight}px`;
@@ -26,9 +49,7 @@ function Dropdowns({
     }, [isCollapsed]);
 
     return (
-        <div className="drop-down" ref={dropDownRef}
-        //  style={{display: hasDropdown === false ? "flex" : ""}}
-         >
+        <div className="drop-down" ref={dropDownRef}>
             <div className="drop-down-header" onClick={toggleCollapse}>
                 <h3 className="drop-down-name">{dropdownName}</h3>
                 {hasDropdown !== false &&

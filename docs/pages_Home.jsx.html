@@ -1,4 +1,95 @@
-/**
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title> pages/Home.jsx</title>
+
+  <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="./build/entry.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+  <link href="https://fonts.googleapis.com/css?family=Roboto:100,400,700|Inconsolata,700" rel="stylesheet">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+  <link type="text/css" rel="stylesheet" href="https://jmblog.github.io/color-themes-for-google-code-prettify/themes/tomorrow-night.min.css">
+  <link type="text/css" rel="stylesheet" href="styles/app.min.css">
+  <link type="text/css" rel="stylesheet" href="styles/iframe.css">
+  <link type="text/css" rel="stylesheet" href="">
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+
+  
+</head>
+
+
+
+<body class="layout small-header">
+    <div id="stickyNavbarOverlay"></div>
+    
+
+<div class="top-nav">
+    <div class="inner">
+        <a id="hamburger" role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+        </a>
+        <div class="logo">
+            
+             
+                <a href="index.html">
+                    <h1 class="navbar-item">AUDIXEL Documentation</h1>
+                </a>
+            
+        </div>
+        <div class="menu">
+            
+            <div class="navigation">
+                <a
+                    href="index.html"
+                    class="link"
+                >
+                    Documentation
+                </a>
+                
+                
+                
+            </div>
+        </div>
+    </div>
+</div>
+    <div id="main">
+        <div
+            class="sidebar "
+            id="sidebarNav"
+        >
+            
+            <nav>
+                
+                    <h2><a href="index.html">Documentation</a></h2><div class="category"><h3>Global</h3><ul><li><a href="global.html#Dropdowns">Dropdowns</a></li><li><a href="global.html#Home">Home</a></li><li><a href="global.html#InfoButton">InfoButton</a></li><li><a href="global.html#LoadingOverlay">LoadingOverlay</a></li><li><a href="global.html#Modal">Modal</a></li><li><a href="global.html#Selector">Selector</a></li><li><a href="global.html#Slider">Slider</a></li><li><a href="global.html#SpinnerOverlay">SpinnerOverlay</a></li></ul></div>
+                
+            </nav>
+        </div>
+        <div class="core" id="main-content-wrapper">
+            <div class="content">
+                <header class="page-title">
+                    <p>Source</p>
+                    <h1>pages/Home.jsx</h1>
+                </header>
+                
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
  * Home Page Component
  * 
  * Core application page that handles:
@@ -97,7 +188,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
    * Handle initial filename display from landing page
    */
   useEffect(() => {
-    if (selectedImage && !fileName && initialAudioFile) {
+    if (selectedImage &amp;&amp; !fileName &amp;&amp; initialAudioFile) {
       // If we have a selected image from landing page
       if (initialAudioFile.isImage) {
         setFileName(initialAudioFile.name || 'Uploaded Image');
@@ -253,7 +344,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
             const d = max - min;
             s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
             switch (max) {
-              case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+              case r: h = (g - b) / d + (g &lt; b ? 6 : 0); break;
               case g: h = (b - r) / d + 2; break;
               case b: h = (r - g) / d + 4; break;
             }
@@ -272,7 +363,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
             const a = pixels[i + 3];
             if (a === 0) return false; 
             const value = (r + g + b) / 3;
-            return value >= minThreshold && value <= maxThreshold;
+            return value >= minThreshold &amp;&amp; value &lt;= maxThreshold;
           };
 
           const getSortValue = (i) => {
@@ -292,19 +383,19 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
 
           const ROW_BATCH_SIZE = isMobile ? 10 : height;
           
-          for (let rowBatch = 0; rowBatch < height; rowBatch += ROW_BATCH_SIZE) {
+          for (let rowBatch = 0; rowBatch &lt; height; rowBatch += ROW_BATCH_SIZE) {
             const endRow = Math.min(rowBatch + ROW_BATCH_SIZE, height);
             
-            for (let y = rowBatch; y < endRow; y++) {
+            for (let y = rowBatch; y &lt; endRow; y++) {
               let startX = 0;
               let isInSortRange = false;
               let pixelsToSort = [];
 
-              for (let x = 0; x < width; x++) {
+              for (let x = 0; x &lt; width; x++) {
                 const i = (y * width + x) * 4;
                 const shouldSort = meetsThreshold(i);
 
-                if (shouldSort && !isInSortRange) {
+                if (shouldSort &amp;&amp; !isInSortRange) {
                   startX = x;
                   isInSortRange = true;
                   pixelsToSort = [];
@@ -320,11 +411,11 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
                   });
                 }
 
-                if ((!shouldSort || x === width - 1) && isInSortRange) {
+                if ((!shouldSort || x === width - 1) &amp;&amp; isInSortRange) {
                   if (pixelsToSort.length > 0) {
                     pixelsToSort.sort((a, b) => a.sortValue - b.sortValue);
 
-                    for (let j = 0; j < pixelsToSort.length; j++) {
+                    for (let j = 0; j &lt; pixelsToSort.length; j++) {
                       const targetI = (y * width + (startX + j)) * 4;
                       pixels[targetI] = pixelsToSort[j].r;
                       pixels[targetI + 1] = pixelsToSort[j].g;
@@ -336,10 +427,10 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
                 }
               }
 
-              if (isInSortRange && pixelsToSort.length > 0) {
+              if (isInSortRange &amp;&amp; pixelsToSort.length > 0) {
                 pixelsToSort.sort((a, b) => a.sortValue - b.sortValue);
 
-                for (let j = 0; j < pixelsToSort.length; j++) {
+                for (let j = 0; j &lt; pixelsToSort.length; j++) {
                   const targetI = (y * width + (startX + j)) * 4;
                   pixels[targetI] = pixelsToSort[j].r;
                   pixels[targetI + 1] = pixelsToSort[j].g;
@@ -349,9 +440,9 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
               }
             }
             
-            if (isMobile && rowBatch + ROW_BATCH_SIZE < height) {
+            if (isMobile &amp;&amp; rowBatch + ROW_BATCH_SIZE &lt; height) {
               const start = Date.now();
-              while (Date.now() - start < 1) { /* tiny pause */ }
+              while (Date.now() - start &lt; 1) { /* tiny pause */ }
             }
           }
           return pixels;
@@ -368,7 +459,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
 
     const chunkHeight = Math.ceil(newHeight * scaleMultiplier / workerCount);
     
-    for (let i = 0; i < workerCount; i++) {
+    for (let i = 0; i &lt; workerCount; i++) {
       const worker = new Worker(workerUrl);
       const startY = i * chunkHeight;
       const endY = Math.min(startY + chunkHeight, newHeight * scaleMultiplier);
@@ -435,7 +526,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     }
 
     // If we have a processed image, use that directly
-    if (processedImage && showProcessed) {
+    if (processedImage &amp;&amp; showProcessed) {
       const processedImg = new Image();
       processedImg.onload = () => {
         const finalCanvas = document.createElement('canvas');
@@ -513,7 +604,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
 
   const arraysEqual = (a, b) => {
     if (a.length !== b.length) return false;
-    for (let i = 0; i < a.length; i++) {
+    for (let i = 0; i &lt; a.length; i++) {
       if (a[i] !== b[i]) return false;
     }
     return true;
@@ -540,14 +631,14 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     if (existingFile) {
       fileToProcess = existingFile;
       // Check if this file was previously approved as a short audio file
-      if (initialAudioFile && initialAudioFile.shortAudioApproved) {
+      if (initialAudioFile &amp;&amp; initialAudioFile.shortAudioApproved) {
         isAlreadyApproved = true;
       }
       // Check if this file was previously approved as a long audio file
-      if (initialAudioFile && initialAudioFile.longAudioApproved) {
+      if (initialAudioFile &amp;&amp; initialAudioFile.longAudioApproved) {
         isAlreadyApproved = true;
       }
-    } else if (event && event.target && event.target.files && event.target.files[0]) {
+    } else if (event &amp;&amp; event.target &amp;&amp; event.target.files &amp;&amp; event.target.files[0]) {
       fileToProcess = event.target.files[0];
     }
     
@@ -562,7 +653,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
       try {
         const duration = await checkAudioDuration(fileToProcess);
         
-        if (duration < 120) { // Less than 2 minutes (120 seconds)
+        if (duration &lt; 120) { // Less than 2 minutes (120 seconds)
           setPendingAudioFile({
             file: fileToProcess,
             event: event
@@ -667,36 +758,36 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
           
           const PAUSE_INTERVAL = isMobileDevice ? 10 : 50;  // Pause every 10 batches on mobile
           
-          for (let i = 0; i < audioBuffer.length; i += bufferSize * BATCH_SIZE) {
-            if (isMobileDevice && (i / (bufferSize * BATCH_SIZE)) % PAUSE_INTERVAL === 0 && i > 0) {
+          for (let i = 0; i &lt; audioBuffer.length; i += bufferSize * BATCH_SIZE) {
+            if (isMobileDevice &amp;&amp; (i / (bufferSize * BATCH_SIZE)) % PAUSE_INTERVAL === 0 &amp;&amp; i > 0) {
               await new Promise(resolve => setTimeout(resolve, 100));
             }
             
             const batchEnd = Math.min(i + bufferSize * BATCH_SIZE, audioBuffer.length);
             
-            for (let j = i; j < batchEnd; j += bufferSize) {
+            for (let j = i; j &lt; batchEnd; j += bufferSize) {
               const sampleBuffer = audioContext.createBuffer(
                 audioBuffer.numberOfChannels,
                 bufferSize,
                 audioBuffer.sampleRate
               );
               
-              for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
+              for (let channel = 0; channel &lt; audioBuffer.numberOfChannels; channel++) {
                 const channelData = audioBuffer.getChannelData(channel);
                 const sampleChannelData = sampleBuffer.getChannelData(channel);
                 
-                for (let k = 0; k < bufferSize && j + k < audioBuffer.length; k++) {
+                for (let k = 0; k &lt; bufferSize &amp;&amp; j + k &lt; audioBuffer.length; k++) {
                   sampleChannelData[k] = channelData[j + k];
                 }
               }
               
               const signal = new Float32Array(bufferSize);
               const channelData = sampleBuffer.getChannelData(0);
-              for (let k = 0; k < bufferSize; k++) {
+              for (let k = 0; k &lt; bufferSize; k++) {
                 signal[k] = channelData[k];
               }
               
-              if (previousSignal && arraysEqual(signal, previousSignal)) {
+              if (previousSignal &amp;&amp; arraysEqual(signal, previousSignal)) {
                 processedBuffers++;
                 continue;
               }
@@ -743,7 +834,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
             let max = -Infinity;
             
             const values = features[feature].filter(val => 
-              !isNaN(val) && val !== null && val !== undefined
+              !isNaN(val) &amp;&amp; val !== null &amp;&amp; val !== undefined
             );
             
             if (values.length > 0) {
@@ -752,7 +843,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
                   sum += value;
                   min = Math.min(min, value);
                   max = Math.max(max, value);
-                } else if (Array.isArray(value) && value.length > 0) {
+                } else if (Array.isArray(value) &amp;&amp; value.length > 0) {
                   const avgValue = value.reduce((a, b) => a + b, 0) / value.length;
                   sum += avgValue;
                   min = Math.min(min, ...value);
@@ -792,7 +883,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
           let currentProgress = 85;
           const progressInterval = setInterval(() => {
             currentProgress += 1;
-            if (currentProgress <= 98) {
+            if (currentProgress &lt;= 98) {
               setLoadingProgress(currentProgress);
             }
           }, 100);
@@ -842,8 +933,8 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     setPendingAudioFile(null);
     
     // Reset file input if it's from a file input element
-    if (pendingAudioFile && pendingAudioFile.event && 
-        pendingAudioFile.event.target && 
+    if (pendingAudioFile &amp;&amp; pendingAudioFile.event &amp;&amp; 
+        pendingAudioFile.event.target &amp;&amp; 
         pendingAudioFile.event.target.value) {
       pendingAudioFile.event.target.value = '';
     }
@@ -862,15 +953,15 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     setPendingAudioFile(null);
     
     // Reset file input if it's from a file input element
-    if (pendingAudioFile && pendingAudioFile.event && 
-        pendingAudioFile.event.target && 
+    if (pendingAudioFile &amp;&amp; pendingAudioFile.event &amp;&amp; 
+        pendingAudioFile.event.target &amp;&amp; 
         pendingAudioFile.event.target.value) {
       pendingAudioFile.event.target.value = '';
     }
   };
 
   const handleImageChange = (e) => {
-    if (e.target.files && e.target.files.length > 0) {
+    if (e.target.files &amp;&amp; e.target.files.length > 0) {
       const file = e.target.files[0];
       setUploadedFile(file); // Add this line to update uploadedFile state
       const reader = new FileReader();
@@ -890,12 +981,12 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
   };
 
   useEffect(() => {
-    if (initialAudioFile && !uploadedFile) {
+    if (initialAudioFile &amp;&amp; !uploadedFile) {
       console.log("Processing initial file from landing page:", initialAudioFile);
       setFileName(initialAudioFile.name || 'Unknown File');
       
       // Only process actual audio files, not images
-      if (initialAudioFile.file && !initialAudioFile.isImage) {
+      if (initialAudioFile.file &amp;&amp; !initialAudioFile.isImage) {
         handleAudioChange(null, initialAudioFile.file);
       }
       
@@ -913,7 +1004,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
 
   const handleProcessAudioAgain = () => {
     if (uploadedFile) {
-      if (canvasComponentRef.current && canvasComponentRef.current.setShouldRegenerateShapes) {
+      if (canvasComponentRef.current &amp;&amp; canvasComponentRef.current.setShouldRegenerateShapes) {
         canvasComponentRef.current.setShouldRegenerateShapes(true);
       }
       
@@ -949,7 +1040,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     e.stopPropagation();
     setIsDragging(false);
     
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+    if (e.dataTransfer.files &amp;&amp; e.dataTransfer.files.length > 0) {
       const file = e.dataTransfer.files[0];
       
       if (file.type.startsWith('audio/')) {
@@ -1075,20 +1166,20 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
   };
 
   return (
-    <div className='upload-parent-parent'>
-      <InfoButton 
+    &lt;div className='upload-parent-parent'>
+      &lt;InfoButton 
         onClick={handleOpenTutorial} 
-        isVisible={!showTutorialModal && !showShortAudioModal && !showLongAudioModal && !isLoading}
+        isVisible={!showTutorialModal &amp;&amp; !showShortAudioModal &amp;&amp; !showLongAudioModal &amp;&amp; !isLoading}
       />
-      {isLoading && (
-        <LoadingOverlay 
+      {isLoading &amp;&amp; (
+        &lt;LoadingOverlay 
           progress={loadingProgress} 
           message={processingMessage} 
         />
       )}
-      <div className='upload-parent'>
-        <div className="canvas-wrapper">
-          <Canvas 
+      &lt;div className='upload-parent'>
+        &lt;div className="canvas-wrapper">
+          &lt;Canvas 
             bufferSize={bufferSize}
             selectedImage={selectedImage}
             processedImage={processedImage}
@@ -1109,93 +1200,93 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
             setSortMode={setSortMode}
             ref={canvasComponentRef}
           />
-          <div className={`download-button upload-own-image-button ${isUploadImageHidden ? 'hidden' : ''}`} style={{ textAlign: 'left' }}>
-            <div className='upload-own-image-button-tab' onClick={toggleUploadImageHide}>
-              <h4 className={`upload-own-image-button-tab-icon ${isUploadImageHidden ? 'hidden' : ''}`}>˄</h4>
-            </div>
-            <label htmlFor="image-file-input">
-              <Dropdowns dropdownName={"UPLOAD OWN IMAGE"} hasDropdown={false} />
-              <div className='upload-own-image-button-plus-icon-parent'>
-                <svg width="30" height="30" viewBox="0 0 50 50" className='upload-own-image-button-plus-icon'>
-                  <line x1="5" y1="25" x2="45" y2="25" stroke="black" stroke-width="2"/>
-                  <line x1="25" y1="5" x2="25" y2="45" stroke="black" stroke-width="2"/>
-                </svg>
-              </div>
-            </label>
-          </div>
-          <input id="image-file-input"
+          &lt;div className={`download-button upload-own-image-button ${isUploadImageHidden ? 'hidden' : ''}`} style={{ textAlign: 'left' }}>
+            &lt;div className='upload-own-image-button-tab' onClick={toggleUploadImageHide}>
+              &lt;h4 className={`upload-own-image-button-tab-icon ${isUploadImageHidden ? 'hidden' : ''}`}>˄&lt;/h4>
+            &lt;/div>
+            &lt;label htmlFor="image-file-input">
+              &lt;Dropdowns dropdownName={"UPLOAD OWN IMAGE"} hasDropdown={false} />
+              &lt;div className='upload-own-image-button-plus-icon-parent'>
+                &lt;svg width="30" height="30" viewBox="0 0 50 50" className='upload-own-image-button-plus-icon'>
+                  &lt;line x1="5" y1="25" x2="45" y2="25" stroke="black" stroke-width="2"/>
+                  &lt;line x1="25" y1="5" x2="25" y2="45" stroke="black" stroke-width="2"/>
+                &lt;/svg>
+              &lt;/div>
+            &lt;/label>
+          &lt;/div>
+          &lt;input id="image-file-input"
             type="file"
             accept="image/*"
             onChange={handleImageChange}
             style={{ display: 'none' }}>
-          </input>
-          {isSettingsChanging && (
-            <div className="canvas-spinner-container">
-              <SpinnerOverlay isVisible={true} />
-            </div>
+          &lt;/input>
+          {isSettingsChanging &amp;&amp; (
+            &lt;div className="canvas-spinner-container">
+              &lt;SpinnerOverlay isVisible={true} />
+            &lt;/div>
           )}
-        </div>
-        {selectedImage && (
-          <div className='selectors-container-parent'>
-            <div className='selectors-container'>
-              <div className='title-bar'>
-                <h3 className='main-title'>AUDIXEL</h3>
-                <label className="switch">
-                    <input
+        &lt;/div>
+        {selectedImage &amp;&amp; (
+          &lt;div className='selectors-container-parent'>
+            &lt;div className='selectors-container'>
+              &lt;div className='title-bar'>
+                &lt;h3 className='main-title'>AUDIXEL&lt;/h3>
+                &lt;label className="switch">
+                    &lt;input
                       type="checkbox"
                       checked={showProcessed}
                       onChange={(e) => setShowProcessed(e.target.checked)}
                       className='toggle-switch-input'
                     />
-                  </label>
-              </div>
-              <div className='chosen-file'>
+                  &lt;/label>
+              &lt;/div>
+              &lt;div className='chosen-file'>
                 {uploadedFile ? (
                   // Add console log to help debug the file type
                   console.log("File type:", uploadedFile.type) || 
-                  (uploadedFile.type && uploadedFile.type.toLowerCase().includes('audio')) ? (
-                    <p ref={filenameRef}>CHOSEN AUDIO: {uploadedFile.name}</p>
+                  (uploadedFile.type &amp;&amp; uploadedFile.type.toLowerCase().includes('audio')) ? (
+                    &lt;p ref={filenameRef}>CHOSEN AUDIO: {uploadedFile.name}&lt;/p>
                   ) : (
                     // Default to image if not audio
-                    <p ref={filenameRef}>CHOSEN IMAGE: {uploadedFile.name || fileName}</p>
+                    &lt;p ref={filenameRef}>CHOSEN IMAGE: {uploadedFile.name || fileName}&lt;/p>
                   )
                 ) : fileName ? (
-                  initialAudioFile && initialAudioFile.isImage ? 
-                    <p ref={filenameRef}>CHOSEN IMAGE: {fileName}</p> 
+                  initialAudioFile &amp;&amp; initialAudioFile.isImage ? 
+                    &lt;p ref={filenameRef}>CHOSEN IMAGE: {fileName}&lt;/p> 
                     : 
-                    <p ref={filenameRef}>CHOSEN AUDIO: {fileName}</p>
+                    &lt;p ref={filenameRef}>CHOSEN AUDIO: {fileName}&lt;/p>
                 ) : selectedImage ? (
-                  <p>CHOSEN IMAGE</p>
+                  &lt;p>CHOSEN IMAGE&lt;/p>
                 ) : (
-                  <p>No file chosen</p>
+                  &lt;p>No file chosen&lt;/p>
                 )}
-              </div>
-              <Dropdowns 
+              &lt;/div>
+              &lt;Dropdowns 
                 dropdownName="SETTINGS"
                 sliders={settingsSliders}
                 hasDropdown={true}
               />
-              <Dropdowns 
+              &lt;Dropdowns 
                 dropdownName="ADVANCED SETTINGS"
                 sliders={advancedSettingsSliders}
                 selectors={sortModeSelectors}
                 hasDropdown={true}
               />
-              <div className={`audio-upload-block home-page-upload-block ${isDragging ? 'dragging' : ''}`} 
+              &lt;div className={`audio-upload-block home-page-upload-block ${isDragging ? 'dragging' : ''}`} 
                 style={{marginTop: "auto"}}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}>
-                <label htmlFor="sound-file" className='file-input-label'>
-                  <div className="upload-text home-page-upload-text">
-                    <div className='image-upload-text-main-parent'>
-                      <p className='image-upload-text'>SELECT OR DRAG NEW AUDIO FILE</p>
-                      <p className='image-upload-text'>(.wav, .mp3, .ogg)</p>
-                    </div>
-                  </div>
-                </label>
-              </div>
-              <input 
+                &lt;label htmlFor="sound-file" className='file-input-label'>
+                  &lt;div className="upload-text home-page-upload-text">
+                    &lt;div className='image-upload-text-main-parent'>
+                      &lt;p className='image-upload-text'>SELECT OR DRAG NEW AUDIO FILE&lt;/p>
+                      &lt;p className='image-upload-text'>(.wav, .mp3, .ogg)&lt;/p>
+                    &lt;/div>
+                  &lt;/div>
+                &lt;/label>
+              &lt;/div>
+              &lt;input 
                 id="sound-file" 
                 accept="audio/*" 
                 type="file" 
@@ -1208,32 +1299,32 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
                   }
                 }}
               />
-              <div className='download-button' onClick={handleProcessAudioAgain}>                
-                <Dropdowns dropdownName={"PROCESS AUDIO AGAIN"} hasDropdown={false} />
-              </div>
-              <div className='download-button' onClick={downloadImage}>                
-                <Dropdowns dropdownName={"DOWNLOAD IMAGE"} hasDropdown={false} />
-              </div>
-            </div>
-          </div>
+              &lt;div className='download-button' onClick={handleProcessAudioAgain}>                
+                &lt;Dropdowns dropdownName={"PROCESS AUDIO AGAIN"} hasDropdown={false} />
+              &lt;/div>
+              &lt;div className='download-button' onClick={downloadImage}>                
+                &lt;Dropdowns dropdownName={"DOWNLOAD IMAGE"} hasDropdown={false} />
+              &lt;/div>
+            &lt;/div>
+          &lt;/div>
         )}
-      </div>
-      <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
-      <Modal
+      &lt;/div>
+      &lt;canvas ref={canvasRef} style={{ display: 'none' }}>&lt;/canvas>
+      &lt;Modal
         isOpen={showShortAudioModal}
         onClose={handleCancelShortAudio}
         onConfirm={handleConfirmShortAudio}
         title="Short Audio File"
         message="The audio file you've selected is less than 2 minutes long. Short audio files may not produce effective results. Would you like to continue anyway?"
       />
-      <Modal
+      &lt;Modal
         isOpen={showLongAudioModal}
         onClose={handleCancelLongAudio}
         onConfirm={handleConfirmLongAudio}
         title="Long Audio File"
         message="The audio file you've selected is over 10 minutes long. Processing might take longer. Would you like to continue anyway?"
       />
-      <Modal
+      &lt;Modal
         isOpen={showTutorialModal}
         onClose={handleCloseTutorial}
         title="AUDIXEL"
@@ -1242,8 +1333,37 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
         hasButtons={false}
         customClass="tutorial-modal"
       />
-    </div>
+    &lt;/div>
   );
 };
 
-export default Home;
+export default Home;</code></pre>
+        </article>
+    </section>
+
+
+
+
+            </div>
+            
+            <footer class="footer">
+                <div class="content has-text-centered">
+                    <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.4</a></p>
+                    <p class="sidebar-created-by">
+                        <a href="https://github.com/SoftwareBrothers/better-docs" target="_blank">BetterDocs theme</a> provided with <i class="fas fa-heart"></i> by
+                        <a href="http://softwarebrothers.co" target="_blank">SoftwareBrothers - JavaScript Development Agency</a>
+                    </p>
+                </div>
+            </footer>
+            
+        </div>
+        <div id="side-nav" class="side-nav">
+        </div>
+    </div>
+<script src="scripts/app.min.js"></script>
+<script>PR.prettyPrint();</script>
+<script src="scripts/linenumber.js"> </script>
+
+
+</body>
+</html>

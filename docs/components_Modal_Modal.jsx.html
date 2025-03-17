@@ -1,0 +1,203 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title> components/Modal/Modal.jsx</title>
+
+  <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="./build/entry.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+  <link href="https://fonts.googleapis.com/css?family=Roboto:100,400,700|Inconsolata,700" rel="stylesheet">
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+  <link type="text/css" rel="stylesheet" href="https://jmblog.github.io/color-themes-for-google-code-prettify/themes/tomorrow-night.min.css">
+  <link type="text/css" rel="stylesheet" href="styles/app.min.css">
+  <link type="text/css" rel="stylesheet" href="styles/iframe.css">
+  <link type="text/css" rel="stylesheet" href="">
+  <script async defer src="https://buttons.github.io/buttons.js"></script>
+
+  
+</head>
+
+
+
+<body class="layout small-header">
+    <div id="stickyNavbarOverlay"></div>
+    
+
+<div class="top-nav">
+    <div class="inner">
+        <a id="hamburger" role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+            <span aria-hidden="true"></span>
+        </a>
+        <div class="logo">
+            
+             
+                <a href="index.html">
+                    <h1 class="navbar-item">AUDIXEL Documentation</h1>
+                </a>
+            
+        </div>
+        <div class="menu">
+            
+            <div class="navigation">
+                <a
+                    href="index.html"
+                    class="link"
+                >
+                    Documentation
+                </a>
+                
+                
+                
+            </div>
+        </div>
+    </div>
+</div>
+    <div id="main">
+        <div
+            class="sidebar "
+            id="sidebarNav"
+        >
+            
+            <nav>
+                
+                    <h2><a href="index.html">Documentation</a></h2><div class="category"><h3>Global</h3><ul><li><a href="global.html#Dropdowns">Dropdowns</a></li><li><a href="global.html#Home">Home</a></li><li><a href="global.html#InfoButton">InfoButton</a></li><li><a href="global.html#LoadingOverlay">LoadingOverlay</a></li><li><a href="global.html#Modal">Modal</a></li><li><a href="global.html#Selector">Selector</a></li><li><a href="global.html#Slider">Slider</a></li><li><a href="global.html#SpinnerOverlay">SpinnerOverlay</a></li></ul></div>
+                
+            </nav>
+        </div>
+        <div class="core" id="main-content-wrapper">
+            <div class="content">
+                <header class="page-title">
+                    <p>Source</p>
+                    <h1>components/Modal/Modal.jsx</h1>
+                </header>
+                
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * Modal Component
+ * 
+ * Flexible modal dialog component supporting different styles and purposes:
+ * - Standard confirmation dialogs with confirm/cancel buttons
+ * - Tutorial/information modals with just a close button
+ * - Custom content and styling through props
+ * 
+ * @component
+ */
+import React from 'react';
+import "./Modal.css";
+
+/**
+ * Modal component for dialogs, alerts and tutorials
+ * 
+ * @param {Object} props - Component props
+ * @param {boolean} props.isOpen - Controls modal visibility
+ * @param {Function} props.onClose - Handler for close actions
+ * @param {Function} props.onConfirm - Handler for confirmation actions
+ * @param {string} props.title - Modal title text
+ * @param {string|JSX.Element} props.message - Modal body content (text or JSX)
+ * @param {string} [props.modalType="standard"] - Modal type ("standard" or "tutorial")
+ * @param {boolean} [props.hasButtons=true] - Whether to show action buttons
+ * @param {string} [props.customClass=""] - Additional CSS class names
+ * @returns {JSX.Element|null} The modal component or null when closed
+ */
+const Modal = ({ 
+  isOpen, 
+  onClose, 
+  onConfirm, 
+  title, 
+  message, 
+  modalType = "standard", 
+  hasButtons = true,
+  customClass = ""
+}) => {
+  if (!isOpen) return null;
+
+  /**
+   * Handles clicks on the overlay background
+   * Only closes the modal if the click is directly on the overlay
+   * 
+   * @param {React.MouseEvent} e - Click event
+   */
+  const handleOverlayClick = (e) => {
+    // Only close if clicking directly on the overlay, not its children
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
+  return (
+    &lt;div className={`modal-overlay ${modalType}`} onClick={handleOverlayClick}>
+      &lt;div className={`modal-content ${customClass} ${modalType}`}>
+        {modalType === "tutorial" &amp;&amp; (
+          &lt;button className="modal-close-button" onClick={onClose}>
+            &lt;svg width="30" height="30" viewBox="0 0 24 24">
+                &lt;line x1="4" y1="4" x2="20" y2="20" stroke="#0D1F22" stroke-width="2"/>
+                &lt;line x1="20" y1="4" x2="4" y2="20" stroke="#0D1F22" stroke-width="2"/>
+            &lt;/svg>
+          &lt;/button>
+        )}
+        
+        {title &amp;&amp; &lt;h3 className={`modal-title ${modalType}-title`}>{title}&lt;/h3>}
+        
+        &lt;div className={`modal-message ${modalType}-message`}>
+          {typeof message === 'string' ? &lt;p>{message}&lt;/p> : message}
+        &lt;/div>
+        
+        {hasButtons &amp;&amp; (
+          &lt;div className="modal-buttons">
+            &lt;button className="modal-button cancel-button" onClick={onClose}>Cancel&lt;/button>
+            &lt;button className="modal-button confirm-button" onClick={onConfirm}>Continue&lt;/button>
+          &lt;/div>
+        )}
+      &lt;/div>
+    &lt;/div>
+  );
+};
+
+export default Modal;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+            </div>
+            
+            <footer class="footer">
+                <div class="content has-text-centered">
+                    <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.4</a></p>
+                    <p class="sidebar-created-by">
+                        <a href="https://github.com/SoftwareBrothers/better-docs" target="_blank">BetterDocs theme</a> provided with <i class="fas fa-heart"></i> by
+                        <a href="http://softwarebrothers.co" target="_blank">SoftwareBrothers - JavaScript Development Agency</a>
+                    </p>
+                </div>
+            </footer>
+            
+        </div>
+        <div id="side-nav" class="side-nav">
+        </div>
+    </div>
+<script src="scripts/app.min.js"></script>
+<script>PR.prettyPrint();</script>
+<script src="scripts/linenumber.js"> </script>
+
+
+</body>
+</html>

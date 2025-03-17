@@ -1,11 +1,36 @@
+/**
+ * Selector Component
+ * 
+ * Dropdown select control with tooltip support.
+ * Used for option selection from predefined choices.
+ * 
+ * @component
+ */
 import './Selector.css';
 import React, { useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
+/**
+ * Renders a dropdown selector with tooltip
+ * 
+ * @param {Object} props - Component props
+ * @param {string} props.label - Label text for selector
+ * @param {Array} props.options - Available options array
+ * @param {Function} props.onChange - Handler for value changes
+ * @param {any} props.value - Current selected value
+ * @param {string} [props.tooltip] - Tooltip text explaining the control
+ * @returns {JSX.Element} Dropdown selector
+ */
 const Selector = ({ label, options, onChange, value, tooltip }) => {
+    // Tooltip visibility state
     const [showTooltip, setShowTooltip] = useState(false);
     const tooltipTimeoutRef = useRef(null);
     
+    /**
+     * Show tooltip after delay when mouse enters label
+     * 
+     * @param {React.MouseEvent} e - Mouse event
+     */
     const handleMouseEnter = (e) => {
         tooltipTimeoutRef.current = setTimeout(() => {
             const rect = e.target.getBoundingClientRect();
@@ -18,6 +43,9 @@ const Selector = ({ label, options, onChange, value, tooltip }) => {
         }, 500);
     };
     
+    /**
+     * Hide tooltip when mouse leaves label
+     */
     const handleMouseLeave = () => {
         if (tooltipTimeoutRef.current) {
             clearTimeout(tooltipTimeoutRef.current);
@@ -61,6 +89,7 @@ const Selector = ({ label, options, onChange, value, tooltip }) => {
     );
 };
 
+// PropTypes for type validation
 Selector.propTypes = {
     label: PropTypes.string.isRequired,
     options: PropTypes.arrayOf(PropTypes.shape({
