@@ -11,11 +11,7 @@
     "destination": "./docs",
     "recurse": true,
     "readme": "README.md",
-    "template": "node_modules/better-docs",
-    "tutorials": "./tutorials",
-    "metadata": {
-      "title": "AUDIXEL"
-    }
+    "template": "node_modules/better-docs"
   },
   "tags": {
     "allowUnknownTags": ["page", "route", "flow", "internal", "component"],
@@ -62,8 +58,6 @@
     "better-docs": {
       "name": "AUDIXEL Documentation",
       "title": "AUDIXEL | Audio Visualization",
-      "hideGenerator": true,
-      "includeFilesInNav": false,
       "footer": "AUDIXEL - Audio Reactive Visualization",
       "css": "style.css",
       "trackingCode": "",
