@@ -10,10 +10,54 @@
   "opts": {
     "destination": "./docs",
     "recurse": true,
-    "readme": "README.md"
+    "readme": "README.md",
+    "template": "node_modules/docdash",
+    "search": true
   },
   "tags": {
     "allowUnknownTags": true,
     "dictionaries": ["jsdoc", "closure"]
-  }
+  },
+  "docdash": {
+    "static": false,
+    "sort": true,
+    "search": true,
+    "collapse": false,
+    "wrap": true,
+    "typedefs": true,
+    "navLevel": 4,
+    "menu": {
+      "Components": {
+        "href": "components.html",
+        "class": "menu-item",
+        "id": "components_nav"
+      },
+      "Pages": {
+        "href": "pages.html",
+        "class": "menu-item",
+        "id": "pages_nav"
+      }
+    },
+    "sectionOrder": [
+      "Namespaces",
+      "Modules",
+      "Classes",
+      "Externals",
+      "Events",
+      "Mixins",
+      "Tutorials",
+      "Interfaces"
+    ],
+    "meta": {
+      "title": "AUDIXEL Documentation",
+      "description": "Documentation for AUDIXEL application",
+      "keyword": "react, audio, visualization"
+    }
+  },
+  "markdown": {
+    "parser": "gfm",
+    "hardwrap": true,
+    "idInHeadings": true
+  },
+  "sourceType": "module"
 }

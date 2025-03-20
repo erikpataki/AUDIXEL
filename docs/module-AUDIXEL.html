@@ -3,7 +3,7 @@
 <head>
     
     <meta charset="utf-8">
-    <title>components/LoadingOverlay/LoadingOverlay.jsx - AUDIXEL Documentation</title>
+    <title>AUDIXEL - AUDIXEL Documentation</title>
     
     <meta name="description" content="Documentation for AUDIXEL application" />
     
@@ -43,64 +43,240 @@
 
 <div id="main">
     
-    <h1 class="page-title">components/LoadingOverlay/LoadingOverlay.jsx</h1>
+    <h1 class="page-title">AUDIXEL</h1>
     
 
     
 
 
 
+
+<section>
+
+<header>
     
-    <section>
-        <article>
-            <pre class="prettyprint source linenums"><code>/**
- * LoadingOverlay Component
- * 
- * Displays a loading overlay with progress information.
- * Used for longer operations where progress tracking improves user experience.
- * 
- * @component
- */
-import React from 'react';
-import './LoadingOverlay.css';
+        
+            
+        
+    
+</header>
 
-/**
- * Renders a loading overlay with optional progress indicator
- * 
- * @param {Object} props - Component props
- * @param {number|null} props.progress - Current progress percentage (0-100)
- * @param {boolean} [props.isProcessing] - Whether processing is active
- * @param {string} [props.message] - Loading message to display
- * @returns {JSX.Element} Loading overlay with progress bar
- */
-const LoadingOverlay = ({ progress, isProcessing, message }) => {
-  return (
-    &lt;div className="loading-overlay">
-      &lt;div className="loading-content">
-        {/* &lt;div className="loading-spinner">&lt;/div> */}
-        &lt;div className="loading-message">
-          {message || 'Processing...'}
-        &lt;/div>
-        {progress !== null &amp;&amp; (
-          &lt;div className="loading-progress-container">
-            &lt;div className="loading-progress-bar">
-              &lt;div 
-                className="loading-progress-fill" 
-                style={{ width: `${Math.min(Math.max(progress, 0), 100)}%` }}
-              >&lt;/div>
-            &lt;/div>
-            &lt;div className="loading-progress-text">{Math.round(progress)}%&lt;/div>
-          &lt;/div>
-        )}
-      &lt;/div>
-    &lt;/div>
-  );
-};
+<article>
+    
+        <div class="container-overview">
+        
+            
+                <div class="description usertext"><p>AUDIXEL - Audio-reactive visualization application</p></div>
+            
 
-export default LoadingOverlay;
-</code></pre>
-        </article>
-    </section>
+            
+                
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>AUDIXEL - Audio-reactive visualization application</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line1">line 1</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            
+        
+        </div>
+    
+
+    
+
+    
+
+    
+    
+    
+
+     
+
+    
+        <h3 class="subsection-title">Namespaces</h3>
+
+        <dl>
+            <dt><a href="module-AUDIXEL-Components.html">Components</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-AUDIXEL-Pages.html">Pages</a></dt>
+            <dd></dd>
+        
+            <dt><a href="module-AUDIXEL-Utils.html">Utils</a></dt>
+            <dd></dd>
+        </dl>
+    
+
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    <h4 class="name" id="~renderApp"><span class="type-signature type-signature-inner">(inner) </span>renderApp<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Main application entry point</p></li></ul></dd>
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="index.js.html">index.js</a>, <a href="index.js.html#line25">line 25</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+    
+
+    
+
+    
+</article>
+
+</section>
 
 
 

@@ -6,6 +6,7 @@ import "./Canvas.css";
  * Canvas component for creating and displaying audio-reactive generative art.
  * 
  * @component
+ * @memberof Components
  * @param {Object} props - Component props
  * @param {string} props.selectedImage - URL or data URI of the currently selected image
  * @param {string} props.processedImage - URL or data URI of the processed image

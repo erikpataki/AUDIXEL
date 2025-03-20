@@ -10,6 +10,7 @@ import { getTutorialMessage } from '../utils/tutorialContent';
  * Allows users to upload audio files or images to start the application.
  * 
  * @component
+ * @memberof Pages
  * @param {Object} props - Component props
  * @param {Function} props.setSelectedImage - Setter function for the selected image
  * @param {Function} props.setProcessedImage - Setter function for the processed image
