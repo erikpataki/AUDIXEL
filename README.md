@@ -1,5 +1,3 @@
-# FOR FULL PROPER JSDOC DOCUMENTAION VISIT `docs\index.html`
-
 # AUDIXEL: Audio-Reactive Album Cover Generator
 
 An innovative web application that transforms music into visual art by analyzing audio characteristics and applying advanced pixel sorting techniques.
