@@ -1,4 +1,32 @@
-import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: components/Canvas/Canvas.jsx</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: components/Canvas/Canvas.jsx</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import p5 from 'p5';
 import "./Canvas.css";
 
@@ -96,10 +124,10 @@ const Canvas = forwardRef(({ selectedImage, processedImage, showProcessed, setSe
 
   useEffect(() => {
     if (
-      audioFeatures && 
-      Object.keys(audioFeatures).length > 0 && 
-      individualBufferValues && 
-      imageLoaded && 
+      audioFeatures &amp;&amp; 
+      Object.keys(audioFeatures).length > 0 &amp;&amp; 
+      individualBufferValues &amp;&amp; 
+      imageLoaded &amp;&amp; 
       (!hasGeneratedBaseImageRef.current || 
        p5InstanceRef.current === null)
     ) {
@@ -165,8 +193,8 @@ const Canvas = forwardRef(({ selectedImage, processedImage, showProcessed, setSe
           if (shouldRegenerateShapes) {
             const newShapeData = [];
 
-            for (let i = 0; i < individualBufferValues.length; i++) {
-              if (individualBufferValues[i].spectralKurtosis && individualBufferValues[i].spectralKurtosis !== 0 && individualBufferValues[i].energy > 1) {
+            for (let i = 0; i &lt; individualBufferValues.length; i++) {
+              if (individualBufferValues[i].spectralKurtosis &amp;&amp; individualBufferValues[i].spectralKurtosis !== 0 &amp;&amp; individualBufferValues[i].energy > 1) {
                 // Original calculation for aggressiveness-based size
                 let aggressiveness = ((individualBufferValues[i].zcr - 10)/30);
                 let sizeMultiplier;
@@ -185,7 +213,7 @@ const Canvas = forwardRef(({ selectedImage, processedImage, showProcessed, setSe
                 col2 = color2;
 
                 // Store the hue value instead of setting angle immediately
-                if (individualBufferValues[i].energy > (audioFeatures.energy.average * 0.2) && aggressiveness !== 0) {
+                if (individualBufferValues[i].energy > (audioFeatures.energy.average * 0.2) &amp;&amp; aggressiveness !== 0) {
                   // Calculate base size with original formula
                   const baseSize = (35 + Math.min(110, individualBufferValues[i].energy)) * 0.5;
                   
@@ -269,11 +297,11 @@ const Canvas = forwardRef(({ selectedImage, processedImage, showProcessed, setSe
             handleThresholdChange('amount', (130 + (averageAggressiveness * 60)));
 
             let newSortMode;
-            if (averageZCR <= 14) {
+            if (averageZCR &lt;= 14) {
               newSortMode = 4; // Lightness
-            } else if (averageZCR > 14 && averageZCR <= 18) {
+            } else if (averageZCR > 14 &amp;&amp; averageZCR &lt;= 18) {
               newSortMode = 0; // Brightness
-            } else if (averageZCR > 18 && averageZCR <= 28) {
+            } else if (averageZCR > 18 &amp;&amp; averageZCR &lt;= 28) {
               newSortMode = 3; // Saturation
             } else {
               newSortMode = 2; // Hue
@@ -315,7 +343,7 @@ const Canvas = forwardRef(({ selectedImage, processedImage, showProcessed, setSe
           p.rotate(rotation);
           
           p.beginShape();
-          for (let i = 0; i < 360; i += 1) {
+          for (let i = 0; i &lt; 360; i += 1) {
             let radius = r + (r * depth * p.sin(i * verticesNums));
             let ex = radius * p.sin(i);
             let ey = radius * p.cos(i);
@@ -340,19 +368,19 @@ const Canvas = forwardRef(({ selectedImage, processedImage, showProcessed, setSe
   }, [audioFeatures, individualBufferValues, imageLoaded, horizontalResolutionValue, verticalResolutionValue, scale, shapeData, shouldRegenerateShapes]);
 
   return (
-    <div className="image-upload">
-      <div className="upload-block">
-        <img
+    &lt;div className="image-upload">
+      &lt;div className="upload-block">
+        &lt;img
           src={showProcessed ? processedImage : selectedImage}
           alt={showProcessed ? "Processed" : "Original"}
           className="preview-image"
         />
-        <img
+        &lt;img
           src={showProcessed ? processedImage : selectedImage}
           alt={showProcessed ? "Processed" : "Original"}
           className="preview-image-blur"
         />
-        <div
+        &lt;div
           id="p5-canvas-container"
           ref={p5ContainerRef}
           style={{ 
@@ -363,7 +391,7 @@ const Canvas = forwardRef(({ selectedImage, processedImage, showProcessed, setSe
             height: '100%', 
             zIndex: 3,
           }}>
-            <canvas 
+            &lt;canvas 
               style={{
                 width: '100%',
                 height: '100%',
@@ -371,11 +399,33 @@ const Canvas = forwardRef(({ selectedImage, processedImage, showProcessed, setSe
                 imageRendering: 'pixelated',
               }}
             />
-        </div>
-      </div>
-      <canvas ref={canvasRef} style={{ display: 'none' }}></canvas>
-    </div>
+        &lt;/div>
+      &lt;/div>
+      &lt;canvas ref={canvasRef} style={{ display: 'none' }}>&lt;/canvas>
+    &lt;/div>
   );
 });
 
-export default Canvas;
+export default Canvas;</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#Canvas">Canvas</a></li><li><a href="global.html#Dropdowns">Dropdowns</a></li><li><a href="global.html#Home">Home</a></li><li><a href="global.html#InfoButton">InfoButton</a></li><li><a href="global.html#LandingPage">LandingPage</a></li><li><a href="global.html#LoadingOverlay">LoadingOverlay</a></li><li><a href="global.html#Modal">Modal</a></li><li><a href="global.html#Selector">Selector</a></li><li><a href="global.html#Slider">Slider</a></li><li><a href="global.html#SpinnerOverlay">SpinnerOverlay</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Thu Mar 20 2025 11:35:16 GMT+0000 (Greenwich Mean Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

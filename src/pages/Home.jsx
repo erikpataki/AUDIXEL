@@ -36,65 +36,70 @@ import { getTutorialMessage } from '../utils/tutorialContent';
  * @returns {JSX.Element} Home page component
  */
 const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedImage, initialAudioFile, setInitialAudioFile }) => {
-  // ===== Core State Management =====
+  // ===== CORE STATE MANAGEMENT =====
   /**
    * Pixel sorting and image processing parameters
-   * Controls the visual output characteristics
+   * These states control the visual characteristics of the processed output
    */
-  const [minThreshold, setMinThreshold] = useState(40);         // Minimum brightness threshold
-  const [maxThreshold, setMaxThreshold] = useState(217);        // Maximum brightness threshold
-  const [combinedThreshold, setCombinedThreshold] = useState(175); // Combined threshold for simplified control
-  const [middlePoint, setMiddlePoint] = useState(128);          // Center point for threshold range
-  const [angle, setAngle] = useState(115);                      // Pixel sorting angle in degrees
-  const [sortMode, setSortMode] = useState(0);                  // Sorting algorithm mode (brightness, darkness, etc.)
-  const [showProcessed, setShowProcessed] = useState(true);     // Toggle between original and processed image
-  const [audioFeatures, setAudioFeatures] = useState({});       // Extracted audio features
-  const [individualBufferValues, setIndividualBufferValues] = useState([]); // Buffer values from audio analysis
+  const [minThreshold, setMinThreshold] = useState(40);         // Minimum brightness threshold for pixel sorting
+  const [maxThreshold, setMaxThreshold] = useState(217);        // Maximum brightness threshold for pixel sorting
+  const [combinedThreshold, setCombinedThreshold] = useState(175); // Combined threshold for simplified UI control
+  const [middlePoint, setMiddlePoint] = useState(128);          // Center point for threshold range calculation
+  const [angle, setAngle] = useState(115);                      // Pixel sorting angle in degrees (direction of sort)
+  const [sortMode, setSortMode] = useState(0);                  // Sorting algorithm mode (0=brightness, 1=darkness, etc.)
+  const [showProcessed, setShowProcessed] = useState(true);     // Toggle between original and processed image view
+  const [audioFeatures, setAudioFeatures] = useState({});       // Extracted audio features from analysis
+  const [individualBufferValues, setIndividualBufferValues] = useState([]); // Individual buffer values from audio analysis
 
-  // ===== References and Device State =====
+  // ===== REFERENCES AND DEVICE STATE =====
   /**
-   * Core refs and device-specific state
+   * Core refs for DOM elements and device detection
+   * Used for accessing canvas element and handling responsive design
    */
-  const canvasRef = useRef(null);                              // Reference to main canvas element
-  const debounceTimeoutRef = useRef(null);                     // Reference for debounce timing
-  const canvasComponentRef = useRef(null);                     // Reference to Canvas component
-  const [isMobileDevice, setIsMobileDevice] = useState(false); // Mobile device detection state
+  const canvasRef = useRef(null);                              // Reference to main canvas element for drawing
+  const debounceTimeoutRef = useRef(null);                     // Reference for debounce timing to limit processing frequency
+  const canvasComponentRef = useRef(null);                     // Reference to Canvas component for method access
+  const [isMobileDevice, setIsMobileDevice] = useState(false); // Tracks if user is on mobile device for optimizations
 
-  // ===== Image Processing State =====
+  // ===== IMAGE PROCESSING STATE =====
   /**
    * States related to image dimensions and processing
+   * Controls output quality and resolution
    */
-  const BASE_RESOLUTION = 2400;                                // Base resolution for output images
-  const [horizontalResolutionValue, setHorizontalResolutionValue] = useState(BASE_RESOLUTION);
-  const [verticalResolutionValue, setVerticalResolutionValue] = useState(BASE_RESOLUTION);
-  const [scale, setScale] = useState(0);                       // Output scale multiplier
+  const BASE_RESOLUTION = 2400;                                // Base resolution for output images in pixels
+  const [horizontalResolutionValue, setHorizontalResolutionValue] = useState(BASE_RESOLUTION); // Width resolution
+  const [verticalResolutionValue, setVerticalResolutionValue] = useState(BASE_RESOLUTION);     // Height resolution
+  const [scale, setScale] = useState(0);                       // Output scale multiplier (0=1x, 1=2x, 2=3x)
 
-  // ===== UI State Management =====
+  // ===== UI STATE MANAGEMENT =====
   /**
-   * States controlling UI elements and user interaction
+   * States controlling UI elements and user interaction feedback
+   * Handles loading states, progress indicators, and user interactions
    */
-  const [isLoading, setIsLoading] = useState(false);           // Loading state for processing
-  const [loadingProgress, setLoadingProgress] = useState(0);    // Progress indicator for processing
-  const [processingMessage, setProcessingMessage] = useState(''); // User feedback during processing
-  const [isSettingsChanging, setIsSettingsChanging] = useState(false); // Settings change indicator
-  const [isDragging, setIsDragging] = useState(false);         // Drag and drop state
+  const [isLoading, setIsLoading] = useState(false);           // Controls main loading overlay visibility
+  const [loadingProgress, setLoadingProgress] = useState(0);    // Progress percentage for loading bar (0-100)
+  const [processingMessage, setProcessingMessage] = useState(''); // User feedback message during processing
+  const [isSettingsChanging, setIsSettingsChanging] = useState(false); // Indicates settings are being changed
+  const [isDragging, setIsDragging] = useState(false);         // Tracks drag and drop interaction state
   
-  // ===== File Management State =====
+  // ===== FILE MANAGEMENT STATE =====
   /**
    * States for handling file uploads and naming
+   * Manages the currently loaded files and their display names
    */
-  const [uploadedFile, setUploadedFile] = useState(null);      // Currently uploaded file
+  const [uploadedFile, setUploadedFile] = useState(null);      // Currently uploaded file object
   const [fileName, setFileName] = useState('');                // Display name for current file
-  const [isUploadImageHidden, setIsUploadImageHidden] = useState(false); // UI visibility toggle
-  const [isFilenameLong, setIsFilenameLong] = useState(false); // Filename length check for UI
-  const filenameRef = useRef(null);
-  const [showShortAudioModal, setShowShortAudioModal] = useState(false);
-  const [showLongAudioModal, setShowLongAudioModal] = useState(false);
-  const [showTutorialModal, setShowTutorialModal] = useState(false);
-  const [pendingAudioFile, setPendingAudioFile] = useState(null);
+  const [isUploadImageHidden, setIsUploadImageHidden] = useState(false); // Controls upload image UI visibility
+  const [isFilenameLong, setIsFilenameLong] = useState(false); // Tracks if filename needs scrolling treatment
+  const filenameRef = useRef(null);                            // Reference to filename element for overflow detection
+  const [showShortAudioModal, setShowShortAudioModal] = useState(false); // Controls short audio warning modal
+  const [showLongAudioModal, setShowLongAudioModal] = useState(false);   // Controls long audio warning modal
+  const [showTutorialModal, setShowTutorialModal] = useState(false);     // Controls tutorial modal visibility
+  const [pendingAudioFile, setPendingAudioFile] = useState(null);        // Stores file awaiting confirmation
 
   /**
    * Handle initial filename display from landing page
+   * Sets the filename based on file passed from landing page
    */
   useEffect(() => {
     if (selectedImage && !fileName && initialAudioFile) {
@@ -109,6 +114,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
 
   /**
    * Mobile device detection for optimizations
+   * Checks user agent to apply mobile-specific performance enhancements
    */
   useEffect(() => {
     const checkMobile = () => {
@@ -123,6 +129,8 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
 
   /**
    * Calculate scale multiplier for image resolution
+   * Converts scale value to actual multiplier (0 → 1x, 1 → 2x, 2 → 3x)
+   * 
    * @param {number} scaleValue - Base scale value (0-2)
    * @returns {number} Actual multiplier (1-3)
    */
@@ -130,7 +138,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
 
   /**
    * Debounce function to limit processing frequency
-   * Used to prevent excessive processing during UI interactions
+   * Prevents excessive processing during rapid UI interactions by delaying execution
    * 
    * @param {Function} func - Function to debounce
    * @param {number} delay - Delay in milliseconds
@@ -150,10 +158,21 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     };
   };
 
+  /**
+   * Debounced version of processImage function
+   * Limits how frequently the image processing is triggered during UI interactions
+   */
   const debouncedProcessImage = useCallback(debounce((dataUrl, minThreshold, maxThreshold, sortMode, angle) => {
     processImage(dataUrl, minThreshold, maxThreshold, sortMode, angle);
   }, 300), []);
 
+  /**
+   * Handles threshold parameter changes with simplified controls
+   * Calculates min/max thresholds based on amount and middle point
+   * 
+   * @param {string} type - Type of threshold change ('amount' or 'middlePoint')
+   * @param {number} value - New value for the parameter
+   */
   const handleThresholdChange = (type, value) => {
     if (type === 'amount') {
       setCombinedThreshold(value);
@@ -178,14 +197,37 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     setMaxThreshold(maxValue);
   };
 
+  /**
+   * Handles direct changes to minimum threshold value
+   * Used by advanced controls for precise adjustments
+   * 
+   * @param {number} value - New minimum threshold value
+   */
   const handleMinThresholdChange = (value) => {
     setMinThreshold(value);
   };
 
+  /**
+   * Handles direct changes to maximum threshold value
+   * Used by advanced controls for precise adjustments
+   * 
+   * @param {number} value - New maximum threshold value
+   */
   const handleMaxThresholdChange = (value) => {
     setMaxThreshold(value);
   };
 
+  /**
+   * Core image processing function
+   * Applies pixel sorting algorithm to the image based on current parameters
+   * Uses web workers for parallel processing to improve performance
+   * 
+   * @param {string} dataUrl - Base64 image data URL
+   * @param {number} minThreshold - Minimum brightness threshold
+   * @param {number} maxThreshold - Maximum brightness threshold
+   * @param {number} sortMode - Sorting mode (brightness, darkness, etc.)
+   * @param {number} angle - Sorting angle in degrees
+   */
   const processImage = async (dataUrl, minThreshold, maxThreshold, sortMode, angle) => {
     setIsSettingsChanging(true);
     
@@ -427,6 +469,11 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     }, 100);
   };
 
+  /**
+   * Handles image download functionality
+   * Creates a high-resolution download of the current processed or original image
+   * Uses canvas to ensure proper format and quality
+   */
   const downloadImage = () => {
     const canvas = canvasRef.current;
     if (!canvas) {
@@ -490,13 +537,18 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     };
   };
 
+  /**
+   * Toggles visibility of the upload image interface
+   * Controls the collapsible upload image panel
+   */
   const toggleUploadImageHide = () => {
     setIsUploadImageHidden(!isUploadImageHidden);
   };
 
   /**
    * Audio feature extraction configuration
-   * Defines features to extract using Meyda
+   * Defines which audio features to extract using the Meyda library
+   * Selected features influence the visual characteristics of the output
    */
   const FEATURES = [
     // { name: "spectralCentroid", average: true, min: true, max: true },
@@ -509,8 +561,20 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     // { name: "mfcc", average: true, min: true, max: true },
   ];
 
+  /**
+   * Buffer size for audio processing
+   * Determines granularity of audio analysis
+   */
   let bufferSize = 512;
 
+  /**
+   * Utility function to compare arrays for equality
+   * Used to detect duplicate audio frames for optimization
+   * 
+   * @param {Array} a - First array
+   * @param {Array} b - Second array
+   * @returns {boolean} True if arrays are equal
+   */
   const arraysEqual = (a, b) => {
     if (a.length !== b.length) return false;
     for (let i = 0; i < a.length; i++) {
@@ -519,6 +583,13 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     return true;
   };
 
+  /**
+   * Checks audio file duration
+   * Used to warn users about very short or long audio files
+   * 
+   * @param {File} file - Audio file to check
+   * @returns {Promise<number>} Promise resolving to duration in seconds
+   */
   const checkAudioDuration = (file) => {
     return new Promise((resolve) => {
       const audio = new Audio();
@@ -533,6 +604,13 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     });
   };
 
+  /**
+   * Handles audio file selection
+   * Validates audio duration and shows warnings if needed
+   * 
+   * @param {Event} event - File input event
+   * @param {File} existingFile - Optional pre-selected file
+   */
   const handleAudioChange = async (event, existingFile = null) => {
     let fileToProcess;
     let isAlreadyApproved = false;
@@ -591,6 +669,7 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
   /**
    * Process audio file to extract features
    * Main audio analysis pipeline that drives visualization
+   * Extracts frequency domain features and temporal characteristics
    * 
    * @param {File} fileToProcess - Audio file to analyze
    * @param {Event} [event] - Original file input event
@@ -829,6 +908,10 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     }
   };
 
+  /**
+   * Confirms processing of short audio files
+   * Triggered when user accepts the short audio warning
+   */
   const handleConfirmShortAudio = () => {
     if (pendingAudioFile) {
       processAudioFile(pendingAudioFile.file, pendingAudioFile.event);
@@ -837,6 +920,10 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     setPendingAudioFile(null);
   };
 
+  /**
+   * Cancels processing of short audio files
+   * Triggered when user rejects the short audio warning
+   */
   const handleCancelShortAudio = () => {
     setShowShortAudioModal(false);
     setPendingAudioFile(null);
@@ -849,6 +936,10 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     }
   };
 
+  /**
+   * Confirms processing of long audio files
+   * Triggered when user accepts the long audio warning
+   */
   const handleConfirmLongAudio = () => {
     if (pendingAudioFile) {
       processAudioFile(pendingAudioFile.file, pendingAudioFile.event);
@@ -857,6 +948,10 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     setPendingAudioFile(null);
   };
 
+  /**
+   * Cancels processing of long audio files
+   * Triggered when user rejects the long audio warning
+   */
   const handleCancelLongAudio = () => {
     setShowLongAudioModal(false);
     setPendingAudioFile(null);
@@ -869,6 +964,12 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     }
   };
 
+  /**
+   * Handles image file selection
+   * Loads image file and prepares it for processing
+   * 
+   * @param {Event} e - File input event
+   */
   const handleImageChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
@@ -889,6 +990,10 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     }
   };
 
+  /**
+   * Processes initial audio file from landing page
+   * Handles automatic file processing when coming from landing page
+   */
   useEffect(() => {
     if (initialAudioFile && !uploadedFile) {
       console.log("Processing initial file from landing page:", initialAudioFile);
@@ -903,6 +1008,10 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     }
   }, [initialAudioFile]);
 
+  /**
+   * Cleanup effect for image resources
+   * Ensures proper cleanup when component unmounts
+   */
   useEffect(() => {
     return () => {
       setSelectedImage(null);
@@ -911,6 +1020,11 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     };
   }, []);
 
+  /**
+   * Re-processes the current audio file
+   * Generates a new visualization from the same audio. Resets settings back to th originals derived from the audio characteristics
+   * Useful for exploring different visual interpretations of the same audio by regenerating the shapes into different locations
+   */
   const handleProcessAudioAgain = () => {
     if (uploadedFile) {
       if (canvasComponentRef.current && canvasComponentRef.current.setShouldRegenerateShapes) {
@@ -926,24 +1040,46 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     }
   };
 
+  /**
+   * Updates resolution when scale changes
+   * Recalculates output dimensions based on scale multiplier
+   */
   useEffect(() => {
     const multiplier = getScaleMultiplier(scale);
     setHorizontalResolutionValue(BASE_RESOLUTION * multiplier);
     setVerticalResolutionValue(BASE_RESOLUTION * multiplier);
   }, [scale]);
 
+  /**
+   * Drag and drop event handler for file selection
+   * Tracks when file is dragged over drop area
+   * 
+   * @param {DragEvent} e - Drag event
+   */
   const handleDragOver = (e) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
   };
 
+  /**
+   * Drag and drop event handler for file selection
+   * Tracks when file leaves drop area
+   * 
+   * @param {DragEvent} e - Drag event
+   */
   const handleDragLeave = (e) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
   };
 
+  /**
+   * Drag and drop event handler for file selection
+   * Processes dropped file based on type (audio/image)
+   * 
+   * @param {DragEvent} e - Drop event
+   */
   const handleDrop = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -963,7 +1099,8 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
 
   /**
    * Settings configurations for UI controls
-   * Define sliders and selectors with tooltips
+   * Defines sliders and their behaviors for the main controls panel
+   * Each slider controls a specific aspect of the visualization
    */
   const settingsSliders = [
     {
@@ -987,6 +1124,11 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     },
   ];
 
+  /**
+   * Advanced settings configurations
+   * Provides fine-grained control over processing parameters
+   * For users who want precise control over the algorithm
+   */
   const advancedSettingsSliders = [
     {
         label: "LOWER THRESHOLD",
@@ -1002,6 +1144,11 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     },
   ];
 
+  /**
+   * Sort mode and scale selector configurations
+   * Defines dropdown selectors for algorithm options
+   * Controls fundamental aspects of the pixel sorting
+   */
   const sortModeSelectors = [ 
     {
       label: "SORT MODE",
@@ -1035,12 +1182,20 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     }
   ];
 
+  /**
+   * Triggers image processing when parameters change
+   * Re-processes the image whenever relevant settings are modified
+   */
   useEffect(() => {
     if (selectedImage) {
       debouncedProcessImage(selectedImage, minThreshold, maxThreshold, sortMode, angle);
     }
   }, [minThreshold, maxThreshold, selectedImage, sortMode, angle, debouncedProcessImage]);
 
+  /**
+   * Checks if filename is too long for container
+   * Used to apply scroll animation for long filenames
+   */
   const checkFilenameOverflow = useCallback(() => {
     if (filenameRef.current) {
       const element = filenameRef.current;
@@ -1058,22 +1213,43 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     }
   }, []);
 
+  /**
+   * Sets up filename overflow detection
+   * Monitors filename length to apply scrolling animation when needed
+   */
   useEffect(() => {
     checkFilenameOverflow();
     window.addEventListener('resize', checkFilenameOverflow);
     return () => window.removeEventListener('resize', checkFilenameOverflow);
   }, [fileName, uploadedFile, checkFilenameOverflow]);
 
+  /**
+   * Retrieves tutorial content from utilities
+   * Gets formatted help text to display in tutorial modal
+   */
   const tutorialMessage = getTutorialMessage();
 
+  /**
+   * Closes the tutorial modal
+   * Triggered when user dismisses tutorial
+   */
   const handleCloseTutorial = () => {
     setShowTutorialModal(false);
   };
 
+  /**
+   * Opens the tutorial modal
+   * Triggered when user clicks help button
+   */
   const handleOpenTutorial = () => {
     setShowTutorialModal(true);
   };
 
+  /**
+   * Main component render
+   * Assembles the complete UI with all interactive elements
+   * Includes canvas, controls, modals, and file handling components
+   */
   return (
     <div className='upload-parent-parent'>
       <InfoButton 

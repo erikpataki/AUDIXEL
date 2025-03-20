@@ -1,4 +1,32 @@
-import React, { useState, useEffect } from 'react';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: pages/LandingPage.jsx</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: pages/LandingPage.jsx</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import "./LandingPage.css";
 import Modal from '../components/Modal/Modal';
@@ -40,7 +68,7 @@ const LandingPage = ({ setSelectedImage, setProcessedImage, setInitialAudioFile 
    * Checks the duration of an audio file.
    * 
    * @param {File} file - The audio file to check
-   * @returns {Promise<number>} A promise that resolves to the duration in seconds
+   * @returns {Promise&lt;number>} A promise that resolves to the duration in seconds
    */
   const checkAudioDuration = (file) => {
     return new Promise((resolve) => {
@@ -59,10 +87,10 @@ const LandingPage = ({ setSelectedImage, setProcessedImage, setInitialAudioFile 
   /**
    * Handles image file selection.
    * 
-   * @param {React.ChangeEvent<HTMLInputElement>} e - The change event from the file input
+   * @param {React.ChangeEvent&lt;HTMLInputElement>} e - The change event from the file input
    */
   const handleImageChange = (e) => {
-    if (e.target.files && e.target.files.length > 0) {
+    if (e.target.files &amp;&amp; e.target.files.length > 0) {
       const file = e.target.files[0];
       const reader = new FileReader();
 
@@ -84,16 +112,16 @@ const LandingPage = ({ setSelectedImage, setProcessedImage, setInitialAudioFile 
   /**
    * Handles audio file selection and checks duration constraints.
    * 
-   * @param {React.ChangeEvent<HTMLInputElement>} e - The change event from the file input
+   * @param {React.ChangeEvent&lt;HTMLInputElement>} e - The change event from the file input
    */
   const handleAudioChange = async (e) => {
-    if (e.target.files && e.target.files.length > 0) {
+    if (e.target.files &amp;&amp; e.target.files.length > 0) {
       const file = e.target.files[0];
       
       try {
         const duration = await checkAudioDuration(file);
         
-        if (duration < 120) { // Less than 2 minutes (120 seconds)
+        if (duration &lt; 120) { // Less than 2 minutes (120 seconds)
           setPendingAudioFile({
             file: file,
             event: e
@@ -142,7 +170,7 @@ const LandingPage = ({ setSelectedImage, setProcessedImage, setInitialAudioFile 
    * Confirms the use of a short audio file and proceeds with processing.
    */
   const handleConfirmShortAudio = () => {
-    if (pendingAudioFile && pendingAudioFile.file) {
+    if (pendingAudioFile &amp;&amp; pendingAudioFile.file) {
       // Pass true for shortAudioApproved
       processAudioFile(pendingAudioFile.file, true, false);
     }
@@ -154,7 +182,7 @@ const LandingPage = ({ setSelectedImage, setProcessedImage, setInitialAudioFile 
    * Confirms the use of a long audio file and proceeds with processing.
    */
   const handleConfirmLongAudio = () => {
-    if (pendingAudioFile && pendingAudioFile.file) {
+    if (pendingAudioFile &amp;&amp; pendingAudioFile.file) {
       // Pass true for longAudioApproved
       processAudioFile(pendingAudioFile.file, false, true);
     }
@@ -169,8 +197,8 @@ const LandingPage = ({ setSelectedImage, setProcessedImage, setInitialAudioFile 
     setShowShortAudioModal(false);
     
     // Reset file input if it's from a file input element
-    if (pendingAudioFile && pendingAudioFile.event && 
-        pendingAudioFile.event.target && 
+    if (pendingAudioFile &amp;&amp; pendingAudioFile.event &amp;&amp; 
+        pendingAudioFile.event.target &amp;&amp; 
         pendingAudioFile.event.target.value) {
       pendingAudioFile.event.target.value = '';
     }
@@ -185,8 +213,8 @@ const LandingPage = ({ setSelectedImage, setProcessedImage, setInitialAudioFile 
     setShowLongAudioModal(false);
     
     // Reset file input if it's from a file input element
-    if (pendingAudioFile && pendingAudioFile.event && 
-        pendingAudioFile.event.target && 
+    if (pendingAudioFile &amp;&amp; pendingAudioFile.event &amp;&amp; 
+        pendingAudioFile.event.target &amp;&amp; 
         pendingAudioFile.event.target.value) {
       pendingAudioFile.event.target.value = '';
     }
@@ -227,14 +255,14 @@ const LandingPage = ({ setSelectedImage, setProcessedImage, setInitialAudioFile 
     e.stopPropagation();
     setIsDragging(false);
     
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+    if (e.dataTransfer.files &amp;&amp; e.dataTransfer.files.length > 0) {
       const file = e.dataTransfer.files[0];
       
       if (file.type.startsWith('audio/')) {
         try {
           const duration = await checkAudioDuration(file);
           
-          if (duration < 120) { // Less than 2 minutes (120 seconds)
+          if (duration &lt; 120) { // Less than 2 minutes (120 seconds)
             setPendingAudioFile({
               file: file
             });
@@ -288,49 +316,49 @@ const LandingPage = ({ setSelectedImage, setProcessedImage, setInitialAudioFile 
   };
 
   return (
-    <div className="image-upload">
-      <InfoButton 
+    &lt;div className="image-upload">
+      &lt;InfoButton 
         onClick={handleOpenTutorial} 
         isVisible={!showTutorialModal}
       />
       
-      <div className='title-bar landing-page-title'>
-        <h3 className='main-title landing-page-title-text'>AUDIXEL</h3>
-      </div>
-      <div 
+      &lt;div className='title-bar landing-page-title'>
+        &lt;h3 className='main-title landing-page-title-text'>AUDIXEL&lt;/h3>
+      &lt;/div>
+      &lt;div 
         className={`upload-block ${isDragging ? 'dragging' : ''}`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        <label htmlFor="audio-file-input" className='file-input-label'>
-          <div className="upload-text">
-            <div className='image-upload-text-main-parent'>
-              <p className='image-upload-text'>Select or drag audio file(s)</p>
-              <p className='image-upload-text'>(.wav, .mp3, .ogg)</p>
-            </div>
-            <label htmlFor='image-file-input' className='image-upload-text small-image-upload-text'>
-              <p>(or upload your own image here)</p>
-            </label>
-          </div>
-        </label>
-      </div>
-      <input
+        &lt;label htmlFor="audio-file-input" className='file-input-label'>
+          &lt;div className="upload-text">
+            &lt;div className='image-upload-text-main-parent'>
+              &lt;p className='image-upload-text'>Select or drag audio file(s)&lt;/p>
+              &lt;p className='image-upload-text'>(.wav, .mp3, .ogg)&lt;/p>
+            &lt;/div>
+            &lt;label htmlFor='image-file-input' className='image-upload-text small-image-upload-text'>
+              &lt;p>(or upload your own image here)&lt;/p>
+            &lt;/label>
+          &lt;/div>
+        &lt;/label>
+      &lt;/div>
+      &lt;input
         id="audio-file-input"
         type="file"
         accept="audio/*"
         onChange={handleAudioChange}
         style={{ display: 'none' }}
       />
-      <input id="image-file-input"
+      &lt;input id="image-file-input"
         type="file"
         accept="image/*"
         onChange={handleImageChange}
         style={{ display: 'none' }}>
-      </input>
+      &lt;/input>
       
       {/* Short audio modal */}
-      <Modal
+      &lt;Modal
         isOpen={showShortAudioModal}
         onClose={handleCancelShortAudio}
         onConfirm={handleConfirmShortAudio}
@@ -339,7 +367,7 @@ const LandingPage = ({ setSelectedImage, setProcessedImage, setInitialAudioFile 
       />
       
       {/* Long audio modal */}
-      <Modal
+      &lt;Modal
         isOpen={showLongAudioModal}
         onClose={handleCancelLongAudio}
         onConfirm={handleConfirmLongAudio}
@@ -348,7 +376,7 @@ const LandingPage = ({ setSelectedImage, setProcessedImage, setInitialAudioFile 
       />
       
       {/* Tutorial modal */}
-      <Modal
+      &lt;Modal
         isOpen={showTutorialModal}
         onClose={handleCloseTutorial}
         title="AUDIXEL"
@@ -357,8 +385,30 @@ const LandingPage = ({ setSelectedImage, setProcessedImage, setInitialAudioFile 
         hasButtons={false}
         customClass="tutorial-modal"
       />
-    </div>
+    &lt;/div>
   );
 };
 
-export default LandingPage;
+export default LandingPage;</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#Canvas">Canvas</a></li><li><a href="global.html#Dropdowns">Dropdowns</a></li><li><a href="global.html#Home">Home</a></li><li><a href="global.html#InfoButton">InfoButton</a></li><li><a href="global.html#LandingPage">LandingPage</a></li><li><a href="global.html#LoadingOverlay">LoadingOverlay</a></li><li><a href="global.html#Modal">Modal</a></li><li><a href="global.html#Selector">Selector</a></li><li><a href="global.html#Slider">Slider</a></li><li><a href="global.html#SpinnerOverlay">SpinnerOverlay</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Thu Mar 20 2025 11:35:16 GMT+0000 (Greenwich Mean Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>
