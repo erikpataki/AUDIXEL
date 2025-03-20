@@ -1,3 +1,17 @@
+/**
+ * Landing Page - Entry point for AUDIXEL application.
+ * 
+ * This is the initial page users encounter, allowing them to:
+ * - Upload audio files for visualization
+ * - Upload images for pixel sorting
+ * - Get introduced to the application via tutorial
+ * - Access help information
+ * 
+ * @page
+ * @memberof AUDIXEL.Pages
+ * @route /
+ * @flow Entry point to application, navigates to Home page after file selection
+ */
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import "./LandingPage.css";
@@ -6,10 +20,8 @@ import InfoButton from '../components/InfoButton/InfoButton';
 import { getTutorialMessage } from '../utils/tutorialContent';
 
 /**
- * Landing page component for the application.
- * Allows users to upload audio files or images to start the application.
+ * Landing page interface component
  * 
- * @component
  * @param {Object} props - Component props
  * @param {Function} props.setSelectedImage - Setter function for the selected image
  * @param {Function} props.setProcessedImage - Setter function for the processed image

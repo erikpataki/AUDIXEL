@@ -1,24 +1,37 @@
 /**
- * Slider Component
- * 
- * Interactive slider control with numeric input.
+ * @module components/Dropdowns/Slider
+ * @description Interactive slider control with numeric input.
  * Includes tooltips and debounced value updates.
- * 
- * @component
+ * @internal This component is only used within the Dropdowns component.
+ * @see module:components/Dropdowns
  */
 import React, { useState, useEffect, useRef } from 'react';
+import PropTypes from 'prop-types';
 import './Slider.css';
 
 /**
- * Renders a slider control with numeric input and tooltip
+ * @internal
+ * Slider component - Renders a customizable range slider
  * 
+ * @component
+ * @memberof module:components/Dropdowns/Slider
  * @param {Object} props - Component props
  * @param {string} props.label - Label text for slider
  * @param {number} props.value - Current value
- * @param {Function} props.setValue - Handler for value changes
- * @param {number} [props.maxValue] - Maximum allowed value (defaults to 255)
- * @param {string} [props.tooltip] - Tooltip text explaining the control
- * @returns {JSX.Element} Slider control
+ * @param {function(number): void} props.setValue - Handler for value changes
+ * @param {number} [props.minValue=0] - Minimum value for the slider
+ * @param {number} [props.maxValue=255] - Maximum allowed value (defaults to 255)
+ * @param {string} [props.tooltip] - Optional tooltip text explaining the control
+ * @returns {JSX.Element} Slider control component
+ * @example
+ * // Example slider with tooltip and maxValue set
+ * <Slider
+ *   label="Example Slider"
+ *   value={value}
+ *   setValue={setValue}
+ *   maxValue={100}
+ *   tooltip="Example tooltip text"
+ * />
  */
 const Slider = ({ label, value, setValue, maxValue, tooltip }) => {
     // Use provided max or default to 255
@@ -132,6 +145,15 @@ const Slider = ({ label, value, setValue, maxValue, tooltip }) => {
             </div>
         </div>
     );
+};
+
+// Add PropTypes definition for the component
+Slider.propTypes = {
+    label: PropTypes.string.isRequired,
+    value: PropTypes.number.isRequired,
+    setValue: PropTypes.func.isRequired,
+    maxValue: PropTypes.number,
+    tooltip: PropTypes.string
 };
 
 export default Slider;

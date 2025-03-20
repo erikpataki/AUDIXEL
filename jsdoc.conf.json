@@ -10,10 +10,65 @@
   "opts": {
     "destination": "./docs",
     "recurse": true,
-    "readme": "README.md"
+    "readme": "README.md",
+    "template": "node_modules/better-docs"
   },
   "tags": {
-    "allowUnknownTags": true,
-    "dictionaries": ["jsdoc", "closure"]
+    "allowUnknownTags": ["page", "route", "flow", "internal", "component"],
+    "dictionaries": ["jsdoc", "closure"],
+    "defineTags": [
+      {
+        "name": "page",
+        "mustHaveValue": false,
+        "mustNotHaveValue": false,
+        "canHaveType": false,
+        "canHaveName": false
+      },
+      {
+        "name": "route",
+        "mustHaveValue": true,
+        "mustNotHaveValue": false,
+        "canHaveType": false,
+        "canHaveName": false
+      },
+      {
+        "name": "flow",
+        "mustHaveValue": true,
+        "mustNotHaveValue": false,
+        "canHaveType": false,
+        "canHaveName": false
+      },
+      {
+        "name": "internal",
+        "mustHaveValue": false,
+        "mustNotHaveValue": false,
+        "canHaveType": false,
+        "canHaveName": false
+      },
+      {
+        "name": "component",
+        "mustHaveValue": false,
+        "mustNotHaveValue": false,
+        "canHaveType": false,
+        "canHaveName": false
+      }
+    ]
+  },
+  "templates": {
+    "better-docs": {
+      "name": "AUDIXEL Documentation",
+      "title": "AUDIXEL | Audio Visualization",
+      "footer": "AUDIXEL - Audio Reactive Visualization",
+      "css": "style.css",
+      "trackingCode": "",
+      "navigation": [
+        {
+          "label": "Github",
+          "href": "https://github.com/yourusername/finalyearproject"
+        }
+      ]
+    },
+    "cleverLinks": false,
+    "monospaceLinks": false
   }
 }

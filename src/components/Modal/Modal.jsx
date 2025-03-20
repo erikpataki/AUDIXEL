@@ -1,19 +1,16 @@
 /**
- * Modal Component
- * 
- * Flexible modal dialog component supporting different styles and purposes:
- * - Standard confirmation dialogs with confirm/cancel buttons
- * - Tutorial/information modals with just a close button
- * - Custom content and styling through props
- * 
- * @component
+ * @module components/Modal
+ * @description Flexible modal dialog component supporting different styles and purposes.
+ * Can be used for confirmations, warnings, and tutorials.
  */
 import React from 'react';
 import "./Modal.css";
 
 /**
- * Modal component for dialogs, alerts and tutorials
+ * Renders a modal dialog for various purposes
  * 
+ * @function Modal
+ * @memberof module:components/Modal
  * @param {Object} props - Component props
  * @param {boolean} props.isOpen - Controls modal visibility
  * @param {Function} props.onClose - Handler for close actions
@@ -24,6 +21,27 @@ import "./Modal.css";
  * @param {boolean} [props.hasButtons=true] - Whether to show action buttons
  * @param {string} [props.customClass=""] - Additional CSS class names
  * @returns {JSX.Element|null} The modal component or null when closed
+ * @example
+ * // Confirmation dialog
+ * <Modal
+ *   isOpen={showConfirmDialog}
+ *   onClose={handleCancel}
+ *   onConfirm={handleConfirm}
+ *   title="Confirm Action"
+ *   message="Are you sure you want to continue?"
+ * />
+ * 
+ * @example
+ * // Tutorial modal
+ * <Modal
+ *   isOpen={showTutorial}
+ *   onClose={closeTutorial}
+ *   title="How to Use"
+ *   message={tutorialContent}
+ *   modalType="tutorial"
+ *   hasButtons={false}
+ *   customClass="tutorial-modal"
+ * />
  */
 const Modal = ({ 
   isOpen, 
@@ -41,6 +59,9 @@ const Modal = ({
    * Handles clicks on the overlay background
    * Only closes the modal if the click is directly on the overlay
    * 
+   * @function handleOverlayClick
+   * @memberof module:components/Modal
+   * @inner
    * @param {React.MouseEvent} e - Click event
    */
   const handleOverlayClick = (e) => {

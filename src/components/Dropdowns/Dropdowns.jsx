@@ -1,10 +1,9 @@
 /**
- * Dropdowns Component
- * 
- * Collapsible control section for app settings.
+ * @module components/Dropdowns
+ * @description Collapsible control section for app settings.
  * Contains sliders and selectors in an expandable panel.
- * 
- * @component
+ * @see module:components/Dropdowns/Slider
+ * @see module:components/Dropdowns/Selector
  */
 import React, { useState, useRef, useEffect } from "react";
 import "./Dropdowns.css";
@@ -12,14 +11,53 @@ import Slider from "./Slider/Slider";
 import Selector from "./Selector/Selector";
 
 /**
- * Renders a collapsible section containing controls
+ * Dropdowns component - Renders collapsible dropdown sections
  * 
+ * @component
  * @param {Object} props - Component props
- * @param {string} props.dropdownName - Title text for the dropdown
- * @param {boolean} props.hasDropdown - Whether section can be collapsed
- * @param {Array} [props.sliders=[]] - Slider control configurations
- * @param {Array} [props.selectors=[]] - Selector control configurations
- * @returns {JSX.Element} Collapsible control section
+ * @param {string} props.dropdownName - Name/title of the dropdown
+ * @param {Array} [props.sliders] - Array of slider configurations
+ * @param {Array} [props.selectors] - Array of selector configurations
+ * @param {boolean} [props.hasDropdown] - Whether this component has dropdown functionality
+ * @returns {JSX.Element} Dropdown component
+ * @example
+ * // With both sliders and selectors
+ * <Dropdowns 
+ *   dropdownName="Example Dropdown"
+ *   hasDropdown={true}
+ *   sliders={
+ *   {
+ *       label: "SLIDER 1",
+ *       value: value1,
+ *       setValue: handleValue1Change,
+ *       tooltip: "example tooltip text 1"
+ *   },
+ *   {
+ *       label: "SLIDER 2",
+ *       value: value2,
+ *       setValue: handleValue2Change,
+ *       tooltip: "example tooltip text 2"
+ *   },
+ * }
+ *   selectors={[
+ *     {
+ *       label: "SELECTOR 1",
+ *       value: value,
+ *       setValue: setValue,
+ *       options: [
+ *         { value: 0, label: 'Example 1' },
+ *         { value: 1, label: 'Example 2' }
+ *       ],
+ *       tooltip: "Example tooltip text"
+ *     }
+ *   ]}
+ * />
+ * @example
+ * // As a non-collapsible button
+ * <Dropdowns 
+ *   dropdownName="DROPDOWN COMPONENT BUTTON" 
+ *   hasDropdown={false} 
+ * />
  */
 function Dropdowns({
     dropdownName,

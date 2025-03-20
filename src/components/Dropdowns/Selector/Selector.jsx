@@ -1,25 +1,26 @@
 /**
- * Selector Component
- * 
- * Dropdown select control with tooltip support.
+ * @module components/Dropdowns/Selector
+ * @description Dropdown select control with tooltip support.
  * Used for option selection from predefined choices.
- * 
- * @component
+ * @internal This component is only used within the Dropdowns component.
+ * @see module:components/Dropdowns
  */
 import './Selector.css';
 import React, { useState, useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
 /**
- * Renders a dropdown selector with tooltip
+ * @internal
+ * Selector component - Renders a dropdown selector
  * 
+ * @component
  * @param {Object} props - Component props
- * @param {string} props.label - Label text for selector
- * @param {Array} props.options - Available options array
- * @param {Function} props.onChange - Handler for value changes
- * @param {any} props.value - Current selected value
- * @param {string} [props.tooltip] - Tooltip text explaining the control
- * @returns {JSX.Element} Dropdown selector
+ * @param {string} props.label - Label for the selector
+ * @param {number|string} props.value - Current selected value
+ * @param {Function} props.setValue - Function to update the value
+ * @param {Array} props.options - Array of options to select from
+ * @param {string} [props.tooltip] - Optional tooltip text
+ * @returns {JSX.Element} Selector component
  */
 const Selector = ({ label, options, onChange, value, tooltip }) => {
     // Tooltip visibility state

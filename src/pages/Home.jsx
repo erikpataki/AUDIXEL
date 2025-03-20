@@ -1,7 +1,10 @@
 /**
- * Home Page Component
+ * Home Page - Main application interface for AUDIXEL.
  * 
- * Core application page that handles:
+ * This is the primary page of the application that integrates all components
+ * and manages the core application logic.
+ * 
+ * Features:
  * - Audio processing and feature extraction
  * - Image generation from audio data
  * - Pixel sorting with configurable parameters
@@ -10,7 +13,10 @@
  * - File upload and processing
  * - Canvas manipulation
  * 
- * @component
+ * @page
+ * @memberof AUDIXEL.Pages
+ * @route /home
+ * @flow Accessible from LandingPage after file selection
  */
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import "./Home.css";

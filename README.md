@@ -1,4 +1,4 @@
-# FOR FULL PROPER JSDOC DOCUMENTAION VISIT `docs\global.html`
+# FOR FULL PROPER JSDOC DOCUMENTAION VISIT `docs\index.html`
 
 # AUDIXEL: Audio-Reactive Album Cover Generator
 

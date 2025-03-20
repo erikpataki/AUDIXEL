@@ -1,11 +1,18 @@
+/**
+ * @module components/Canvas
+ * @description Canvas component for creating and displaying audio-reactive generative art.
+ * Handles audio visualization, shape generation, and image processing.
+ * @see module:components/Dropdowns
+ */
 import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import p5 from 'p5';
 import "./Canvas.css";
 
 /**
- * Canvas component for creating and displaying audio-reactive generative art.
+ * Renders a canvas for audio visualization and image processing
  * 
- * @component
+ * @function Canvas
+ * @memberof module:components/Canvas
  * @param {Object} props - Component props
  * @param {string} props.selectedImage - URL or data URI of the currently selected image
  * @param {string} props.processedImage - URL or data URI of the processed image
@@ -23,8 +30,31 @@ import "./Canvas.css";
  * @param {number} props.maxThreshold - Maximum threshold for image processing
  * @param {Function} props.handleThresholdChange - Handler function for threshold changes
  * @param {Function} props.setSortMode - Setter function for the pixel sorting mode
- * @param {React.Ref} ref - Ref forwarded to the component
- * @returns {React.ReactElement} The rendered Canvas component
+ * @param {React.Ref} ref - Ref forwarded to the component for imperative methods
+ * @returns {JSX.Element} Canvas component for visualization rendering
+ * @example
+ * // Example Canvas with minimal configuration
+ * <Canvas 
+ *   bufferSize={bufferSize}
+ *   selectedImage={selectedImage}
+ *   processedImage={processedImage}
+ *   showProcessed={showProcessed}
+ *   setSelectedImage={setSelectedImage}
+ *   setProcessedImage={setProcessedImage}
+ *   canvasRef={canvasRef}
+ *   audioFeatures={audioFeatures}
+ *   individualBufferValues={individualBufferValues}
+ *   debouncedProcessImage={debouncedProcessImage}
+ *   horizontalResolutionValue={horizontalResolutionValue}
+ *   verticalResolutionValue={verticalResolutionValue}
+ *   scale={scale}
+ *   setAngle={setAngle}
+ *   minThreshold={minThreshold}
+ *   maxThreshold={maxThreshold}
+ *   handleThresholdChange={handleThresholdChange}
+ *   setSortMode={setSortMode}
+ *   ref={canvasComponentRef}
+ * />
  */
 const Canvas = forwardRef(({ selectedImage, processedImage, showProcessed, setSelectedImage, canvasRef, audioFeatures, individualBufferValues, debouncedProcessImage, horizontalResolutionValue, verticalResolutionValue, scale, setAngle, minThreshold, maxThreshold, handleThresholdChange, setSortMode }, ref) => {
   const p5ContainerRef = useRef(null);
@@ -40,11 +70,28 @@ const Canvas = forwardRef(({ selectedImage, processedImage, showProcessed, setSe
   // Previous audio features reference to detect changes
   const previousAudioFeaturesRef = useRef(null);
 
-  // Expose the setShouldRegenerateShapes method through the ref
+  /**
+   * Expose methods to parent component through ref
+   * 
+   * @memberof module:components/Canvas
+   * @inner
+   */
   useImperativeHandle(ref, () => ({
+    /**
+     * Sets flag to regenerate shapes on next render
+     * 
+     * @function setShouldRegenerateShapes
+     * @param {boolean} value - Whether shapes should be regenerated
+     */
     setShouldRegenerateShapes
   }));
 
+  /**
+   * Load and draw image to canvas when selected image changes
+   * 
+   * @memberof module:components/Canvas
+   * @inner
+   */
   useEffect(() => {
     if (selectedImage) {
       const img = new Image();
@@ -68,8 +115,11 @@ const Canvas = forwardRef(({ selectedImage, processedImage, showProcessed, setSe
   }, [selectedImage, canvasRef, scale]);
 
   /**
-   * Converts audio analysis values to RGBA color values.
+   * Converts audio analysis values to RGBA color values
    * 
+   * @function getAudioRGBA
+   * @memberof module:components/Canvas
+   * @inner
    * @param {number} hue - Hue value from audio analysis, range 0-1
    * @param {number} saturation - Saturation value from audio analysis
    * @param {number} lightness - Lightness value (defaulted to 50)
@@ -94,6 +144,12 @@ const Canvas = forwardRef(({ selectedImage, processedImage, showProcessed, setSe
   let col1;
   let col2;
 
+  /**
+   * Initialize p5 sketch and generate shapes based on audio features
+   * 
+   * @memberof module:components/Canvas
+   * @inner
+   */
   useEffect(() => {
     if (
       audioFeatures && 
@@ -148,6 +204,14 @@ const Canvas = forwardRef(({ selectedImage, processedImage, showProcessed, setSe
       const scaleMultiplier = getScaleMultiplier(scale);
 
       const sketch = (p) => {
+        /**
+         * p5.js setup function.
+         * Creates canvas and configures initial settings
+         * 
+         * @function setup
+         * @memberof module:components/Canvas
+         * @inner
+         */
         p.setup = () => {
           const container = p5ContainerRef.current;
           // Use the horizontalResolutionValue and verticalResolutionValue directly
@@ -158,6 +222,14 @@ const Canvas = forwardRef(({ selectedImage, processedImage, showProcessed, setSe
           p.noLoop();
         };
 
+        /**
+         * p5.js draw function
+         * Renders shapes based on audio analysis
+         * 
+         * @function draw
+         * @memberof module:components/Canvas
+         * @inner
+         */
         p.draw = () => {
           p.background(0); // Set background to black
           
@@ -287,8 +359,11 @@ const Canvas = forwardRef(({ selectedImage, processedImage, showProcessed, setSe
         };
 
         /**
-         * Draws a polygon with gradient fill.
+         * Draws a polygon with gradient fill
          * 
+         * @function drawPoly
+         * @memberof module:components/Canvas
+         * @inner
          * @param {number} x - X coordinate of the polygon center
          * @param {number} y - Y coordinate of the polygon center
          * @param {number} r - Base radius of the polygon
