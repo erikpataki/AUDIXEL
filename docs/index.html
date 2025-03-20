@@ -1,48 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    
     <meta charset="utf-8">
-    <title>Home - AUDIXEL Documentation</title>
-    
-    <meta name="description" content="Documentation for AUDIXEL application" />
-    
-        <meta name="keywords" content="react, audio, visualization" />
-        <meta name="keyword" content="react, audio, visualization" />
-    
-    
-    
-    <script src="scripts/prettify/prettify.js"></script>
-    <script src="scripts/prettify/lang-css.js"></script>
+    <title>JSDoc: Home</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
     <!--[if lt IE 9]>
       <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-    <link type="text/css" rel="stylesheet" href="styles/prettify.css">
-    <link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
-    <script src="scripts/nav.js" defer></script>
-    
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
 </head>
+
 <body>
 
-<input type="checkbox" id="nav-trigger" class="nav-trigger" />
-<label for="nav-trigger" class="navicon-button x">
-  <div class="navicon"></div>
-</label>
-
-<label for="nav-trigger" class="overlay"></label>
-
-<nav class="wrap">
-    
-    <input type="text" id="nav-search" placeholder="Search" />
-    
-    
-    <h2><a href="index.html">Home</a></h2><h2><a href="components.html" class="menu-item" id="components_nav" >Components</a></h2><h2><a href="pages.html" class="menu-item" id="pages_nav" >Pages</a></h2><h3>Namespaces</h3><ul><li><a href="Components.html">Components</a></li><li><a href="Pages.html">Pages</a><ul class='methods'></ul></li><li><a href="module-AUDIXEL-Components.html">Components</a></li><li><a href="module-AUDIXEL-Pages.html">Pages</a></li><li><a href="module-AUDIXEL-Utils.html">Utils</a></li></ul><h3>Modules</h3><ul><li><a href="module-AUDIXEL.html">AUDIXEL</a><ul class='methods'><li data-type='method'><a href="module-AUDIXEL.html#~renderApp">renderApp</a></li></ul></li></ul>
-    
-</nav>
-
 <div id="main">
-    
+
+    <h1 class="page-title">Home</h1>
 
     
 
@@ -51,9 +26,8 @@
     
 
 
-    <section class="package">
-        <h3> </h3>		
-    </section>
+    <h3> </h3>
+
 
 
 
@@ -67,12 +41,13 @@
 
 
 
-    <section class="readme usertext">
-        <article><h1 id="audixel%3A-audio-reactive-album-cover-generator">AUDIXEL: Audio-Reactive Album Cover Generator</h1>
+
+    <section>
+        <article><h1>AUDIXEL: Audio-Reactive Album Cover Generator</h1>
 <p>An innovative web application that transforms music into visual art by analyzing audio characteristics and applying advanced pixel sorting techniques.</p>
-<h2 id="project-overview">Project Overview</h2>
+<h2>Project Overview</h2>
 <p>AUDIXEL bridges the gap between algorithmic art and music visualization by extracting meaningful audio features and mapping them to visual parameters. The result is album artwork that is fundamentally connected to the sonic properties of the music itself.</p>
-<h2 id="features">Features</h2>
+<h2>Features</h2>
 <ul>
 <li><strong>Audio Analysis</strong>: Processes audio files using Meyda.js to extract features like Zero Crossing Rate (ZCR), Spectral Kurtosis, and Energy</li>
 <li><strong>Shape Generation</strong>: Creates abstract polygonal shapes based on audio characteristics</li>
@@ -89,7 +64,7 @@
 <li><strong>Parallel Processing</strong>: Uses Web Workers for efficient image transformation</li>
 <li><strong>High-Resolution Output</strong>: Supports up to 7200×7200 pixel exports</li>
 </ul>
-<h2 id="audio-visual-mapping">Audio-Visual Mapping</h2>
+<h2>Audio-Visual Mapping</h2>
 <ul>
 <li><strong>Sort Mode Selection</strong>: Based on ZCR ranges
 <ul>
@@ -102,13 +77,13 @@
 <li><strong>Sorting Angle</strong>: Derived from spectral kurtosis</li>
 <li><strong>Threshold Values</strong>: Calculated from ZCR aggressiveness</li>
 </ul>
-<h2 id="getting-started">Getting Started</h2>
-<h3 id="prerequisites">Prerequisites</h3>
+<h2>Getting Started</h2>
+<h3>Prerequisites</h3>
 <ul>
 <li>Node.js (v16.0 or higher recommended)</li>
 <li>npm or yarn</li>
 </ul>
-<h3 id="installation">Installation</h3>
+<h3>Installation</h3>
 <pre class="prettyprint source lang-bash"><code># Clone the repository
 git clone https://github.com/erikpataki/audixel.git
 
@@ -121,8 +96,8 @@ npm install
 # Start the development server
 npm start
 </code></pre>
-<h1 id="audio-processing-pipeline-pseudocode">Audio Processing Pipeline Pseudocode</h1>
-<h2 id="function%3A-processaudio(audiofile)">Function: <code>processAudio(audioFile)</code></h2>
+<h1>Audio Processing Pipeline Pseudocode</h1>
+<h2>Function: <code>processAudio(audioFile)</code></h2>
 <ol>
 <li>Load and decode audio file</li>
 <li>Divide audio into 512-sample buffers</li>
@@ -139,8 +114,8 @@ npm start
 <li>Pass audio features to Canvas component</li>
 </ol>
 <hr>
-<h1 id="shape-generation">Shape Generation</h1>
-<h2 id="function%3A-generateshapes(individualbuffervalues%2C-audiofeatures)">Function: <code>generateShapes(individualBufferValues, audioFeatures)</code></h2>
+<h1>Shape Generation</h1>
+<h2>Function: <code>generateShapes(individualBufferValues, audioFeatures)</code></h2>
 <ol>
 <li>Create canvas with p5.js</li>
 <li>For each audio buffer segment with sufficient energy:
@@ -164,8 +139,8 @@ npm start
 <li>Capture generated image as <code>dataURL</code></li>
 </ol>
 <hr>
-<h1 id="parameter-selection">Parameter Selection</h1>
-<h2 id="function%3A-selectpixelsortingparameters(audiofeatures)">Function: <code>selectPixelSortingParameters(audioFeatures)</code></h2>
+<h1>Parameter Selection</h1>
+<h2>Function: <code>selectPixelSortingParameters(audioFeatures)</code></h2>
 <ol>
 <li><strong>Set angle based on spectral kurtosis:</strong><pre class="prettyprint source lang-js"><code>angle = (spectralKurtosis.average * 10) % 360
 </code></pre>
@@ -182,8 +157,8 @@ npm start
 </code></pre>
 </li>
 </ol>
-<h1 id="pixel-sorting">Pixel Sorting</h1>
-<h2 id="sortpixels(image%2C-minthreshold%2C-maxthreshold%2C-sortmode%2C-angle)">sortPixels(image, minThreshold, maxThreshold, sortMode, angle)</h2>
+<h1>Pixel Sorting</h1>
+<h2>sortPixels(image, minThreshold, maxThreshold, sortMode, angle)</h2>
 <ol>
 <li>
 <p><strong>Rotate image to specified angle</strong></p>
@@ -239,23 +214,19 @@ npm start
 
 
 
-    
-    
 </div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#Canvas">Canvas</a></li><li><a href="global.html#Dropdowns">Dropdowns</a></li><li><a href="global.html#Home">Home</a></li><li><a href="global.html#InfoButton">InfoButton</a></li><li><a href="global.html#LandingPage">LandingPage</a></li><li><a href="global.html#LoadingOverlay">LoadingOverlay</a></li><li><a href="global.html#Modal">Modal</a></li><li><a href="global.html#Selector">Selector</a></li><li><a href="global.html#Slider">Slider</a></li><li><a href="global.html#SpinnerOverlay">SpinnerOverlay</a></li></ul>
+</nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.4</a> on Thu Mar 20 2025 16:07:51 GMT+0000 (Greenwich Mean Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.4</a> on Thu Mar 20 2025 11:35:16 GMT+0000 (Greenwich Mean Time)
 </footer>
 
-<script>prettyPrint();</script>
-<script src="scripts/polyfill.js"></script>
-<script src="scripts/linenumber.js"></script>
-
-<script src="scripts/search.js" defer></script>
-
-
-
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
 </body>
 </html>
