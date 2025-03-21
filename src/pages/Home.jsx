@@ -96,7 +96,6 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
   const [uploadedFile, setUploadedFile] = useState(null);      // Currently uploaded file object
   const [fileName, setFileName] = useState('');                // Display name for current file
   const [isUploadImageHidden, setIsUploadImageHidden] = useState(false); // Controls upload image UI visibility
-  const [isFilenameLong, setIsFilenameLong] = useState(false); // Tracks if filename needs scrolling treatment
   const filenameRef = useRef(null);                            // Reference to filename element for overflow detection
   const [showShortAudioModal, setShowShortAudioModal] = useState(false); // Controls short audio warning modal
   const [showLongAudioModal, setShowLongAudioModal] = useState(false);   // Controls long audio warning modal
@@ -281,7 +280,6 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
     tempCtx.drawImage(image, 0, 0);
     
     const imageData = tempCtx.getImageData(0, 0, newWidth * scaleMultiplier, newHeight * scaleMultiplier);
-    const data = new Uint8ClampedArray(imageData.data);
 
     const workerBlob = new Blob([`
       self.onmessage = function(e) {
@@ -803,7 +801,6 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
             const updateUI = (!isMobileDevice || processedBuffers % 5 === 0);
             if (updateUI) {
               const progress = Math.floor((processedBuffers / totalBuffers) * 55) + 25; // Audio processing is 25-80% of total
-              const percentComplete = Math.floor((processedBuffers / totalBuffers) * 100);
               
               await new Promise(resolve => setTimeout(() => {
                 setProcessingMessage(`Extracting audio features...`);
@@ -1214,8 +1211,6 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
       } else {
         element.style.setProperty('--scroll-width', '100%');
       }
-      
-      setIsFilenameLong(isOverflowing);
     }
   }, []);
 

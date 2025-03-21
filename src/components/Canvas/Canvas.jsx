@@ -127,7 +127,6 @@ const Canvas = forwardRef(({ selectedImage, processedImage, showProcessed, setSe
    */
   function getAudioRGBA(hue, saturation, lightness) {
     hue = (1-hue) * 240;
-    saturation = saturation;
     lightness = 50;
     
     let color1 = `hsla(${hue}, ${saturation}%, ${lightness}%, 0.3)`;
@@ -140,9 +139,6 @@ const Canvas = forwardRef(({ selectedImage, processedImage, showProcessed, setSe
 
     return { color1, color2 };
   }
-
-  let col1;
-  let col2;
 
   /**
    * Initialize p5 sketch and generate shapes based on audio features
@@ -253,8 +249,6 @@ const Canvas = forwardRef(({ selectedImage, processedImage, showProcessed, setSe
                 let saturationValue = Math.min(100, (30 + (individualBufferValues[i].energy*1.15)));
 
                 const { color1, color2 } = getAudioRGBA(hueValue, saturationValue);
-                col1 = color1;
-                col2 = color2;
 
                 // Store the hue value instead of setting angle immediately
                 if (individualBufferValues[i].energy > (audioFeatures.energy.average * 0.2) && aggressiveness !== 0) {
