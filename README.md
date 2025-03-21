@@ -1,3 +1,7 @@
+# FOR FULL PROPER JSDOC DOCUMENTAION VISIT `docs\index.html`
+
+# FOR FULL WORKING SOFTWARE DEMO WITHOUT NEEDING TO INSTALL, VISIT THE WEBSITE [HERE](erikpataki.github.io/AUDIXEL/)
+
 # AUDIXEL: Audio-Reactive Album Cover Generator
 
 An innovative web application that transforms music into visual art by analyzing audio characteristics and applying advanced pixel sorting techniques.
