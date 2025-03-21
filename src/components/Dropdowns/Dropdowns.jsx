@@ -64,6 +64,7 @@ function Dropdowns({
     hasDropdown,
     sliders = [], // Accept an array of slider objects
     selectors = [], // Accept an array of selector objects
+    icon
 }) 
 { 
     // Track collapsed state
@@ -89,7 +90,12 @@ function Dropdowns({
     return (
         <div className="drop-down" ref={dropDownRef}>
             <div className="drop-down-header" onClick={toggleCollapse}>
-                <h3 className="drop-down-name">{dropdownName}</h3>
+                <h3 className="drop-down-name">
+                    {dropdownName}
+                    <div className="dropdown-icon">                    
+                        {icon && icon}
+                    </div>
+                </h3>
                 {hasDropdown !== false &&
                     <svg className={`dropdown-arrow ${isCollapsed ? 'flipped' : ''}`} xmlns="http://www.w3.org/2000/svg" width="14" height="12" viewBox="0 0 14 12" fill="none">
                     <path d="M7 0L0.0717964 12H13.9282L7 0Z" fill="#0D1F22"/>

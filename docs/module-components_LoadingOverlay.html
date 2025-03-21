@@ -5,7 +5,7 @@
   
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AUDIXEL | Audio Visualization components/LoadingOverlay</title>
+  <title>AUDIXEL components/LoadingOverlay</title>
 
   <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -495,11 +495,19 @@ Used for longer operations where progress tracking improves user experience.</p>
     <h5>Examples</h5>
     
     
-        <pre class="prettyprint"><code>// Basic loading overlay with progress&lt;LoadingOverlay  progress={75}  message="Processing your file..."/></code></pre>
+        <pre class="prettyprint"><code>// Basic loading overlay with progress
+&lt;LoadingOverlay
+  progress={75}
+  message="Processing your file..."
+/></code></pre>
     
 
     
-        <pre class="prettyprint"><code>// Indeterminate loading overlay&lt;LoadingOverlay  progress={null}  message="Please wait..."/></code></pre>
+        <pre class="prettyprint"><code>// Indeterminate loading overlay
+&lt;LoadingOverlay
+  progress={null}
+  message="Please wait..."
+/></code></pre>
     
 
 

@@ -57,7 +57,7 @@
   "templates": {
     "better-docs": {
       "name": "AUDIXEL Documentation",
-      "title": "AUDIXEL | Audio Visualization",
+      "title": "AUDIXEL",
       "footer": "AUDIXEL - Audio Reactive Visualization",
       "css": "style.css",
       "trackingCode": "",

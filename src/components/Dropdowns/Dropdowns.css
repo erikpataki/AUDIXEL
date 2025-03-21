@@ -49,3 +49,15 @@
     overflow: visible;
     padding-bottom: 7px;
 }
+
+.dropdown-icon {
+    display: flex;
+    justify-content: center;
+    transform: translateY(-100%);
+}
+
+.dropdown-icon * {
+    margin-left: auto;
+    /* margin-right: 10%; */
+    margin-bottom: 1px;
+}

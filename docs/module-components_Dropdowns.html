@@ -5,7 +5,7 @@
   
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AUDIXEL | Audio Visualization components/Dropdowns</title>
+  <title>AUDIXEL components/Dropdowns</title>
 
   <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -534,11 +534,45 @@ Contains sliders and selectors in an expandable panel.</p></div>
     <h5>Examples</h5>
     
     
-        <pre class="prettyprint"><code>// With both sliders and selectors&lt;Dropdowns   dropdownName="Example Dropdown"  hasDropdown={true}  sliders={  {      label: "SLIDER 1",      value: value1,      setValue: handleValue1Change,      tooltip: "example tooltip text 1"  },  {      label: "SLIDER 2",      value: value2,      setValue: handleValue2Change,      tooltip: "example tooltip text 2"  },}  selectors={[    {      label: "SELECTOR 1",      value: value,      setValue: setValue,      options: [        { value: 0, label: 'Example 1' },        { value: 1, label: 'Example 2' }      ],      tooltip: "Example tooltip text"    }  ]}/></code></pre>
+        <pre class="prettyprint"><code>// With both sliders and selectors
+&lt;Dropdowns 
+  dropdownName="Example Dropdown"
+  hasDropdown={true}
+  sliders={
+  {
+      label: "SLIDER 1",
+      value: value1,
+      setValue: handleValue1Change,
+      tooltip: "example tooltip text 1"
+  },
+  {
+      label: "SLIDER 2",
+      value: value2,
+      setValue: handleValue2Change,
+      tooltip: "example tooltip text 2"
+  },
+}
+  selectors={[
+    {
+      label: "SELECTOR 1",
+      value: value,
+      setValue: setValue,
+      options: [
+        { value: 0, label: 'Example 1' },
+        { value: 1, label: 'Example 2' }
+      ],
+      tooltip: "Example tooltip text"
+    }
+  ]}
+/></code></pre>
     
 
     
-        <pre class="prettyprint"><code>// As a non-collapsible button&lt;Dropdowns   dropdownName="DROPDOWN COMPONENT BUTTON"   hasDropdown={false} /></code></pre>
+        <pre class="prettyprint"><code>// As a non-collapsible button
+&lt;Dropdowns 
+  dropdownName="DROPDOWN COMPONENT BUTTON" 
+  hasDropdown={false} 
+/></code></pre>
     
 
 

@@ -5,7 +5,7 @@
   
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AUDIXEL | Audio Visualization components/Modal</title>
+  <title>AUDIXEL components/Modal</title>
 
   <script src="https://cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -699,11 +699,27 @@ Can be used for confirmations, warnings, and tutorials.</p></div>
     <h5>Examples</h5>
     
     
-        <pre class="prettyprint"><code>// Confirmation dialog&lt;Modal  isOpen={showConfirmDialog}  onClose={handleCancel}  onConfirm={handleConfirm}  title="Confirm Action"  message="Are you sure you want to continue?"/></code></pre>
+        <pre class="prettyprint"><code>// Confirmation dialog
+&lt;Modal
+  isOpen={showConfirmDialog}
+  onClose={handleCancel}
+  onConfirm={handleConfirm}
+  title="Confirm Action"
+  message="Are you sure you want to continue?"
+/></code></pre>
     
 
     
-        <pre class="prettyprint"><code>// Tutorial modal&lt;Modal  isOpen={showTutorial}  onClose={closeTutorial}  title="How to Use"  message={tutorialContent}  modalType="tutorial"  hasButtons={false}  customClass="tutorial-modal"/></code></pre>
+        <pre class="prettyprint"><code>// Tutorial modal
+&lt;Modal
+  isOpen={showTutorial}
+  onClose={closeTutorial}
+  title="How to Use"
+  message={tutorialContent}
+  modalType="tutorial"
+  hasButtons={false}
+  customClass="tutorial-modal"
+/></code></pre>
     
 
 
