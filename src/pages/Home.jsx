@@ -555,14 +555,9 @@ const Home = ({ selectedImage, processedImage, setSelectedImage, setProcessedIma
    * Selected features influence the visual characteristics of the output
    */
   const FEATURES = [
-    // { name: "spectralCentroid", average: true, min: true, max: true },
     { name: "energy", average: true, min: true, max: true },
     { name: "spectralKurtosis", average: true, min: true, max: true }, 
-    // { name: "spectralSpread", average: true, min: true, max: true },
     { name: "zcr", average: true, min: true, max: true },
-    // { name: "spectralRolloff", average: true, min: true, max: true },
-    // { name: "chroma", average: true, min: true, max: true },
-    // { name: "mfcc", average: true, min: true, max: true },
   ];
 
   /**

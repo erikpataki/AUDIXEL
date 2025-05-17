@@ -15,6 +15,6 @@ export const getTutorialMessage = () => (
     </ol>
     
     <h2>Try it now</h2>
-    <p>Curious what your song looks like? Upload your track to find out!</p>
+    <p style={{ marginBottom: '0' }}>Curious what your song looks like? Upload your track to find out!</p>
   </div>
 );
