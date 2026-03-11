@@ -4,17 +4,17 @@
 
 # AUDIXEL: Audio-Reactive Album Cover Generator
 
-An innovative web application that transforms music into visual art by analyzing audio characteristics and applying advanced pixel sorting techniques.
+An innovative web application that transforms music into visual art by analysing audio characteristics and applying advanced pixel sorting techniques.
 
 ## Project Overview
 
-AUDIXEL bridges the gap between algorithmic art and music visualization by extracting meaningful audio features and mapping them to visual parameters. The result is album artwork that is fundamentally connected to the sonic properties of the music itself.
+AUDIXEL bridges the gap between algorithmic art and music visualisation by extracting meaningful audio features and mapping them to visual parameters. The result is album artwork that is fundamentally connected to the sonic properties of the music itself.
 
 ## Features
 
 - **Audio Analysis**: Processes audio files using Meyda.js to extract features like Zero Crossing Rate (ZCR), Spectral Kurtosis, and Energy
 - **Shape Generation**: Creates abstract polygonal shapes based on audio characteristics
-- **Pixel Sorting**: Applies customizable sorting algorithms with parameters derived from audio features
+- **Pixel Sorting**: Applies customisable sorting algorithms with parameters derived from audio features
 - **Multiple Sort Modes**: 
   - Brightness (RGB sum)
   - Darkness (negative RGB sum)
